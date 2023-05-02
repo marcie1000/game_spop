@@ -57,7 +57,8 @@ int initialize_SDL(void)
 
 int initialize_emulator(s_emu *emu, void (*opcode_functions[OPCODE_NB])(s_emu*, uint32_t))
 {
-    initialize_cpu(&emu->cpu);
+    if(0 != initialize_cpu(&emu->cpu))
+        return EXIT_FAILURE;
     memset(&emu->in, 0, sizeof(s_input));
     if(0 != initialize_SDL())
         return EXIT_FAILURE;

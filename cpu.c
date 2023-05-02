@@ -5,12 +5,14 @@
 #include "emulator.h"
 #include "opcodes.h"
 
-void initialize_cpu(s_cpu *cpu)
+int initialize_cpu(s_cpu *cpu)
 {
     memset(cpu, 0, sizeof(s_cpu));
     cpu->pc = START_ADRESS;
     initialize_length_table(&cpu->jump_table);
-    load_boot_rom(cpu);
+    if(0 != load_boot_rom(cpu))
+        return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
 
 int load_boot_rom(s_cpu *cpu)
@@ -18,7 +20,7 @@ int load_boot_rom(s_cpu *cpu)
     FILE *bootrom = fopen("boot_rom/dmg_rom.bin", "rb");
     if(NULL == bootrom)
     {
-        perror("Error fopen: ");
+        perror("ERROR: cannot open boot_rom/dmg_rom.bin: ");
         return EXIT_FAILURE;
     }
     

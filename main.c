@@ -5,10 +5,8 @@
 
 #include "emulator.h"
 
-int main(int argc, char *argv[])
+int main(void)
 {
-    printf("%d, %s\n", argc, argv[0]);
-    
     s_emu emu;
     void (*opcode_functions[OPCODE_NB]) (s_emu*, uint32_t);
     

@@ -43,9 +43,9 @@ endif (NOT SDL2_FOUND)
 #endif (NOT SDL2_mixer_FOUND)
 
 set (CMAKE_C_STANDARD 11)
-add_executable (chip8_emu ${SOURCES} ${HEADERS})
-#target_link_libraries (chip8_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
-target_link_libraries (chip8_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
+add_executable (game_spop_emu ${SOURCES} ${HEADERS})
+#target_link_libraries (game_spop_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
+target_link_libraries (game_spop_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
 
 
 
