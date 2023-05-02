@@ -1,0 +1,13 @@
+#executable shortcut
+chip8_emu
+
+game_spop_emu.mk
+..gitignore.swp
+.clangd
+.clang-format
+/Debug
+/Build
+/build
+/roms
+dmg_rom.bin
+build.sh
