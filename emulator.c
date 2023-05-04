@@ -55,14 +55,16 @@ int initialize_SDL(void)
     return EXIT_SUCCESS;
 }
 
-int initialize_emulator(s_emu *emu, void (*opcode_functions[OPCODE_NB])(s_emu*, uint32_t))
+int initialize_emulator(s_emu *emu)
 {
     if(0 != initialize_cpu(&emu->cpu))
         return EXIT_FAILURE;
+    initialize_length_table(emu);
     memset(&emu->in, 0, sizeof(s_input));
     if(0 != initialize_SDL())
         return EXIT_FAILURE;
-    init_opcodes_pointers(opcode_functions);
+    init_opcodes_pointers(emu->opcode_functions);
+    init_cb_pointers(emu->cb_functions);
     
     return EXIT_SUCCESS;
 }
@@ -77,15 +79,21 @@ void destroy_SDL(void)
     SDL_Quit();
 }
 
-void emulate(s_emu *emu, void (*opcode_functions[OPCODE_NB])(s_emu*, uint32_t))
+void emulate(s_emu *emu)
 {
+    emu->cpu.cycles = 70224;
+    
     while(!emu->in.quit)
     {
+        emu->cpu.cycles -= 70224;
+        
         update_event(&emu->in);
         
-        interpret(emu, opcode_functions);
+        //one frame takes 70224 instructions
+        while(!emu->in.quit && emu->cpu.cycles < 70224)
+            interpret(emu, emu->opcode_functions);
         
-        SDL_Delay(10);
+        SDL_Delay(16);
         
     }
 }

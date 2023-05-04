@@ -4,12 +4,12 @@
 #include "cpu.h"
 #include "emulator.h"
 #include "opcodes.h"
+#include "prefixed_opcodes.h"
 
 int initialize_cpu(s_cpu *cpu)
 {
     memset(cpu, 0, sizeof(s_cpu));
     cpu->pc = START_ADRESS;
-    initialize_length_table(&cpu->jump_table);
     if(0 != load_boot_rom(cpu))
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
@@ -24,7 +24,7 @@ int load_boot_rom(s_cpu *cpu)
         return EXIT_FAILURE;
     }
     
-    fread(&cpu->ram[0], sizeof(cpu->ram[0]), 0x100, bootrom);
+    fread(&cpu->mem[0], sizeof(cpu->mem[0]), 0x100, bootrom);
     fclose(bootrom);
     
     printf("Boot rom loaded.\n");
@@ -35,126 +35,623 @@ int load_boot_rom(s_cpu *cpu)
 uint32_t get_opcode(s_cpu *cpu)
 {
     uint32_t op = 0;
-    op = (cpu->ram[cpu->pc] << 16);
-    if(cpu->pc < RAM_SIZE)
-        op += (cpu->ram[cpu->pc + 1] << 8);
-    if(cpu->pc < RAM_SIZE - 1)
-        op += (cpu->ram[cpu->pc + 2]);
+    op = (cpu->mem[cpu->pc] << 16);
+    if(cpu->pc < MEM_SIZE)
+        op += (cpu->mem[cpu->pc + 1] << 8);
+    if(cpu->pc < MEM_SIZE - 1)
+        op += (cpu->mem[cpu->pc + 2]);
     return op;
 }
 
 uint8_t get_action(uint32_t opcode)
 {
-    return (opcode & 0xFF000000) >> 24;
+    return (opcode & 0xFF0000) >> 16;
 }
 
-void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(s_emu *, uint32_t))
+uint8_t get_cb_opcode(uint32_t op32)
+{
+    return (op32 & 0x0000FF00) >> 8;
+}
+
+void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     uint32_t opcode = get_opcode(&emu->cpu);
     uint8_t action = get_action(opcode);
     (*opcode_functions[action])(emu, opcode);
-    emu->cpu.pc += emu->cpu.jump_table.length[action];
+    emu->cpu.pc += emu->length_table[action];
 }
 
-void initialize_length_table(s_jump *table)
+void initialize_length_table(s_emu *emu)
 {
-    memset(&table->length, 1U, OPCODE_NB);
+    memset(&emu->length_table, 1U, OPCODE_NB);
     
-    table->length[0x1] = 3;
-    table->length[0x6] = 2;
-    table->length[0x8] = 3;
-    table->length[0xE] = 2;
-    table->length[0x11] = 3;
-    table->length[0x15] = 1;
-    table->length[0x16] = 2;
-    table->length[0x18] = 2;
-    table->length[0x1E] = 2;
-    table->length[0x20] = 2;
-    table->length[0x21] = 3;
-    table->length[0x26] = 2;
-    table->length[0x28] = 2;
-    table->length[0x2E] = 2;
-    table->length[0x30] = 2;
-    table->length[0x31] = 3;
-    table->length[0x36] = 2;
-    table->length[0x38] = 2;
-    table->length[0x3e] = 2;
-    table->length[0xc2] = 3;
-    table->length[0xc3] = 3;
-    table->length[0xc4] = 3;
-    table->length[0xc6] = 2;
-    table->length[0xca] = 3;
-    table->length[0xcc] = 3;
-    table->length[0xcd] = 3;
-    table->length[0xce] = 2;
-    table->length[0xd2] = 3;
-    table->length[0xd3] = 0;
-    table->length[0xd4] = 3;
-    table->length[0xd6] = 2;
-    table->length[0xda] = 3;
-    table->length[0xdb] = 0;
-    table->length[0xdc] = 3;
-    table->length[0xdd] = 0;
-    table->length[0xde] = 2;
-    table->length[0xe0] = 2;
-    table->length[0xe3] = 0;
-    table->length[0xe4] = 0;
-    table->length[0xe6] = 2;
-    table->length[0xe8] = 2;
-    table->length[0xea] = 3;
-    table->length[0xeb] = 0;
-    table->length[0xec] = 0;
-    table->length[0xed] = 0;
-    table->length[0xee] = 2;
-    table->length[0xf0] = 2;
-    table->length[0xf4] = 0;
-    table->length[0xf6] = 2;
-    table->length[0xf8] = 2;
-    table->length[0xfa] = 3;
-    table->length[0xfc] = 0;
-    table->length[0xfd] = 0;
-    table->length[0xfe] = 2;
+    emu->length_table[0x1] = 3;
+    emu->length_table[0x6] = 2;
+    emu->length_table[0x8] = 3;
+    emu->length_table[0xE] = 2;
+    emu->length_table[0x11] = 3;
+    emu->length_table[0x15] = 1;
+    emu->length_table[0x16] = 2;
+    emu->length_table[0x18] = 2;
+    emu->length_table[0x1E] = 2;
+    emu->length_table[0x20] = 2;
+    emu->length_table[0x21] = 3;
+    emu->length_table[0x26] = 2;
+    emu->length_table[0x28] = 2;
+    emu->length_table[0x2E] = 2;
+    emu->length_table[0x30] = 2;
+    emu->length_table[0x31] = 3;
+    emu->length_table[0x36] = 2;
+    emu->length_table[0x38] = 2;
+    emu->length_table[0x3e] = 2;
+    emu->length_table[0xc2] = 3;
+    emu->length_table[0xc3] = 3;
+    emu->length_table[0xc4] = 3;
+    emu->length_table[0xc6] = 2;
+    emu->length_table[0xca] = 3;
+    emu->length_table[0xcc] = 3;
+    emu->length_table[0xcd] = 3;
+    emu->length_table[0xce] = 2;
+    emu->length_table[0xd2] = 3;
+    emu->length_table[0xd3] = 0;
+    emu->length_table[0xd4] = 3;
+    emu->length_table[0xd6] = 2;
+    emu->length_table[0xda] = 3;
+    emu->length_table[0xdb] = 0;
+    emu->length_table[0xdc] = 3;
+    emu->length_table[0xdd] = 0;
+    emu->length_table[0xde] = 2;
+    emu->length_table[0xe0] = 2;
+    emu->length_table[0xe3] = 0;
+    emu->length_table[0xe4] = 0;
+    emu->length_table[0xe6] = 2;
+    emu->length_table[0xe8] = 2;
+    emu->length_table[0xea] = 3;
+    emu->length_table[0xeb] = 0;
+    emu->length_table[0xec] = 0;
+    emu->length_table[0xed] = 0;
+    emu->length_table[0xee] = 2;
+    emu->length_table[0xf0] = 2;
+    emu->length_table[0xf4] = 0;
+    emu->length_table[0xf6] = 2;
+    emu->length_table[0xf8] = 2;
+    emu->length_table[0xfa] = 3;
+    emu->length_table[0xfc] = 0;
+    emu->length_table[0xfd] = 0;
+    emu->length_table[0xfe] = 2;
 }
 
-void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(s_emu *, uint32_t))
+void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     for(size_t i = 0; i < OPCODE_NB; i++)
     {
         opcode_functions[i] = &opcode_unimplemented;
     }
+    
+    opcode_functions[0x00] = &NOP;
+    //opcode_functions[0x01] = &LD_BC_d16;
+    //opcode_functions[0x02] = &LD_derefBC_A;
+    //opcode_functions[0x03] = &INC_BC;
+    //opcode_functions[0x04] = &INC_B;
+    //opcode_functions[0x05] = &DEC_B;
+    //opcode_functions[0x06] = &LD_B_d8;
+    //opcode_functions[0x07] = &RLCA;
+    //opcode_functions[0x08] = &LD_derefa16_SP;
+    //opcode_functions[0x09] = &ADD_HL_BC;
+    //opcode_functions[0x0A] = &LD_A_derefBC;
+    //opcode_functions[0x0B] = &DEC_BC;
+    opcode_functions[0x0C] = &INC_C;
+    //opcode_functions[0x0D] = &DEC_C;
+    opcode_functions[0x0E] = &LD_C_d8;
+    //opcode_functions[0x0F] = &RRCA;
+    //opcode_functions[0x10] = &STOP_0;
+    opcode_functions[0x11] = &LD_DE_d16;
+    //opcode_functions[0x12] = &LD_derefDE_A;
+    //opcode_functions[0x13] = &INC_DE;
+    //opcode_functions[0x14] = &INC_D;
+    //opcode_functions[0x15] = &DEC_D;
+    //opcode_functions[0x16] = &LD_D_d8;
+    //opcode_functions[0x17] = &RLA;
+    //opcode_functions[0x18] = &JR_r8;
+    //opcode_functions[0x19] = &ADD_HL_DE;
+    opcode_functions[0x1A] = &LD_A_derefDE;
+    //opcode_functions[0x1B] = &DEC_DE;
+    //opcode_functions[0x1C] = &INC_E;
+    //opcode_functions[0x1D] = &DEC_E;
+    //opcode_functions[0x1E] = &LD_E_d8;
+    //opcode_functions[0x1F] = &RRA;
+    opcode_functions[0x20] = &JR_NZ_r8;
+    opcode_functions[0x21] = &LD_HL_d16;
+    //opcode_functions[0x22] = &LD_derefHLplus_A;
+    //opcode_functions[0x23] = &INC_HL;
+    //opcode_functions[0x24] = &INC_H;
+    //opcode_functions[0x25] = &DEC_H;
+    //opcode_functions[0x26] = &LD_H_d8;
+    //opcode_functions[0x27] = &DAA;
+    //opcode_functions[0x28] = &JR_Z_r8;
+    //opcode_functions[0x29] = &ADD_HL_HL;
+    //opcode_functions[0x2A] = &LD_A_derefHLplus;
+    //opcode_functions[0x2B] = &DEC_HL;
+    //opcode_functions[0x2C] = &INC_L;
+    //opcode_functions[0x2D] = &DEC_L;
+    //opcode_functions[0x2E] = &LD_L_d8;
+    //opcode_functions[0x2F] = &CPL;
+    //opcode_functions[0x30] = &JR_NC_r8;
+    opcode_functions[0x31] = &LD_SP_d16;
+    opcode_functions[0x32] = &LD_derefHLminus_A;
+    //opcode_functions[0x33] = &INC_SP;
+    //opcode_functions[0x34] = &INC_derefHL;
+    //opcode_functions[0x35] = &DEC_derefHL;
+    //opcode_functions[0x36] = &LD_derefHL_d8;
+    //opcode_functions[0x37] = &SCF;
+    //opcode_functions[0x38] = &JR_C_r8;
+    //opcode_functions[0x39] = &ADD_HL_SP;
+    //opcode_functions[0x3A] = &LD_A_derefHLminus;
+    //opcode_functions[0x3B] = &DEC_SP;
+    //opcode_functions[0x3C] = &INC_A;
+    //opcode_functions[0x3D] = &DEC_A;
+    opcode_functions[0x3E] = &LD_A_d8;
+    //opcode_functions[0x3F] = &CCF;
+    //opcode_functions[0x40] = &LD_B_B;
+    //opcode_functions[0x41] = &LD_B_C;
+    //opcode_functions[0x42] = &LD_B_D;
+    //opcode_functions[0x43] = &LD_B_E;
+    //opcode_functions[0x44] = &LD_B_H;
+    //opcode_functions[0x45] = &LD_B_L;
+    //opcode_functions[0x46] = &LD_B_derefHL;
+    //opcode_functions[0x47] = &LD_B_A;
+    //opcode_functions[0x48] = &LD_C_B;
+    //opcode_functions[0x49] = &LD_C_C;
+    //opcode_functions[0x4A] = &LD_C_D;
+    //opcode_functions[0x4B] = &LD_C_E;
+    //opcode_functions[0x4C] = &LD_C_H;
+    //opcode_functions[0x4D] = &LD_C_L;
+    //opcode_functions[0x4E] = &LD_C_derefHL;
+    //opcode_functions[0x4F] = &LD_C_A;
+    //opcode_functions[0x50] = &LD_D_B;
+    //opcode_functions[0x51] = &LD_D_C;
+    //opcode_functions[0x52] = &LD_D_D;
+    //opcode_functions[0x53] = &LD_D_E;
+    //opcode_functions[0x54] = &LD_D_H;
+    //opcode_functions[0x55] = &LD_D_L;
+    //opcode_functions[0x56] = &LD_D_derefHL;
+    //opcode_functions[0x57] = &LD_D_A;
+    //opcode_functions[0x58] = &LD_E_B;
+    //opcode_functions[0x59] = &LD_E_C;
+    //opcode_functions[0x5A] = &LD_E_D;
+    //opcode_functions[0x5B] = &LD_E_E;
+    //opcode_functions[0x5C] = &LD_E_H;
+    //opcode_functions[0x5D] = &LD_E_L;
+    //opcode_functions[0x5E] = &LD_E_derefHL;
+    //opcode_functions[0x5F] = &LD_E_A;
+    //opcode_functions[0x60] = &LD_H_B;
+    //opcode_functions[0x61] = &LD_H_C;
+    //opcode_functions[0x62] = &LD_H_D;
+    //opcode_functions[0x63] = &LD_H_E;
+    //opcode_functions[0x64] = &LD_H_H;
+    //opcode_functions[0x65] = &LD_H_L;
+    //opcode_functions[0x66] = &LD_H_derefHL;
+    //opcode_functions[0x67] = &LD_H_A;
+    //opcode_functions[0x68] = &LD_L_B;
+    //opcode_functions[0x69] = &LD_L_C;
+    //opcode_functions[0x6A] = &LD_L_D;
+    //opcode_functions[0x6B] = &LD_L_E;
+    //opcode_functions[0x6C] = &LD_L_H;
+    //opcode_functions[0x6D] = &LD_L_L;
+    //opcode_functions[0x6E] = &LD_L_derefHL;
+    //opcode_functions[0x6F] = &LD_L_A;
+    //opcode_functions[0x70] = &LD_derefHL_B;
+    //opcode_functions[0x71] = &LD_derefHL_C;
+    //opcode_functions[0x72] = &LD_derefHL_D;
+    //opcode_functions[0x73] = &LD_derefHL_E;
+    //opcode_functions[0x74] = &LD_derefHL_H;
+    //opcode_functions[0x75] = &LD_derefHL_L;
+    //opcode_functions[0x76] = &HALT;
+    opcode_functions[0x77] = &LD_derefHL_A;
+    //opcode_functions[0x78] = &LD_A_B;
+    //opcode_functions[0x79] = &LD_A_C;
+    //opcode_functions[0x7A] = &LD_A_D;
+    //opcode_functions[0x7B] = &LD_A_E;
+    opcode_functions[0x7C] = &LD_A_H;
+    //opcode_functions[0x7D] = &LD_A_L;
+    //opcode_functions[0x7E] = &LD_A_derefHL;
+    //opcode_functions[0x7F] = &LD_A_A;
+    //opcode_functions[0x80] = &ADD_A_B;
+    //opcode_functions[0x81] = &ADD_A_C;
+    //opcode_functions[0x82] = &ADD_A_D;
+    //opcode_functions[0x83] = &ADD_A_E;
+    //opcode_functions[0x84] = &ADD_A_H;
+    //opcode_functions[0x85] = &ADD_A_L;
+    //opcode_functions[0x86] = &ADD_A_derefHL;
+    //opcode_functions[0x87] = &ADD_A_A;
+    //opcode_functions[0x88] = &ADC_A_B;
+    //opcode_functions[0x89] = &ADC_A_C;
+    //opcode_functions[0x8A] = &ADC_A_D;
+    //opcode_functions[0x8B] = &ADC_A_E;
+    //opcode_functions[0x8C] = &ADC_A_H;
+    //opcode_functions[0x8D] = &ADC_A_L;
+    //opcode_functions[0x8E] = &ADC_A_derefHL;
+    //opcode_functions[0x8F] = &ADC_A_A;
+    //opcode_functions[0x90] = &SUB_B;
+    //opcode_functions[0x91] = &SUB_C;
+    //opcode_functions[0x92] = &SUB_D;
+    //opcode_functions[0x93] = &SUB_E;
+    //opcode_functions[0x94] = &SUB_H;
+    //opcode_functions[0x95] = &SUB_L;
+    //opcode_functions[0x96] = &SUB_derefHL;
+    //opcode_functions[0x97] = &SUB_A;
+    //opcode_functions[0x98] = &SBC_A_B;
+    //opcode_functions[0x99] = &SBC_A_C;
+    //opcode_functions[0x9A] = &SBC_A_D;
+    //opcode_functions[0x9B] = &SBC_A_E;
+    //opcode_functions[0x9C] = &SBC_A_H;
+    //opcode_functions[0x9D] = &SBC_A_L;
+    //opcode_functions[0x9E] = &SBC_A_derefHL;
+    //opcode_functions[0x9F] = &SBC_A_A;
+    //opcode_functions[0xA0] = &AND_B;
+    //opcode_functions[0xA1] = &AND_C;
+    //opcode_functions[0xA2] = &AND_D;
+    //opcode_functions[0xA3] = &AND_E;
+    //opcode_functions[0xA4] = &AND_H;
+    //opcode_functions[0xA5] = &AND_L;
+    //opcode_functions[0xA6] = &AND_derefHL;
+    //opcode_functions[0xA7] = &AND_A;
+    //opcode_functions[0xA8] = &XOR_B;
+    //opcode_functions[0xA9] = &XOR_C;
+    //opcode_functions[0xAA] = &XOR_D;
+    //opcode_functions[0xAB] = &XOR_E;
+    //opcode_functions[0xAC] = &XOR_H;
+    //opcode_functions[0xAD] = &XOR_L;
+    //opcode_functions[0xAE] = &XOR_derefHL;
+    opcode_functions[0xAF] = &XOR_A;
+    //opcode_functions[0xB0] = &OR_B;
+    //opcode_functions[0xB1] = &OR_C;
+    //opcode_functions[0xB2] = &OR_D;
+    //opcode_functions[0xB3] = &OR_E;
+    //opcode_functions[0xB4] = &OR_H;
+    //opcode_functions[0xB5] = &OR_L;
+    //opcode_functions[0xB6] = &OR_derefHL;
+    //opcode_functions[0xB7] = &OR_A;
+    //opcode_functions[0xB8] = &CP_B;
+    //opcode_functions[0xB9] = &CP_C;
+    //opcode_functions[0xBA] = &CP_D;
+    //opcode_functions[0xBB] = &CP_E;
+    //opcode_functions[0xBC] = &CP_H;
+    //opcode_functions[0xBD] = &CP_L;
+    //opcode_functions[0xBE] = &CP_derefHL;
+    //opcode_functions[0xBF] = &CP_A;
+    //opcode_functions[0xC0] = &RET_NZ;
+    //opcode_functions[0xC1] = &POP_BC;
+    //opcode_functions[0xC2] = &JP_NZ_a16;
+    //opcode_functions[0xC3] = &JP_a16;
+    //opcode_functions[0xC4] = &CALL_NZ_a16;
+    //opcode_functions[0xC5] = &PUSH_BC;
+    //opcode_functions[0xC6] = &ADD_A_d8;
+    //opcode_functions[0xC7] = &RST_00H;
+    //opcode_functions[0xC8] = &RET_Z;
+    //opcode_functions[0xC9] = &RET;
+    //opcode_functions[0xCA] = &JP_Z_a16;
+    opcode_functions[0xCB] = &PREFIX_CB;
+    //opcode_functions[0xCC] = &CALL_Z_a16;
+    opcode_functions[0xCD] = &CALL_a16;
+    //opcode_functions[0xCE] = &ADC_A_d8;
+    //opcode_functions[0xCF] = &RST_08H;
+    //opcode_functions[0xD0] = &RET_NC;
+    //opcode_functions[0xD1] = &POP_DE;
+    //opcode_functions[0xD2] = &JP_NC_a16;
+    //opcode_functions[0xD3] = &dont_exist;
+    //opcode_functions[0xD4] = &CALL_NC_a16;
+    //opcode_functions[0xD5] = &PUSH_DE;
+    //opcode_functions[0xD6] = &SUB_d8;
+    //opcode_functions[0xD7] = &RST_10H;
+    //opcode_functions[0xD8] = &RET_C;
+    //opcode_functions[0xD9] = &RETI;
+    //opcode_functions[0xDA] = &JP_C_a16;
+    //opcode_functions[0xDB] = &dont_exist;
+    //opcode_functions[0xDC] = &CALL_C_a16;
+    //opcode_functions[0xDD] = &dont_exist;
+    //opcode_functions[0xDE] = &SBC_A_d8;
+    //opcode_functions[0xDF] = &RST_18H;
+    opcode_functions[0xE0] = &LDH_derefa8_A;
+    //opcode_functions[0xE1] = &POP_HL;
+    opcode_functions[0xE2] = &LD_derefC_A;
+    //opcode_functions[0xE3] = &dont_exist;
+    //opcode_functions[0xE4] = &dont_exist;
+    //opcode_functions[0xE5] = &PUSH_HL;
+    //opcode_functions[0xE6] = &AND_d8;
+    //opcode_functions[0xE7] = &RST_20H;
+    //opcode_functions[0xE8] = &ADD_SP_r8;
+    //opcode_functions[0xE9] = &JP_derefHL;
+    //opcode_functions[0xEA] = &LD_derefa16_A;
+    //opcode_functions[0xEB] = &dont_exist;
+    //opcode_functions[0xEC] = &dont_exist;
+    //opcode_functions[0xED] = &dont_exist;
+    //opcode_functions[0xEE] = &XOR_d8;
+    //opcode_functions[0xEF] = &RST_28H;
+    //opcode_functions[0xF0] = &LDH_A_derefa8;
+    //opcode_functions[0xF1] = &POP_AF;
+    //opcode_functions[0xF2] = &LD_A_derefC;
+    //opcode_functions[0xF3] = &DI;
+    //opcode_functions[0xF4] = &dont_exist;
+    //opcode_functions[0xF5] = &PUSH_AF;
+    //opcode_functions[0xF6] = &OR_d8;
+    //opcode_functions[0xF7] = &RST_30H;
+    //opcode_functions[0xF8] = &LD_HL_SPplusr8;
+    //opcode_functions[0xF9] = &LD_SP_HL;
+    //opcode_functions[0xFA] = &LD_A_derefa16;
+    //opcode_functions[0xFB] = &EI;
+    //opcode_functions[0xFC] = &dont_exist;
+    //opcode_functions[0xFD] = &dont_exist;
+    //opcode_functions[0xFE] = &CP_d8;
+    //opcode_functions[0xFF] = &RST_38H;
+
+
 }
 
-//void initialize_jump_table(s_jump *table)
-//{
-//    table->mask[0x0] = 0xFF; table->id[0x0] = 0x00;             //NOP - 0x00
-//    table->mask[0x1] = 0xFF0000; table->id[0x1] = 0x010000;     //LD BC ,u16 - 0x01
-//    table->mask[0x2] = 0xFF; table->id[0x2] = 0x02;             //LD (BC), A - 0x02
-//    table->mask[0x3] = 0xFF; table->id[0x3] = 0x03;             //INC BC - 0x03
-//    table->mask[0x4] = 0xFF; table->id[0x4] = 0x04;             //INC B - 0x04
-//    table->mask[0x5] = 0xFF; table->id[0x5] = 0x05;             //DEC B - 0x05
-//    table->mask[0x6] = 0xFF00; table->id[0x6] = 0x0600;         //LD B,u8 - 0x06
-//    table->mask[0x7] = 0xFF; table->id[0x7] = 0x07;             //RLCA - 0x07
-//    table->mask[0x8] = 0xFF0000; table->id[0x8] = 0x080000;     //LD (u16),SP - 0x08
-//    table->mask[0x9] = 0xFF; table->id[0x9] = 0x09;             //ADD HL,BC - 0x09
-//    table->mask[0xA] = 0xFF; table->id[0xA] = 0x0A;             //LD A,(BC) - 0x0A
-//    table->mask[0xB] = 0xFF; table->id[0xB] = 0x0B;             //DEC BC - 0x0B
-//    table->mask[0xC] = 0xFF; table->id[0xC] = 0x0C;             //INC C - 0x0C
-//    table->mask[0xD] = 0xFF; table->id[0xD] = 0x0D;             //DEC C - 0x0D
-//    table->mask[0xE] = 0xFF00; table->id[0xE] = 0x0E00;         //LD C,u8 - 0x0E
-//    table->mask[0xF] = 0xFF; table->id[0xF] = 0x0F;             //RRCA - 0x0F
-//    table->mask[0x10] = 0xFF; table->id[0x10] = 0x10;
-//    table->mask[0x11] = 0xFF; table->id[0x11] = 0x11;
-//    table->mask[0x12] = 0xFF; table->id[0x12] = 0x12;
-//    table->mask[0x13] = 0xFF; table->id[0x13] = 0x13;
-//    table->mask[0x14] = 0xFF; table->id[0x14] = 0x14;
-//    table->mask[0x15] = 0xFF; table->id[0x15] = 0x15;
-//    table->mask[0x16] = 0xFF; table->id[0x16] = 0x16;
-//    table->mask[0x17] = 0xFF; table->id[0x17] = 0x17;
-//    table->mask[0x18] = 0xFF; table->id[0x18] = 0x18;
-//    table->mask[0x19] = 0xFF; table->id[0x19] = 0x19;
-//    table->mask[0x1A] = 0xFF; table->id[0x1A] = 0x1A;
-//    table->mask[0x1B] = 0xFF; table->id[0x1B] = 0x1B;
-//}
+void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
+{
+    for(size_t i = 0; i < CB_NB; i++)
+    {
+        cb_functions[i] = &cb_opcode_unimplemented;
+    }
+    
+    //cb_functions[0x00] = &prefixed_RLC_B;
+    //cb_functions[0x01] = &prefixed_RLC_C;
+    //cb_functions[0x02] = &prefixed_RLC_D;
+    //cb_functions[0x03] = &prefixed_RLC_E;
+    //cb_functions[0x04] = &prefixed_RLC_H;
+    //cb_functions[0x05] = &prefixed_RLC_L;
+    //cb_functions[0x06] = &prefixed_RLC_derefHL;
+    //cb_functions[0x07] = &prefixed_RLC_A;
+    //cb_functions[0x08] = &prefixed_RRC_B;
+    //cb_functions[0x09] = &prefixed_RRC_C;
+    //cb_functions[0x0A] = &prefixed_RRC_D;
+    //cb_functions[0x0B] = &prefixed_RRC_E;
+    //cb_functions[0x0C] = &prefixed_RRC_H;
+    //cb_functions[0x0D] = &prefixed_RRC_L;
+    //cb_functions[0x0E] = &prefixed_RRC_derefHL;
+    //cb_functions[0x0F] = &prefixed_RRC_A;
+    //cb_functions[0x10] = &prefixed_RL_B;
+    //cb_functions[0x11] = &prefixed_RL_C;
+    //cb_functions[0x12] = &prefixed_RL_D;
+    //cb_functions[0x13] = &prefixed_RL_E;
+    //cb_functions[0x14] = &prefixed_RL_H;
+    //cb_functions[0x15] = &prefixed_RL_L;
+    //cb_functions[0x16] = &prefixed_RL_derefHL;
+    //cb_functions[0x17] = &prefixed_RL_A;
+    //cb_functions[0x18] = &prefixed_RR_B;
+    //cb_functions[0x19] = &prefixed_RR_C;
+    //cb_functions[0x1A] = &prefixed_RR_D;
+    //cb_functions[0x1B] = &prefixed_RR_E;
+    //cb_functions[0x1C] = &prefixed_RR_H;
+    //cb_functions[0x1D] = &prefixed_RR_L;
+    //cb_functions[0x1E] = &prefixed_RR_derefHL;
+    //cb_functions[0x1F] = &prefixed_RR_A;
+    //cb_functions[0x20] = &prefixed_SLA_B;
+    //cb_functions[0x21] = &prefixed_SLA_C;
+    //cb_functions[0x22] = &prefixed_SLA_D;
+    //cb_functions[0x23] = &prefixed_SLA_E;
+    //cb_functions[0x24] = &prefixed_SLA_H;
+    //cb_functions[0x25] = &prefixed_SLA_L;
+    //cb_functions[0x26] = &prefixed_SLA_derefHL;
+    //cb_functions[0x27] = &prefixed_SLA_A;
+    //cb_functions[0x28] = &prefixed_SRA_B;
+    //cb_functions[0x29] = &prefixed_SRA_C;
+    //cb_functions[0x2A] = &prefixed_SRA_D;
+    //cb_functions[0x2B] = &prefixed_SRA_E;
+    //cb_functions[0x2C] = &prefixed_SRA_H;
+    //cb_functions[0x2D] = &prefixed_SRA_L;
+    //cb_functions[0x2E] = &prefixed_SRA_derefHL;
+    //cb_functions[0x2F] = &prefixed_SRA_A;
+    //cb_functions[0x30] = &prefixed_SWAP_B;
+    //cb_functions[0x31] = &prefixed_SWAP_C;
+    //cb_functions[0x32] = &prefixed_SWAP_D;
+    //cb_functions[0x33] = &prefixed_SWAP_E;
+    //cb_functions[0x34] = &prefixed_SWAP_H;
+    //cb_functions[0x35] = &prefixed_SWAP_L;
+    //cb_functions[0x36] = &prefixed_SWAP_derefHL;
+    //cb_functions[0x37] = &prefixed_SWAP_A;
+    //cb_functions[0x38] = &prefixed_SRL_B;
+    //cb_functions[0x39] = &prefixed_SRL_C;
+    //cb_functions[0x3A] = &prefixed_SRL_D;
+    //cb_functions[0x3B] = &prefixed_SRL_E;
+    //cb_functions[0x3C] = &prefixed_SRL_H;
+    //cb_functions[0x3D] = &prefixed_SRL_L;
+    //cb_functions[0x3E] = &prefixed_SRL_derefHL;
+    //cb_functions[0x3F] = &prefixed_SRL_A;
+    //cb_functions[0x40] = &prefixed_BIT_0_B;
+    //cb_functions[0x41] = &prefixed_BIT_0_C;
+    //cb_functions[0x42] = &prefixed_BIT_0_D;
+    //cb_functions[0x43] = &prefixed_BIT_0_E;
+    //cb_functions[0x44] = &prefixed_BIT_0_H;
+    //cb_functions[0x45] = &prefixed_BIT_0_L;
+    //cb_functions[0x46] = &prefixed_BIT_0_derefHL;
+    //cb_functions[0x47] = &prefixed_BIT_0_A;
+    //cb_functions[0x48] = &prefixed_BIT_1_B;
+    //cb_functions[0x49] = &prefixed_BIT_1_C;
+    //cb_functions[0x4A] = &prefixed_BIT_1_D;
+    //cb_functions[0x4B] = &prefixed_BIT_1_E;
+    //cb_functions[0x4C] = &prefixed_BIT_1_H;
+    //cb_functions[0x4D] = &prefixed_BIT_1_L;
+    //cb_functions[0x4E] = &prefixed_BIT_1_derefHL;
+    //cb_functions[0x4F] = &prefixed_BIT_1_A;
+    //cb_functions[0x50] = &prefixed_BIT_2_B;
+    //cb_functions[0x51] = &prefixed_BIT_2_C;
+    //cb_functions[0x52] = &prefixed_BIT_2_D;
+    //cb_functions[0x53] = &prefixed_BIT_2_E;
+    //cb_functions[0x54] = &prefixed_BIT_2_H;
+    //cb_functions[0x55] = &prefixed_BIT_2_L;
+    //cb_functions[0x56] = &prefixed_BIT_2_derefHL;
+    //cb_functions[0x57] = &prefixed_BIT_2_A;
+    //cb_functions[0x58] = &prefixed_BIT_3_B;
+    //cb_functions[0x59] = &prefixed_BIT_3_C;
+    //cb_functions[0x5A] = &prefixed_BIT_3_D;
+    //cb_functions[0x5B] = &prefixed_BIT_3_E;
+    //cb_functions[0x5C] = &prefixed_BIT_3_H;
+    //cb_functions[0x5D] = &prefixed_BIT_3_L;
+    //cb_functions[0x5E] = &prefixed_BIT_3_derefHL;
+    //cb_functions[0x5F] = &prefixed_BIT_3_A;
+    //cb_functions[0x60] = &prefixed_BIT_4_B;
+    //cb_functions[0x61] = &prefixed_BIT_4_C;
+    //cb_functions[0x62] = &prefixed_BIT_4_D;
+    //cb_functions[0x63] = &prefixed_BIT_4_E;
+    //cb_functions[0x64] = &prefixed_BIT_4_H;
+    //cb_functions[0x65] = &prefixed_BIT_4_L;
+    //cb_functions[0x66] = &prefixed_BIT_4_derefHL;
+    //cb_functions[0x67] = &prefixed_BIT_4_A;
+    //cb_functions[0x68] = &prefixed_BIT_5_B;
+    //cb_functions[0x69] = &prefixed_BIT_5_C;
+    //cb_functions[0x6A] = &prefixed_BIT_5_D;
+    //cb_functions[0x6B] = &prefixed_BIT_5_E;
+    //cb_functions[0x6C] = &prefixed_BIT_5_H;
+    //cb_functions[0x6D] = &prefixed_BIT_5_L;
+    //cb_functions[0x6E] = &prefixed_BIT_5_derefHL;
+    //cb_functions[0x6F] = &prefixed_BIT_5_A;
+    //cb_functions[0x70] = &prefixed_BIT_6_B;
+    //cb_functions[0x71] = &prefixed_BIT_6_C;
+    //cb_functions[0x72] = &prefixed_BIT_6_D;
+    //cb_functions[0x73] = &prefixed_BIT_6_E;
+    //cb_functions[0x74] = &prefixed_BIT_6_H;
+    //cb_functions[0x75] = &prefixed_BIT_6_L;
+    //cb_functions[0x76] = &prefixed_BIT_6_derefHL;
+    //cb_functions[0x77] = &prefixed_BIT_6_A;
+    //cb_functions[0x78] = &prefixed_BIT_7_B;
+    //cb_functions[0x79] = &prefixed_BIT_7_C;
+    //cb_functions[0x7A] = &prefixed_BIT_7_D;
+    //cb_functions[0x7B] = &prefixed_BIT_7_E;
+    cb_functions[0x7C] = &prefixed_BIT_7_H;
+    //cb_functions[0x7D] = &prefixed_BIT_7_L;
+    //cb_functions[0x7E] = &prefixed_BIT_7_derefHL;
+    //cb_functions[0x7F] = &prefixed_BIT_7_A;
+    //cb_functions[0x80] = &prefixed_RES_0_B;
+    //cb_functions[0x81] = &prefixed_RES_0_C;
+    //cb_functions[0x82] = &prefixed_RES_0_D;
+    //cb_functions[0x83] = &prefixed_RES_0_E;
+    //cb_functions[0x84] = &prefixed_RES_0_H;
+    //cb_functions[0x85] = &prefixed_RES_0_L;
+    //cb_functions[0x86] = &prefixed_RES_0_derefHL;
+    //cb_functions[0x87] = &prefixed_RES_0_A;
+    //cb_functions[0x88] = &prefixed_RES_1_B;
+    //cb_functions[0x89] = &prefixed_RES_1_C;
+    //cb_functions[0x8A] = &prefixed_RES_1_D;
+    //cb_functions[0x8B] = &prefixed_RES_1_E;
+    //cb_functions[0x8C] = &prefixed_RES_1_H;
+    //cb_functions[0x8D] = &prefixed_RES_1_L;
+    //cb_functions[0x8E] = &prefixed_RES_1_derefHL;
+    //cb_functions[0x8F] = &prefixed_RES_1_A;
+    //cb_functions[0x90] = &prefixed_RES_2_B;
+    //cb_functions[0x91] = &prefixed_RES_2_C;
+    //cb_functions[0x92] = &prefixed_RES_2_D;
+    //cb_functions[0x93] = &prefixed_RES_2_E;
+    //cb_functions[0x94] = &prefixed_RES_2_H;
+    //cb_functions[0x95] = &prefixed_RES_2_L;
+    //cb_functions[0x96] = &prefixed_RES_2_derefHL;
+    //cb_functions[0x97] = &prefixed_RES_2_A;
+    //cb_functions[0x98] = &prefixed_RES_3_B;
+    //cb_functions[0x99] = &prefixed_RES_3_C;
+    //cb_functions[0x9A] = &prefixed_RES_3_D;
+    //cb_functions[0x9B] = &prefixed_RES_3_E;
+    //cb_functions[0x9C] = &prefixed_RES_3_H;
+    //cb_functions[0x9D] = &prefixed_RES_3_L;
+    //cb_functions[0x9E] = &prefixed_RES_3_derefHL;
+    //cb_functions[0x9F] = &prefixed_RES_3_A;
+    //cb_functions[0xA0] = &prefixed_RES_4_B;
+    //cb_functions[0xA1] = &prefixed_RES_4_C;
+    //cb_functions[0xA2] = &prefixed_RES_4_D;
+    //cb_functions[0xA3] = &prefixed_RES_4_E;
+    //cb_functions[0xA4] = &prefixed_RES_4_H;
+    //cb_functions[0xA5] = &prefixed_RES_4_L;
+    //cb_functions[0xA6] = &prefixed_RES_4_derefHL;
+    //cb_functions[0xA7] = &prefixed_RES_4_A;
+    //cb_functions[0xA8] = &prefixed_RES_5_B;
+    //cb_functions[0xA9] = &prefixed_RES_5_C;
+    //cb_functions[0xAA] = &prefixed_RES_5_D;
+    //cb_functions[0xAB] = &prefixed_RES_5_E;
+    //cb_functions[0xAC] = &prefixed_RES_5_H;
+    //cb_functions[0xAD] = &prefixed_RES_5_L;
+    //cb_functions[0xAE] = &prefixed_RES_5_derefHL;
+    //cb_functions[0xAF] = &prefixed_RES_5_A;
+    //cb_functions[0xB0] = &prefixed_RES_6_B;
+    //cb_functions[0xB1] = &prefixed_RES_6_C;
+    //cb_functions[0xB2] = &prefixed_RES_6_D;
+    //cb_functions[0xB3] = &prefixed_RES_6_E;
+    //cb_functions[0xB4] = &prefixed_RES_6_H;
+    //cb_functions[0xB5] = &prefixed_RES_6_L;
+    //cb_functions[0xB6] = &prefixed_RES_6_derefHL;
+    //cb_functions[0xB7] = &prefixed_RES_6_A;
+    //cb_functions[0xB8] = &prefixed_RES_7_B;
+    //cb_functions[0xB9] = &prefixed_RES_7_C;
+    //cb_functions[0xBA] = &prefixed_RES_7_D;
+    //cb_functions[0xBB] = &prefixed_RES_7_E;
+    //cb_functions[0xBC] = &prefixed_RES_7_H;
+    //cb_functions[0xBD] = &prefixed_RES_7_L;
+    //cb_functions[0xBE] = &prefixed_RES_7_derefHL;
+    //cb_functions[0xBF] = &prefixed_RES_7_A;
+    //cb_functions[0xC0] = &prefixed_SET_0_B;
+    //cb_functions[0xC1] = &prefixed_SET_0_C;
+    //cb_functions[0xC2] = &prefixed_SET_0_D;
+    //cb_functions[0xC3] = &prefixed_SET_0_E;
+    //cb_functions[0xC4] = &prefixed_SET_0_H;
+    //cb_functions[0xC5] = &prefixed_SET_0_L;
+    //cb_functions[0xC6] = &prefixed_SET_0_derefHL;
+    //cb_functions[0xC7] = &prefixed_SET_0_A;
+    //cb_functions[0xC8] = &prefixed_SET_1_B;
+    //cb_functions[0xC9] = &prefixed_SET_1_C;
+    //cb_functions[0xCA] = &prefixed_SET_1_D;
+    //cb_functions[0xCB] = &prefixed_SET_1_E;
+    //cb_functions[0xCC] = &prefixed_SET_1_H;
+    //cb_functions[0xCD] = &prefixed_SET_1_L;
+    //cb_functions[0xCE] = &prefixed_SET_1_derefHL;
+    //cb_functions[0xCF] = &prefixed_SET_1_A;
+    //cb_functions[0xD0] = &prefixed_SET_2_B;
+    //cb_functions[0xD1] = &prefixed_SET_2_C;
+    //cb_functions[0xD2] = &prefixed_SET_2_D;
+    //cb_functions[0xD3] = &prefixed_SET_2_E;
+    //cb_functions[0xD4] = &prefixed_SET_2_H;
+    //cb_functions[0xD5] = &prefixed_SET_2_L;
+    //cb_functions[0xD6] = &prefixed_SET_2_derefHL;
+    //cb_functions[0xD7] = &prefixed_SET_2_A;
+    //cb_functions[0xD8] = &prefixed_SET_3_B;
+    //cb_functions[0xD9] = &prefixed_SET_3_C;
+    //cb_functions[0xDA] = &prefixed_SET_3_D;
+    //cb_functions[0xDB] = &prefixed_SET_3_E;
+    //cb_functions[0xDC] = &prefixed_SET_3_H;
+    //cb_functions[0xDD] = &prefixed_SET_3_L;
+    //cb_functions[0xDE] = &prefixed_SET_3_derefHL;
+    //cb_functions[0xDF] = &prefixed_SET_3_A;
+    //cb_functions[0xE0] = &prefixed_SET_4_B;
+    //cb_functions[0xE1] = &prefixed_SET_4_C;
+    //cb_functions[0xE2] = &prefixed_SET_4_D;
+    //cb_functions[0xE3] = &prefixed_SET_4_E;
+    //cb_functions[0xE4] = &prefixed_SET_4_H;
+    //cb_functions[0xE5] = &prefixed_SET_4_L;
+    //cb_functions[0xE6] = &prefixed_SET_4_derefHL;
+    //cb_functions[0xE7] = &prefixed_SET_4_A;
+    //cb_functions[0xE8] = &prefixed_SET_5_B;
+    //cb_functions[0xE9] = &prefixed_SET_5_C;
+    //cb_functions[0xEA] = &prefixed_SET_5_D;
+    //cb_functions[0xEB] = &prefixed_SET_5_E;
+    //cb_functions[0xEC] = &prefixed_SET_5_H;
+    //cb_functions[0xED] = &prefixed_SET_5_L;
+    //cb_functions[0xEE] = &prefixed_SET_5_derefHL;
+    //cb_functions[0xEF] = &prefixed_SET_5_A;
+    //cb_functions[0xF0] = &prefixed_SET_6_B;
+    //cb_functions[0xF1] = &prefixed_SET_6_C;
+    //cb_functions[0xF2] = &prefixed_SET_6_D;
+    //cb_functions[0xF3] = &prefixed_SET_6_E;
+    //cb_functions[0xF4] = &prefixed_SET_6_H;
+    //cb_functions[0xF5] = &prefixed_SET_6_L;
+    //cb_functions[0xF6] = &prefixed_SET_6_derefHL;
+    //cb_functions[0xF7] = &prefixed_SET_6_A;
+    //cb_functions[0xF8] = &prefixed_SET_7_B;
+    //cb_functions[0xF9] = &prefixed_SET_7_C;
+    //cb_functions[0xFA] = &prefixed_SET_7_D;
+    //cb_functions[0xFB] = &prefixed_SET_7_E;
+    //cb_functions[0xFC] = &prefixed_SET_7_H;
+    //cb_functions[0xFD] = &prefixed_SET_7_L;
+    //cb_functions[0xFE] = &prefixed_SET_7_derefHL;
+    //cb_functions[0xFF] = &prefixed_SET_7_A;
 
+}
 
 

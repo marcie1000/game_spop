@@ -1,6 +1,3 @@
-#executable shortcut
-chip8_emu
-
 game_spop_emu.mk
 ..gitignore.swp
 .clangd
@@ -11,3 +8,5 @@ game_spop_emu.mk
 /roms
 dmg_rom.bin
 build.sh
+prefix_functions_list.txt
+functions_list.txt

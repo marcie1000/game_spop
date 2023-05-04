@@ -10,6 +10,7 @@ set (HEADERS
     cpu.h
     emulator.h
     opcodes.h
+    prefixed_opcodes.h
 )
 
 set (SOURCES
@@ -17,6 +18,7 @@ set (SOURCES
     emulator.c
     main.c
     opcodes.c
+    prefixed_opcodes.c
 )
 
 find_package (SDL2 REQUIRED)

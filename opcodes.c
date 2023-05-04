@@ -6,9 +6,425 @@
 #include "emulator.h"
 #include "opcodes.h"
 
-void opcode_unimplemented(s_emu *emu, UNUSED uint32_t op)
+void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
 {
-    printf("WARNING: instruction %x unimplemented!\n", op);
+    *flag = cond ? mask | *flag : ~mask & *flag;
+}
+
+void opcode_unimplemented(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    fprintf(stderr, "WARNING: instruction 0x%06X unimplemented!\n", op);
     emu->in.quit = SDL_TRUE;
 }
+
+void NOP(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    emu->cpu.cycles += 4;
+}
+//void LD_BC_d16(void *arg, uint32_t op)
+//void LD_derefBC_A(void *arg, uint32_t op)
+//void INC_BC(void *arg, uint32_t op)
+//void INC_B(void *arg, uint32_t op)
+//void DEC_B(void *arg, uint32_t op)
+//void LD_B_d8(void *arg, uint32_t op)
+//void RLCA(void *arg, uint32_t op)
+//void LD_derefa16_SP(void *arg, uint32_t op)
+//void ADD_HL_BC(void *arg, uint32_t op)
+//void LD_A_derefBC(void *arg, uint32_t op)
+//void DEC_BC(void *arg, uint32_t op)
+
+void INC_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    cpu->reg_C++;
+    cpu->cycles += 4;    
+}
+
+//void DEC_C(void *arg, uint32_t op)
+
+void LD_C_d8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->reg_C = (op & 0x0000ff00) >> 8;
+    cpu->cycles += 8;
+}
+
+//void RRCA(void *arg, uint32_t op)
+//void STOP_0(void *arg, uint32_t op)
+void LD_DE_d16(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->reg_E = (op & 0x0000ff00) >> 8;
+    cpu->reg_D = (op & 0x000000ff);
+    
+    cpu->cycles += 12;
+}
+//void LD_derefDE_A(void *arg, uint32_t op)
+//void INC_DE(void *arg, uint32_t op)
+//void INC_D(void *arg, uint32_t op)
+//void DEC_D(void *arg, uint32_t op)
+//void LD_D_d8(void *arg, uint32_t op)
+//void RLA(void *arg, uint32_t op)
+//void JR_r8(void *arg, uint32_t op)
+//void ADD_HL_DE(void *arg, uint32_t op)
+void LD_A_derefDE(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->reg_A = cpu->mem[(cpu->reg_E << 8) + cpu->reg_D];
+    cpu->cycles += 8;
+}
+//void DEC_DE(void *arg, uint32_t op)
+//void INC_E(void *arg, uint32_t op)
+//void DEC_E(void *arg, uint32_t op)
+//void LD_E_d8(void *arg, uint32_t op)
+//void RRA(void *arg, uint32_t op)
+
+void JR_NZ_r8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    if(cpu->reg_F & 0x80) //if Z flag is 0
+    {
+        uint16_t value = op & 0x0000ffff;
+        //take cp incrementation in interpret function into account
+        if (value >= 2) value -= 2; 
+        cpu->pc += value;
+        emu->cpu.cycles += 12;
+    }
+    else
+    {
+        emu->cpu.cycles += 8;
+    }
+}
+
+void LD_HL_d16(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    emu->cpu.reg_L = (op & 0x0000ff00) >> 8;
+    emu->cpu.reg_H = (op & 0x000000ff);
+    emu->cpu.cycles += 12;
+}
+
+//void LD_derefHLplus_A(void *arg, uint32_t op)
+//void INC_HL(void *arg, uint32_t op)
+//void INC_H(void *arg, uint32_t op)
+//void DEC_H(void *arg, uint32_t op)
+//void LD_H_d8(void *arg, uint32_t op)
+//void DAA(void *arg, uint32_t op)
+//void JR_Z_r8(void *arg, uint32_t op)
+//void ADD_HL_HL(void *arg, uint32_t op)
+//void LD_A_derefHLplus(void *arg, uint32_t op)
+//void DEC_HL(void *arg, uint32_t op)
+//void INC_L(void *arg, uint32_t op)
+//void DEC_L(void *arg, uint32_t op)
+//void LD_L_d8(void *arg, uint32_t op)
+//void CPL(void *arg, uint32_t op)
+//void JR_NC_r8(void *arg, uint32_t op)
+
+void LD_SP_d16(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    emu->cpu.sp = (op & 0x0000ffff);
+    emu->cpu.cycles += 12;
+}
+
+void LD_derefHLminus_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    cpu->mem[(cpu->reg_L << 8) + cpu->reg_H] = cpu->reg_A;
+    uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
+    HL--;
+    cpu->reg_L = (HL & 0xff00) << 8;
+    cpu->reg_H = HL & 0x00ff;
+    cpu->cycles += 8;    
+}
+
+//void INC_SP(void *arg, uint32_t op)
+//void INC_derefHL(void *arg, uint32_t op)
+//void DEC_derefHL(void *arg, uint32_t op)
+//void LD_derefHL_d8(void *arg, uint32_t op)
+//void SCF(void *arg, uint32_t op)
+//void JR_C_r8(void *arg, uint32_t op)
+//void ADD_HL_SP(void *arg, uint32_t op)
+//void LD_A_derefHLminus(void *arg, uint32_t op)
+//void DEC_SP(void *arg, uint32_t op)
+//void INC_A(void *arg, uint32_t op)
+//void DEC_A(void *arg, uint32_t op)
+
+void LD_A_d8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->reg_A = (op & 0x0000ff00) >> 8;
+    cpu->cycles += 8;
+}
+
+//void CCF(void *arg, uint32_t op)
+//void LD_B_B(void *arg, uint32_t op)
+//void LD_B_C(void *arg, uint32_t op)
+//void LD_B_D(void *arg, uint32_t op)
+//void LD_B_E(void *arg, uint32_t op)
+//void LD_B_H(void *arg, uint32_t op)
+//void LD_B_L(void *arg, uint32_t op)
+//void LD_B_derefHL(void *arg, uint32_t op)
+//void LD_B_A(void *arg, uint32_t op)
+//void LD_C_B(void *arg, uint32_t op)
+//void LD_C_C(void *arg, uint32_t op)
+//void LD_C_D(void *arg, uint32_t op)
+//void LD_C_E(void *arg, uint32_t op)
+//void LD_C_H(void *arg, uint32_t op)
+//void LD_C_L(void *arg, uint32_t op)
+//void LD_C_derefHL(void *arg, uint32_t op)
+//void LD_C_A(void *arg, uint32_t op)
+//void LD_D_B(void *arg, uint32_t op)
+//void LD_D_C(void *arg, uint32_t op)
+//void LD_D_D(void *arg, uint32_t op)
+//void LD_D_E(void *arg, uint32_t op)
+//void LD_D_H(void *arg, uint32_t op)
+//void LD_D_L(void *arg, uint32_t op)
+//void LD_D_derefHL(void *arg, uint32_t op)
+//void LD_D_A(void *arg, uint32_t op)
+//void LD_E_B(void *arg, uint32_t op)
+//void LD_E_C(void *arg, uint32_t op)
+//void LD_E_D(void *arg, uint32_t op)
+//void LD_E_E(void *arg, uint32_t op)
+//void LD_E_H(void *arg, uint32_t op)
+//void LD_E_L(void *arg, uint32_t op)
+//void LD_E_derefHL(void *arg, uint32_t op)
+//void LD_E_A(void *arg, uint32_t op)
+//void LD_H_B(void *arg, uint32_t op)
+//void LD_H_C(void *arg, uint32_t op)
+//void LD_H_D(void *arg, uint32_t op)
+//void LD_H_E(void *arg, uint32_t op)
+//void LD_H_H(void *arg, uint32_t op)
+//void LD_H_L(void *arg, uint32_t op)
+//void LD_H_derefHL(void *arg, uint32_t op)
+//void LD_H_A(void *arg, uint32_t op)
+//void LD_L_B(void *arg, uint32_t op)
+//void LD_L_C(void *arg, uint32_t op)
+//void LD_L_D(void *arg, uint32_t op)
+//void LD_L_E(void *arg, uint32_t op)
+//void LD_L_H(void *arg, uint32_t op)
+//void LD_L_L(void *arg, uint32_t op)
+//void LD_L_derefHL(void *arg, uint32_t op)
+//void LD_L_A(void *arg, uint32_t op)
+//void LD_derefHL_B(void *arg, uint32_t op)
+//void LD_derefHL_C(void *arg, uint32_t op)
+//void LD_derefHL_D(void *arg, uint32_t op)
+//void LD_derefHL_E(void *arg, uint32_t op)
+//void LD_derefHL_H(void *arg, uint32_t op)
+//void LD_derefHL_L(void *arg, uint32_t op)
+//void HALT(void *arg, uint32_t op)
+void LD_derefHL_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    cpu->mem[(cpu->reg_L << 8) + cpu->reg_H] = cpu->reg_A;
+    cpu->cycles += 8;
+}
+//void LD_A_B(void *arg, uint32_t op)
+//void LD_A_C(void *arg, uint32_t op)
+//void LD_A_D(void *arg, uint32_t op)
+//void LD_A_E(void *arg, uint32_t op)
+
+void LD_A_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    cpu->reg_A = cpu->reg_H;
+    cpu->cycles += 4;    
+}
+
+//void LD_A_L(void *arg, uint32_t op)
+//void LD_A_derefHL(void *arg, uint32_t op)
+//void LD_A_A(void *arg, uint32_t op)
+//void ADD_A_B(void *arg, uint32_t op)
+//void ADD_A_C(void *arg, uint32_t op)
+//void ADD_A_D(void *arg, uint32_t op)
+//void ADD_A_E(void *arg, uint32_t op)
+//void ADD_A_H(void *arg, uint32_t op)
+//void ADD_A_L(void *arg, uint32_t op)
+//void ADD_A_derefHL(void *arg, uint32_t op)
+//void ADD_A_A(void *arg, uint32_t op)
+//void ADC_A_B(void *arg, uint32_t op)
+//void ADC_A_C(void *arg, uint32_t op)
+//void ADC_A_D(void *arg, uint32_t op)
+//void ADC_A_E(void *arg, uint32_t op)
+//void ADC_A_H(void *arg, uint32_t op)
+//void ADC_A_L(void *arg, uint32_t op)
+//void ADC_A_derefHL(void *arg, uint32_t op)
+//void ADC_A_A(void *arg, uint32_t op)
+//void SUB_B(void *arg, uint32_t op)
+//void SUB_C(void *arg, uint32_t op)
+//void SUB_D(void *arg, uint32_t op)
+//void SUB_E(void *arg, uint32_t op)
+//void SUB_H(void *arg, uint32_t op)
+//void SUB_L(void *arg, uint32_t op)
+//void SUB_derefHL(void *arg, uint32_t op)
+//void SUB_A(void *arg, uint32_t op)
+//void SBC_A_B(void *arg, uint32_t op)
+//void SBC_A_C(void *arg, uint32_t op)
+//void SBC_A_D(void *arg, uint32_t op)
+//void SBC_A_E(void *arg, uint32_t op)
+//void SBC_A_H(void *arg, uint32_t op)
+//void SBC_A_L(void *arg, uint32_t op)
+//void SBC_A_derefHL(void *arg, uint32_t op)
+//void SBC_A_A(void *arg, uint32_t op)
+//void AND_B(void *arg, uint32_t op)
+//void AND_C(void *arg, uint32_t op)
+//void AND_D(void *arg, uint32_t op)
+//void AND_E(void *arg, uint32_t op)
+//void AND_H(void *arg, uint32_t op)
+//void AND_L(void *arg, uint32_t op)
+//void AND_derefHL(void *arg, uint32_t op)
+//void AND_A(void *arg, uint32_t op)
+//void XOR_B(void *arg, uint32_t op)
+//void XOR_C(void *arg, uint32_t op)
+//void XOR_D(void *arg, uint32_t op)
+//void XOR_E(void *arg, uint32_t op)
+//void XOR_H(void *arg, uint32_t op)
+//void XOR_L(void *arg, uint32_t op)
+//void XOR_derefHL(void *arg, uint32_t op)
+
+void XOR_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    cpu->reg_A = cpu->reg_A ^ cpu->reg_A;
+    flag_assign(cpu->reg_A == 0, &cpu->reg_F, 0x80);
+    flag_assign(false, &cpu->reg_F, 0x70);
+    cpu->cycles += 4;
+}
+
+//void OR_B(void *arg, uint32_t op)
+//void OR_C(void *arg, uint32_t op)
+//void OR_D(void *arg, uint32_t op)
+//void OR_E(void *arg, uint32_t op)
+//void OR_H(void *arg, uint32_t op)
+//void OR_L(void *arg, uint32_t op)
+//void OR_derefHL(void *arg, uint32_t op)
+//void OR_A(void *arg, uint32_t op)
+//void CP_B(void *arg, uint32_t op)
+//void CP_C(void *arg, uint32_t op)
+//void CP_D(void *arg, uint32_t op)
+//void CP_E(void *arg, uint32_t op)
+//void CP_H(void *arg, uint32_t op)
+//void CP_L(void *arg, uint32_t op)
+//void CP_derefHL(void *arg, uint32_t op)
+//void CP_A(void *arg, uint32_t op)
+//void RET_NZ(void *arg, uint32_t op)
+//void POP_BC(void *arg, uint32_t op)
+//void JP_NZ_a16(void *arg, uint32_t op)
+//void JP_a16(void *arg, uint32_t op)
+//void CALL_NZ_a16(void *arg, uint32_t op)
+//void PUSH_BC(void *arg, uint32_t op)
+//void ADD_A_d8(void *arg, uint32_t op)
+//void RST_00H(void *arg, uint32_t op)
+//void RET_Z(void *arg, uint32_t op)
+//void RET(void *arg, uint32_t op)
+//void JP_Z_a16(void *arg, uint32_t op)
+
+void PREFIX_CB(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    uint8_t cb_opcode = get_cb_opcode(op);
+    (emu->cb_functions[cb_opcode] (emu, cb_opcode));
+}
+
+//void CALL_Z_a16(void *arg, uint32_t op)
+
+void CALL_a16(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint16_t pc_old_value = cpu->pc + 3;
+    cpu->sp--;
+    cpu->mem[cpu->sp] = (pc_old_value & 0xff00) >> 8;
+    cpu->sp--;
+    cpu->mem[cpu->sp] = (pc_old_value & 0x00ff);
+    cpu->pc = (op & 0x0000ffff);
+    //take the pc incrementation in the interpret function into account
+    if(cpu->pc >= 3) cpu->pc -= 3;
+    cpu->cycles += 24;    
+}
+
+//void ADC_A_d8(void *arg, uint32_t op)
+//void RST_08H(void *arg, uint32_t op)
+//void RET_NC(void *arg, uint32_t op)
+//void POP_DE(void *arg, uint32_t op)
+//void JP_NC_a16(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void CALL_NC_a16(void *arg, uint32_t op)
+//void PUSH_DE(void *arg, uint32_t op)
+//void SUB_d8(void *arg, uint32_t op)
+//void RST_10H(void *arg, uint32_t op)
+//void RET_C(void *arg, uint32_t op)
+//void RETI(void *arg, uint32_t op)
+//void JP_C_a16(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void CALL_C_a16(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void SBC_A_d8(void *arg, uint32_t op)
+//void RST_18H(void *arg, uint32_t op)
+void LDH_derefa8_A(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->mem[0xFF00 + ((op & 0x0000FF00) >> 8)] = cpu->reg_A;
+    cpu->cycles += 12;
+}
+//void POP_HL(void *arg, uint32_t op)
+
+void LD_derefC_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->mem[0xFF00 + cpu->reg_C] = cpu->reg_A;
+    cpu->cycles += 8;
+}
+
+//void dont_exist(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void PUSH_HL(void *arg, uint32_t op)
+//void AND_d8(void *arg, uint32_t op)
+//void RST_20H(void *arg, uint32_t op)
+//void ADD_SP_r8(void *arg, uint32_t op)
+//void JP_derefHL(void *arg, uint32_t op)
+//void LD_derefa16_A(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void XOR_d8(void *arg, uint32_t op)
+//void RST_28H(void *arg, uint32_t op)
+//void LDH_A_derefa8(void *arg, uint32_t op)
+//void POP_AF(void *arg, uint32_t op)
+//void LD_A_derefC(void *arg, uint32_t op)
+//void DI(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void PUSH_AF(void *arg, uint32_t op)
+//void OR_d8(void *arg, uint32_t op)
+//void RST_30H(void *arg, uint32_t op)
+//void LD_HL_SPplusr8(void *arg, uint32_t op)
+//void LD_SP_HL(void *arg, uint32_t op)
+//void LD_A_derefa16(void *arg, uint32_t op)
+//void EI(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void dont_exist(void *arg, uint32_t op)
+//void CP_d8(void *arg, uint32_t op)
+//void RST_38H(void *arg, uint32_t op)
 
