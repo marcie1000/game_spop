@@ -44,6 +44,8 @@ extern int initialize_emulator(s_emu *emu);
 extern void destroy_emulator(void);
 extern void destroy_SDL(void);
 extern void emulate(s_emu *emu);
+extern int load_boot_rom(s_cpu *cpu);
+
 
 #endif //EMULATOR_H
 

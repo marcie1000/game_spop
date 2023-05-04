@@ -10,25 +10,6 @@ int initialize_cpu(s_cpu *cpu)
 {
     memset(cpu, 0, sizeof(s_cpu));
     cpu->pc = START_ADRESS;
-    if(0 != load_boot_rom(cpu))
-        return EXIT_FAILURE;
-    return EXIT_SUCCESS;
-}
-
-int load_boot_rom(s_cpu *cpu)
-{
-    FILE *bootrom = fopen("boot_rom/dmg_rom.bin", "rb");
-    if(NULL == bootrom)
-    {
-        perror("ERROR: cannot open boot_rom/dmg_rom.bin: ");
-        return EXIT_FAILURE;
-    }
-    
-    fread(&cpu->mem[0], sizeof(cpu->mem[0]), 0x100, bootrom);
-    fclose(bootrom);
-    
-    printf("Boot rom loaded.\n");
-    
     return EXIT_SUCCESS;
 }
 
@@ -57,6 +38,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
 {
     uint32_t opcode = get_opcode(&emu->cpu);
     uint8_t action = get_action(opcode);
+    printf("Opcode 0x%06X\n", opcode);
     (*opcode_functions[action])(emu, opcode);
     emu->cpu.pc += emu->length_table[action];
 }
@@ -89,6 +71,7 @@ void initialize_length_table(s_emu *emu)
     emu->length_table[0xc4] = 3;
     emu->length_table[0xc6] = 2;
     emu->length_table[0xca] = 3;
+    emu->length_table[0xcb] = 2;
     emu->length_table[0xcc] = 3;
     emu->length_table[0xcd] = 3;
     emu->length_table[0xce] = 2;
@@ -171,7 +154,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x28] = &JR_Z_r8;
     //opcode_functions[0x29] = &ADD_HL_HL;
     //opcode_functions[0x2A] = &LD_A_derefHLplus;
-    //opcode_functions[0x2B] = &DEC_HL;
+    opcode_functions[0x2B] = &DEC_HL;
     //opcode_functions[0x2C] = &INC_L;
     //opcode_functions[0x2D] = &DEC_L;
     //opcode_functions[0x2E] = &LD_L_d8;
@@ -256,7 +239,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x7D] = &LD_A_L;
     //opcode_functions[0x7E] = &LD_A_derefHL;
     //opcode_functions[0x7F] = &LD_A_A;
-    //opcode_functions[0x80] = &ADD_A_B;
+    opcode_functions[0x80] = &ADD_A_B;
     //opcode_functions[0x81] = &ADD_A_C;
     //opcode_functions[0x82] = &ADD_A_D;
     //opcode_functions[0x83] = &ADD_A_E;
@@ -339,7 +322,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0xD0] = &RET_NC;
     //opcode_functions[0xD1] = &POP_DE;
     //opcode_functions[0xD2] = &JP_NC_a16;
-    //opcode_functions[0xD3] = &dont_exist;
+    opcode_functions[0xD3] = &opcode_non_existant;
     //opcode_functions[0xD4] = &CALL_NC_a16;
     //opcode_functions[0xD5] = &PUSH_DE;
     //opcode_functions[0xD6] = &SUB_d8;
@@ -347,32 +330,32 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0xD8] = &RET_C;
     //opcode_functions[0xD9] = &RETI;
     //opcode_functions[0xDA] = &JP_C_a16;
-    //opcode_functions[0xDB] = &dont_exist;
+    opcode_functions[0xDB] = &opcode_non_existant;
     //opcode_functions[0xDC] = &CALL_C_a16;
-    //opcode_functions[0xDD] = &dont_exist;
+    opcode_functions[0xDD] = &opcode_non_existant;
     //opcode_functions[0xDE] = &SBC_A_d8;
     //opcode_functions[0xDF] = &RST_18H;
     opcode_functions[0xE0] = &LDH_derefa8_A;
     //opcode_functions[0xE1] = &POP_HL;
     opcode_functions[0xE2] = &LD_derefC_A;
-    //opcode_functions[0xE3] = &dont_exist;
-    //opcode_functions[0xE4] = &dont_exist;
+    opcode_functions[0xE3] = &opcode_non_existant;
+    opcode_functions[0xE4] = &opcode_non_existant;
     //opcode_functions[0xE5] = &PUSH_HL;
     //opcode_functions[0xE6] = &AND_d8;
     //opcode_functions[0xE7] = &RST_20H;
     //opcode_functions[0xE8] = &ADD_SP_r8;
     //opcode_functions[0xE9] = &JP_derefHL;
     //opcode_functions[0xEA] = &LD_derefa16_A;
-    //opcode_functions[0xEB] = &dont_exist;
-    //opcode_functions[0xEC] = &dont_exist;
-    //opcode_functions[0xED] = &dont_exist;
+    opcode_functions[0xEB] = &opcode_non_existant;
+    opcode_functions[0xEC] = &opcode_non_existant;
+    opcode_functions[0xED] = &opcode_non_existant;
     //opcode_functions[0xEE] = &XOR_d8;
     //opcode_functions[0xEF] = &RST_28H;
     //opcode_functions[0xF0] = &LDH_A_derefa8;
     //opcode_functions[0xF1] = &POP_AF;
     //opcode_functions[0xF2] = &LD_A_derefC;
-    //opcode_functions[0xF3] = &DI;
-    //opcode_functions[0xF4] = &dont_exist;
+    opcode_functions[0xF3] = &DI;
+    opcode_functions[0xF4] = &opcode_non_existant;
     //opcode_functions[0xF5] = &PUSH_AF;
     //opcode_functions[0xF6] = &OR_d8;
     //opcode_functions[0xF7] = &RST_30H;
@@ -380,8 +363,8 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0xF9] = &LD_SP_HL;
     //opcode_functions[0xFA] = &LD_A_derefa16;
     //opcode_functions[0xFB] = &EI;
-    //opcode_functions[0xFC] = &dont_exist;
-    //opcode_functions[0xFD] = &dont_exist;
+    opcode_functions[0xFC] = &opcode_non_existant;
+    opcode_functions[0xFD] = &opcode_non_existant;
     //opcode_functions[0xFE] = &CP_d8;
     //opcode_functions[0xFF] = &RST_38H;
 

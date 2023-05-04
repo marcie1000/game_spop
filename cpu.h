@@ -5,7 +5,6 @@
 #include "emulator.h"
 
 extern int initialize_cpu(s_cpu *cpu);
-extern int load_boot_rom(s_cpu *cpu);
 extern uint32_t get_opcode(s_cpu *cpu);
 extern uint8_t get_action(uint32_t opcode);
 extern uint8_t get_cb_opcode(uint32_t op32);

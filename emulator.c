@@ -66,6 +66,26 @@ int initialize_emulator(s_emu *emu)
     init_opcodes_pointers(emu->opcode_functions);
     init_cb_pointers(emu->cb_functions);
     
+    if(0 != load_boot_rom(&emu->cpu))
+        return EXIT_FAILURE;
+    
+    return EXIT_SUCCESS;
+}
+
+int load_boot_rom(s_cpu *cpu)
+{
+    FILE *bootrom = fopen("boot_rom/dmg_rom.bin", "rb");
+    if(NULL == bootrom)
+    {
+        perror("ERROR: cannot open boot_rom/dmg_rom.bin: ");
+        return EXIT_FAILURE;
+    }
+    
+    fread(&cpu->mem[0], sizeof(cpu->mem[0]), 0x100, bootrom);
+    fclose(bootrom);
+    
+    printf("Boot rom loaded.\n");
+    
     return EXIT_SUCCESS;
 }
 

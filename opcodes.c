@@ -18,6 +18,13 @@ void opcode_unimplemented(void *arg, uint32_t op)
     emu->in.quit = SDL_TRUE;
 }
 
+void opcode_non_existant(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    fprintf(stderr, "ERROR: instuction 0x%02X doesn't exist!\n", (op & 0xFF0000) >> 16);
+    emu->in.quit = SDL_TRUE;
+}
+
 void NOP(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -93,9 +100,9 @@ void JR_NZ_r8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    if(cpu->reg_F & 0x80) //if Z flag is 0
+    if(!(cpu->reg_F & 0x80)) //if Z flag is 0
     {
-        uint16_t value = op & 0x0000ffff;
+        uint8_t value = (op & 0x0000ff00) >> 8;
         //take cp incrementation in interpret function into account
         if (value >= 2) value -= 2; 
         cpu->pc += value;
@@ -124,7 +131,17 @@ void LD_HL_d16(void *arg, uint32_t op)
 //void JR_Z_r8(void *arg, uint32_t op)
 //void ADD_HL_HL(void *arg, uint32_t op)
 //void LD_A_derefHLplus(void *arg, uint32_t op)
-//void DEC_HL(void *arg, uint32_t op)
+void DEC_HL(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
+    HL--;
+    cpu->reg_H = (HL & 0xff00) >> 8;
+    cpu->reg_L = HL & 0x00ff;
+    cpu->cycles += 8;
+    
+}
 //void INC_L(void *arg, uint32_t op)
 //void DEC_L(void *arg, uint32_t op)
 //void LD_L_d8(void *arg, uint32_t op)
@@ -145,8 +162,8 @@ void LD_derefHLminus_A(void *arg, UNUSED uint32_t op)
     cpu->mem[(cpu->reg_L << 8) + cpu->reg_H] = cpu->reg_A;
     uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
     HL--;
-    cpu->reg_L = (HL & 0xff00) << 8;
-    cpu->reg_H = HL & 0x00ff;
+    cpu->reg_H = (HL & 0xff00) >> 8;
+    cpu->reg_L = HL & 0x00ff;
     cpu->cycles += 8;    
 }
 
@@ -250,7 +267,36 @@ void LD_A_H(void *arg, UNUSED uint32_t op)
 //void LD_A_L(void *arg, uint32_t op)
 //void LD_A_derefHL(void *arg, uint32_t op)
 //void LD_A_A(void *arg, uint32_t op)
-//void ADD_A_B(void *arg, uint32_t op)
+void ADD_A_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint16_t new_A = cpu->reg_A;
+    uint16_t new_B = cpu->reg_B;
+    
+    uint8_t A_4bit = new_A & 0x0F;
+    uint8_t B_4bit = new_B & 0x0F;
+    
+    bool half_carry = ((A_4bit + B_4bit) > 0x0F);
+    flag_assign(half_carry, &cpu->reg_F, 0x20);
+    
+    new_A += new_B;
+    bool carry = (new_A > 0xFF00);
+    flag_assign(carry, &cpu->reg_F, 0x10);
+    
+    bool zero = (new_A == 0);
+    flag_assign(zero, &cpu->reg_F, 0x80);
+    
+    //negative flag
+    flag_assign(false, &cpu->reg_F, 0x40);
+    
+    new_A &= 0x00FF;
+    cpu->reg_A = new_A;
+    
+    cpu->cycles += 4;
+
+}
 //void ADD_A_C(void *arg, uint32_t op)
 //void ADD_A_D(void *arg, uint32_t op)
 //void ADD_A_E(void *arg, uint32_t op)
@@ -414,7 +460,14 @@ void LD_derefC_A(void *arg, UNUSED uint32_t op)
 //void LDH_A_derefa8(void *arg, uint32_t op)
 //void POP_AF(void *arg, uint32_t op)
 //void LD_A_derefC(void *arg, uint32_t op)
-//void DI(void *arg, uint32_t op)
+void DI(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(false, &cpu->mem[0xFFFF], 0x1F);
+    cpu->cycles += 4;
+}
 //void dont_exist(void *arg, uint32_t op)
 //void PUSH_AF(void *arg, uint32_t op)
 //void OR_d8(void *arg, uint32_t op)
