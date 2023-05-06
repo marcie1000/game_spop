@@ -47,7 +47,7 @@ endif (NOT SDL2_FOUND)
 set (CMAKE_C_STANDARD 11)
 add_executable (game_spop_emu ${SOURCES} ${HEADERS})
 #target_link_libraries (game_spop_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
-target_link_libraries (game_spop_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
+target_link_libraries (game_spop_emu ${SDL2_LIBRARIES})
 
 
 

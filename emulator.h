@@ -32,6 +32,7 @@ typedef struct s_cpu {
 
 typedef struct s_emu{
     uint8_t length_table[OPCODE_NB];
+    char mnemonic_index[OPCODE_NB][15];
     void (*opcode_functions[OPCODE_NB])(void*, uint32_t);
     void (*cb_functions[CB_NB]) (void*, uint8_t);
     s_cpu cpu;
@@ -45,6 +46,7 @@ extern void destroy_emulator(void);
 extern void destroy_SDL(void);
 extern void emulate(s_emu *emu);
 extern int load_boot_rom(s_cpu *cpu);
+extern void init_mnemonic_index(s_emu *emu);
 
 
 #endif //EMULATOR_H
