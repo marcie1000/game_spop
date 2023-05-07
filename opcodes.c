@@ -37,10 +37,10 @@ void INC_BC(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    uint16_t BC = (cpu->reg_B << 8) + cpu->reg_C;
+    uint16_t BC = (cpu->regB << 8) + cpu->regC;
     BC++;
-    cpu->reg_B = (BC & 0xff00) >> 8;
-    cpu->reg_C = BC & 0x00ff;
+    cpu->regB = (BC & 0xff00) >> 8;
+    cpu->regC = BC & 0x00ff;
     cpu->cycles += 8;
 }
 //void INC_B(void *arg, uint32_t op)
@@ -49,14 +49,14 @@ void DEC_B(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint8_t B4bit = (cpu->reg_B & 0x0F) + 0x10;
+    uint8_t B4bit = (cpu->regB & 0x0F) + 0x10;
     B4bit--;
     bool half_carry = !(B4bit & 0x10);
-    flag_assign(half_carry, &cpu->reg_F, 0x20);
+    flag_assign(half_carry, &cpu->regF, 0x20);
     
-    cpu->reg_B--;
-    flag_assign(cpu->reg_B == 0, &cpu->reg_F, 0x80);
-    flag_assign(true, &cpu->reg_F, 0x40);
+    cpu->regB--;
+    flag_assign(cpu->regB == 0, &cpu->regF, 0x80);
+    flag_assign(true, &cpu->regF, 0x40);
     
     cpu->cycles += 4;
 }
@@ -65,7 +65,7 @@ void LD_B_d8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->reg_B = (op & 0x0000ff00) >> 8;
+    cpu->regB = (op & 0x0000ff00) >> 8;
     cpu->cycles += 8;
 }
 
@@ -74,10 +74,10 @@ void RLCA(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint16_t newA = cpu->reg_A << 1;
-    flag_assign(newA > 0xff, &cpu->reg_F, 0x10);
-    flag_assign(false, &cpu->reg_F, 0xE0);
-    cpu->reg_A = (newA & 0x00FF) + ((newA & 0x0100) >> 8);
+    uint16_t newA = cpu->regA << 1;
+    flag_assign(newA > 0xff, &cpu->regF, 0x10);
+    flag_assign(false, &cpu->regF, 0xE0);
+    cpu->regA = (newA & 0x00FF) + ((newA & 0x0100) >> 8);
     
     cpu->cycles += 4;
 }
@@ -88,10 +88,10 @@ void DEC_BC(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    uint16_t BC = (cpu->reg_B << 8) + cpu->reg_C;
+    uint16_t BC = (cpu->regB << 8) + cpu->regC;
     BC--;
-    cpu->reg_B = (BC & 0xff00) >> 8;
-    cpu->reg_C = BC & 0x00ff;
+    cpu->regB = (BC & 0xff00) >> 8;
+    cpu->regC = BC & 0x00ff;
     cpu->cycles += 8;
 }
 
@@ -100,13 +100,13 @@ void INC_C(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint8_t c4bit = cpu->reg_C & 0x0f;
+    uint8_t c4bit = cpu->regC & 0x0f;
     c4bit++;
-    flag_assign(c4bit > 0x0f, &cpu->reg_F, 0x20);
+    flag_assign(c4bit > 0x0f, &cpu->regF, 0x20);
     
-    cpu->reg_C++;
-    flag_assign(cpu->reg_C == 0, &cpu->reg_F, 0x80);
-    flag_assign(false, &cpu->reg_F, 0x40);
+    cpu->regC++;
+    flag_assign(cpu->regC == 0, &cpu->regF, 0x80);
+    flag_assign(false, &cpu->regF, 0x40);
     
     cpu->cycles += 4;    
 }
@@ -116,14 +116,14 @@ void DEC_C(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint8_t C4bit = (cpu->reg_C & 0x0F) + 0x10;
+    uint8_t C4bit = (cpu->regC & 0x0F) + 0x10;
     C4bit--;
     bool half_carry = !(C4bit & 0x10);
-    flag_assign(half_carry, &cpu->reg_F, 0x20);
+    flag_assign(half_carry, &cpu->regF, 0x20);
     
-    cpu->reg_C--;
-    flag_assign(cpu->reg_C == 0, &cpu->reg_F, 0x80);
-    flag_assign(true, &cpu->reg_F, 0x40);
+    cpu->regC--;
+    flag_assign(cpu->regC == 0, &cpu->regF, 0x80);
+    flag_assign(true, &cpu->regF, 0x40);
     
     cpu->cycles += 4;
 }
@@ -133,7 +133,7 @@ void LD_C_d8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->reg_C = (op & 0x0000ff00) >> 8;
+    cpu->regC = (op & 0x0000ff00) >> 8;
     cpu->cycles += 8;
 }
 
@@ -144,8 +144,8 @@ void LD_DE_d16(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->reg_E = (op & 0x0000ff00) >> 8;
-    cpu->reg_D = (op & 0x000000ff);
+    cpu->regE = (op & 0x0000ff00) >> 8;
+    cpu->regD = (op & 0x000000ff);
     
     cpu->cycles += 12;
 }
@@ -154,10 +154,10 @@ void INC_DE(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    uint16_t DE = (cpu->reg_D << 8) + cpu->reg_E;
+    uint16_t DE = (cpu->regD << 8) + cpu->regE;
     DE++;
-    cpu->reg_D = (DE & 0xff00) >> 8;
-    cpu->reg_E = DE & 0x00ff;
+    cpu->regD = (DE & 0xff00) >> 8;
+    cpu->regE = DE & 0x00ff;
     cpu->cycles += 8;
 }
 //void INC_D(void *arg, uint32_t op)
@@ -179,7 +179,7 @@ void LD_A_derefDE(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->reg_A = cpu->mem[(cpu->reg_E << 8) + cpu->reg_D];
+    cpu->regA = cpu->mem[(cpu->regE << 8) + cpu->regD];
     cpu->cycles += 8;
 }
 //void DEC_DE(void *arg, uint32_t op)
@@ -193,7 +193,7 @@ void JR_NZ_r8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    if(!(cpu->reg_F & 0x80)) //if Z flag is 0
+    if(!(cpu->regF & 0x80)) //if Z flag is 0
     {
         int8_t value = (op & 0x0000ff00) >> 8;
         cpu->pc += value;
@@ -206,8 +206,8 @@ void JR_NZ_r8(void *arg, uint32_t op)
 void LD_HL_d16(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
-    emu->cpu.reg_L = (op & 0x0000ff00) >> 8;
-    emu->cpu.reg_H = (op & 0x000000ff);
+    emu->cpu.regL = (op & 0x0000ff00) >> 8;
+    emu->cpu.regH = (op & 0x000000ff);
     emu->cpu.cycles += 12;
 }
 
@@ -215,21 +215,21 @@ void LD_derefHLplus_A(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    cpu->mem[(cpu->reg_L << 8) + cpu->reg_H] = cpu->reg_A;
-    uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
+    cpu->mem[(cpu->regL << 8) + cpu->regH] = cpu->regA;
+    uint16_t HL = (cpu->regH << 8) + cpu->regL;
     HL++;
-    cpu->reg_H = (HL & 0xff00) >> 8;
-    cpu->reg_L = HL & 0x00ff;
+    cpu->regH = (HL & 0xff00) >> 8;
+    cpu->regL = HL & 0x00ff;
     cpu->cycles += 8;    
 }
 void INC_HL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
+    uint16_t HL = (cpu->regH << 8) + cpu->regL;
     HL++;
-    cpu->reg_H = (HL & 0xff00) >> 8;
-    cpu->reg_L = HL & 0x00ff;
+    cpu->regH = (HL & 0xff00) >> 8;
+    cpu->regL = HL & 0x00ff;
     cpu->cycles += 8;
 }
 //void INC_H(void *arg, uint32_t op)
@@ -241,7 +241,7 @@ void JR_Z_r8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    if(cpu->reg_F & 0x80)
+    if(cpu->regF & 0x80)
     {
         int8_t r8 = (op & 0x0000ff00) >> 8;
         cpu->pc += r8;
@@ -258,10 +258,10 @@ void DEC_HL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
+    uint16_t HL = (cpu->regH << 8) + cpu->regL;
     HL--;
-    cpu->reg_H = (HL & 0xff00) >> 8;
-    cpu->reg_L = HL & 0x00ff;
+    cpu->regH = (HL & 0xff00) >> 8;
+    cpu->regL = HL & 0x00ff;
     cpu->cycles += 8;
     
 }
@@ -272,7 +272,7 @@ void LD_L_d8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->reg_A = (op & 0x0000ff00) >> 8;
+    cpu->regA = (op & 0x0000ff00) >> 8;
     cpu->cycles += 8;
 }
 //void CPL(void *arg, uint32_t op)
@@ -289,11 +289,11 @@ void LD_derefHLminus_A(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    cpu->mem[(cpu->reg_L << 8) + cpu->reg_H] = cpu->reg_A;
-    uint16_t HL = (cpu->reg_H << 8) + cpu->reg_L;
+    cpu->mem[(cpu->regL << 8) + cpu->regH] = cpu->regA;
+    uint16_t HL = (cpu->regH << 8) + cpu->regL;
     HL--;
-    cpu->reg_H = (HL & 0xff00) >> 8;
-    cpu->reg_L = HL & 0x00ff;
+    cpu->regH = (HL & 0xff00) >> 8;
+    cpu->regL = HL & 0x00ff;
     cpu->cycles += 8;    
 }
 
@@ -312,14 +312,14 @@ void DEC_A(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint8_t A4bit = (cpu->reg_A & 0x0F) + 0x10;
+    uint8_t A4bit = (cpu->regA & 0x0F) + 0x10;
     A4bit--;
     bool half_carry = !(A4bit & 0x10);
-    flag_assign(half_carry, &cpu->reg_F, 0x20);
+    flag_assign(half_carry, &cpu->regF, 0x20);
     
-    cpu->reg_A--;
-    flag_assign(cpu->reg_A == 0, &cpu->reg_F, 0x80);
-    flag_assign(true, &cpu->reg_F, 0x40);
+    cpu->regA--;
+    flag_assign(cpu->regA == 0, &cpu->regF, 0x80);
+    flag_assign(true, &cpu->regF, 0x40);
     
     cpu->cycles += 4;
 }
@@ -329,7 +329,7 @@ void LD_A_d8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->reg_A = (op & 0x0000ff00) >> 8;
+    cpu->regA = (op & 0x0000ff00) >> 8;
     cpu->cycles += 8;
 }
 
@@ -393,7 +393,7 @@ void LD_derefHL_A(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    cpu->mem[(cpu->reg_L << 8) + cpu->reg_H] = cpu->reg_A;
+    cpu->mem[(cpu->regL << 8) + cpu->regH] = cpu->regA;
     cpu->cycles += 8;
 }
 //void LD_A_B(void *arg, uint32_t op)
@@ -403,7 +403,7 @@ void LD_A_E(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    cpu->reg_A = cpu->reg_E;
+    cpu->regA = cpu->regE;
     cpu->cycles += 4;   
 }
 
@@ -411,7 +411,7 @@ void LD_A_H(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    cpu->reg_A = cpu->reg_H;
+    cpu->regA = cpu->regH;
     cpu->cycles += 4;    
 }
 
@@ -423,27 +423,27 @@ void ADD_A_B(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint16_t new_A = cpu->reg_A;
-    uint16_t new_B = cpu->reg_B;
+    uint16_t new_A = cpu->regA;
+    uint16_t new_B = cpu->regB;
     
     uint8_t A_4bit = new_A & 0x0F;
     uint8_t B_4bit = new_B & 0x0F;
     
     bool half_carry = ((A_4bit + B_4bit) > 0x0F);
-    flag_assign(half_carry, &cpu->reg_F, 0x20);
+    flag_assign(half_carry, &cpu->regF, 0x20);
     
     new_A += new_B;
     bool carry = (new_A > 0xFF00);
-    flag_assign(carry, &cpu->reg_F, 0x10);
+    flag_assign(carry, &cpu->regF, 0x10);
     
     bool zero = (new_A == 0);
-    flag_assign(zero, &cpu->reg_F, 0x80);
+    flag_assign(zero, &cpu->regF, 0x80);
     
     //negative flag
-    flag_assign(false, &cpu->reg_F, 0x40);
+    flag_assign(false, &cpu->regF, 0x40);
     
     new_A &= 0x00FF;
-    cpu->reg_A = new_A;
+    cpu->regA = new_A;
     
     cpu->cycles += 4;
 
@@ -499,9 +499,9 @@ void XOR_A(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    cpu->reg_A ^= cpu->reg_A;
-    flag_assign(cpu->reg_A == 0, &cpu->reg_F, 0x80);
-    flag_assign(false, &cpu->reg_F, 0x70);
+    cpu->regA ^= cpu->regA;
+    flag_assign(cpu->regA == 0, &cpu->regF, 0x80);
+    flag_assign(false, &cpu->regF, 0x70);
     cpu->cycles += 4;
 }
 
@@ -596,7 +596,7 @@ void LDH_derefa8_A(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->mem[0xFF00 + ((op & 0x0000FF00) >> 8)] = cpu->reg_A;
+    cpu->mem[0xFF00 + ((op & 0x0000FF00) >> 8)] = cpu->regA;
     cpu->cycles += 12;
 }
 //void POP_HL(void *arg, uint32_t op)
@@ -606,7 +606,7 @@ void LD_derefC_A(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->mem[0xFF00 + cpu->reg_C] = cpu->reg_A;
+    cpu->mem[0xFF00 + cpu->regC] = cpu->regA;
     cpu->cycles += 8;
 }
 
@@ -623,7 +623,7 @@ void LD_derefa16_A(void *arg, uint32_t op)
     s_cpu *cpu = &emu->cpu;
     
     uint16_t adress = ((op & 0x0000ff00) >> 8) + (op & 0x000000ff);
-    cpu->mem[adress] = cpu->reg_A;
+    cpu->mem[adress] = cpu->regA;
     
     cpu->cycles += 16;
 }
@@ -660,12 +660,12 @@ void CP_d8(void *arg, uint32_t op)
     
     uint8_t d8 = (op & 0x0000ff00) >> 8;
     uint8_t d4bit = d8 & 0x0F;
-    uint8_t A4bit = (cpu->reg_A & 0x0F) + 0x10;
+    uint8_t A4bit = (cpu->regA & 0x0F) + 0x10;
     bool half_carry = !(A4bit - d4bit);
-    flag_assign(half_carry, &cpu->reg_F, 0x20);
-    flag_assign(cpu->reg_A - d8 == 0, &cpu->reg_F, 0x80);
-    flag_assign(true, &cpu->reg_F, 0x40);
-    flag_assign(d8 > cpu->reg_A, &cpu->reg_F, 0x80);
+    flag_assign(half_carry, &cpu->regF, 0x20);
+    flag_assign(cpu->regA - d8 == 0, &cpu->regF, 0x80);
+    flag_assign(true, &cpu->regF, 0x40);
+    flag_assign(d8 > cpu->regA, &cpu->regF, 0x80);
     
     cpu->cycles += 8;
 }

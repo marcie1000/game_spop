@@ -21,9 +21,9 @@ typedef struct s_input{
 
 typedef struct s_cpu {
     uint8_t mem[MEM_SIZE];
-    uint8_t reg_A; //accumulator
-    uint8_t reg_B, reg_C, reg_D, reg_E, reg_H, reg_L; //normal registers
-    uint8_t reg_F; //flags
+    uint8_t regA; //accumulator
+    uint8_t regB, regC, regD, regE, regH, regL; //normal registers
+    uint8_t regF; //flags
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
     size_t cycles; //cycles counter

@@ -40,6 +40,9 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     uint8_t action = get_action(opcode);
     printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%02X\n", opcode, emu->mnemonic_index[action], emu->cpu.pc);
     (*opcode_functions[action])(emu, opcode);
+    printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n\n",
+           emu->cpu.regA, emu->cpu.regB, emu->cpu.regC, emu->cpu.regD, emu->cpu.regE, 
+           emu->cpu.regF, emu->cpu.regH, emu->cpu.regL);
     emu->cpu.pc += emu->length_table[action];
 }
 

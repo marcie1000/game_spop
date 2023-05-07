@@ -143,13 +143,13 @@ void prefixed_BIT_7_H(void *arg, UNUSED uint8_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    flag_assign(!(cpu->reg_H & 0x80), &cpu->reg_F, 0x80);
+    flag_assign(!(cpu->regH & 0x80), &cpu->regF, 0x80);
     
     //half carry
-    flag_assign(true, &cpu->reg_F, 0x20);
+    flag_assign(true, &cpu->regF, 0x20);
     
     //negative flag
-    flag_assign(false, &cpu->reg_F, 0x40);
+    flag_assign(false, &cpu->regF, 0x40);
     
     emu->cpu.cycles += 8;
 }
