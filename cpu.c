@@ -36,14 +36,16 @@ uint8_t get_cb_opcode(uint32_t op32)
 
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
-    uint32_t opcode = get_opcode(&emu->cpu);
+    s_cpu *cpu = &emu->cpu;
+    uint32_t opcode = get_opcode(cpu);
     uint8_t action = get_action(opcode);
-    printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%02X\n", opcode, emu->mnemonic_index[action], emu->cpu.pc);
+    printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%02X\n", opcode, emu->mnemonic_index[action], cpu->pc);
     (*opcode_functions[action])(emu, opcode);
-    printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n\n",
-           emu->cpu.regA, emu->cpu.regB, emu->cpu.regC, emu->cpu.regD, emu->cpu.regE, 
-           emu->cpu.regF, emu->cpu.regH, emu->cpu.regL);
-    emu->cpu.pc += emu->length_table[action];
+    printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
+           cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
+    printf("Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n\n",
+           (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
+    cpu->pc += emu->length_table[action];
 }
 
 void initialize_length_table(s_emu *emu)
