@@ -180,7 +180,7 @@ void LD_A_derefDE(void *arg, UNUSED uint32_t op)
     s_cpu *cpu = &emu->cpu;
     
     uint8_t data;
-    if(0 != read_memory(emu, (cpu->regE << 8) + cpu->regD, &data))
+    if(0 != read_memory(emu, (cpu->regD << 8) + cpu->regE, &data))
         return;
     cpu->regA = data;
     cpu->cycles += 8;
@@ -219,7 +219,7 @@ void LD_derefHLplus_A(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    if(0 != write_memory(emu, (cpu->regL << 8) + cpu->regH, cpu->regA))
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regA))
         return;
     uint16_t HL = (cpu->regH << 8) + cpu->regL;
     HL++;
@@ -294,7 +294,7 @@ void LD_derefHLminus_A(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    if(0 != write_memory(emu, (cpu->regL << 8) + cpu->regH, cpu->regA))
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regA))
         return;
     uint16_t HL = (cpu->regH << 8) + cpu->regL;
     HL--;
@@ -399,7 +399,7 @@ void LD_derefHL_A(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
-    if(0 != write_memory(emu, (cpu->regL << 8) + cpu->regH, cpu->regA))
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regA))
         return;
     cpu->cycles += 8;
 }
@@ -639,7 +639,7 @@ void LD_derefa16_A(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint16_t adress = ((op & 0x0000ff00) >> 8) + (op & 0x000000ff);
+    uint16_t adress = ((op & 0x0000ff00) >> 8) + ((op & 0x000000ff) << 8);
     if(0 != write_memory(emu, adress, cpu->regA))
         return;
     

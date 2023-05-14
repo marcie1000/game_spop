@@ -11,7 +11,6 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     s_cpu *cpu = &emu->cpu;
     
     emu->in.quit = SDL_TRUE;
-    printf("adress = 0x%04X\n", adress);
     if(adress < 0x4000)
     {
         fprintf(stderr, "ERROR: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
