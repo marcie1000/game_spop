@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include "emulator.h"
 
+extern int write_memory(s_emu *emu, uint16_t adress, uint8_t data);
+extern int read_memory(s_emu *emu, uint16_t adress, uint8_t *data);
 extern int initialize_cpu(s_cpu *cpu);
-extern uint32_t get_opcode(s_cpu *cpu);
+extern uint32_t get_opcode(s_emu *emu);
 extern uint8_t get_action(uint32_t opcode);
 extern uint8_t get_cb_opcode(uint32_t op32);
 extern void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t));

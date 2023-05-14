@@ -2,13 +2,27 @@
 #define EMULATOR_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <SDL.h>
 
 #define MEM_SIZE (0xFFFF)
 #define START_ADRESS (0x0000)
 #define OPCODE_NB (256)
 #define CB_NB (256)
+#define ROM_BANK_SIZE (0x4000)
+#define VRAM_SIZE (0x2000)
+#define WRAM_SIZE (0x2000)
+#define HRAM_SIZE (0x80)
+#define OAM_SIZE (0xA0)
+#define EXTERNAL_RAM_SIZE (0x2000)
 #define UNUSED __attribute__((unused))
+
+enum flags_masks {
+    ZERO_FMASK = 0x80,
+    NEGATIVE_FMASK = 0x40,
+    HALF_CARRY_FMASK = 0x20,
+    CARRY_FMASK = 0x10
+};
 
 typedef struct s_input{
     SDL_bool key[SDL_NUM_SCANCODES];
@@ -20,12 +34,19 @@ typedef struct s_input{
 } s_input;
 
 typedef struct s_cpu {
-    uint8_t mem[MEM_SIZE];
+    //uint8_t mem[MEM_SIZE];
+    uint8_t ROM_Bank[1][ROM_BANK_SIZE];
+    uint8_t VRAM[VRAM_SIZE];
+    uint8_t WRAM[WRAM_SIZE];
+    uint8_t HRAM[HRAM_SIZE];
+    uint8_t OAM[OAM_SIZE];
+    uint8_t external_RAM[EXTERNAL_RAM_SIZE];
     uint8_t regA; //accumulator
     uint8_t regB, regC, regD, regE, regH, regL; //normal registers
     uint8_t regF; //flags
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
+    bool cartridge;
     size_t cycles; //cycles counter
 } s_cpu;
 

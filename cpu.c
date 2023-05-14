@@ -6,6 +6,130 @@
 #include "opcodes.h"
 #include "prefixed_opcodes.h"
 
+int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
+{
+    s_cpu *cpu = &emu->cpu;
+    
+    emu->in.quit = SDL_TRUE;
+    printf("adress = 0x%04X\n", adress);
+    if(adress < 0x4000)
+    {
+        fprintf(stderr, "ERROR: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
+        return EXIT_FAILURE;
+    }
+    else if(adress < 0x8000)
+    {
+        fprintf(stderr, "ERROR: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n", adress);
+        return EXIT_FAILURE;
+    }
+    //8 KiB External RAM 
+    else if(adress >= 0xA000 && adress <= 0xBFFF)
+    {
+        if(cpu->cartridge)
+            cpu->external_RAM[adress - 0xA000] = data;
+    }
+    //WRAM
+    else if(adress >= 0xC000 && adress <= 0xDFFF)
+    {
+        cpu->WRAM[adress - 0xC000] = data;
+    }
+    //ECHO RAM
+    else if(adress >= 0xE000 && adress <= 0xFDFF)
+    {
+        fprintf(stderr, "WARNING: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
+        cpu->WRAM[adress - 0xE000] = data;
+    }
+    //sprite attribute table (OAM)
+    else if(adress >= 0xFE00 && adress <= 0xFE9F)
+    {
+        cpu->OAM[adress - 0xFE00] = data;
+    }
+    else if(adress >= 0xFEA0 && adress <= 0xFEFF)
+    {
+        fprintf(stderr, "ERROR: attempt to write at adress 0x%04X (prohibited)\n", adress);
+        return EXIT_FAILURE;
+    }
+    else if(adress >= 0xFF00 && adress <= 0xFF7F)
+    {
+        fprintf(stderr, "ERROR: attempt to write in I/O Registers at adress 0x%04X (unimplemented)!\n", adress);
+        return EXIT_FAILURE;
+    }    
+    //HRAM
+    else if(adress >= 0xFF80 && adress <= 0xFFFE)
+    {
+        cpu->HRAM[adress - 0xFF80] = data;
+    }
+    else if(adress == 0xFFFF)
+    {
+        fprintf(stderr, "ERROR: attempt to write in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
+        return EXIT_FAILURE;
+    }
+    
+    emu->in.quit = SDL_FALSE;
+    return EXIT_SUCCESS;
+}
+
+int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
+{
+    s_cpu *cpu = &emu->cpu;
+    
+    emu->in.quit = SDL_TRUE;
+    
+    if(adress < 0x4000)
+    {
+        *data = cpu->ROM_Bank[0][adress];
+    }
+    else if(adress >= 0x4000 && adress < 0x8000)
+    {
+        fprintf(stderr, "ERROR: attempt to read in 16 KiB switchable ROM bank at adress 0x%04X\n", adress);
+        return EXIT_FAILURE;
+    }
+    //8 KiB External RAM 
+    else if(adress >= 0xA000 && adress <= 0xBFFF)
+    {
+        *data = cpu->external_RAM[adress - 0xA000];
+    }
+    //WRAM
+    else if(adress >= 0xC000 && adress <= 0xDFFF)
+    {
+        *data = cpu->WRAM[adress - 0xC000];
+    }
+    //ECHO RAM
+    else if(adress >= 0xE000 && adress <= 0xFDFF)
+    {
+        fprintf(stderr, "WARNING: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
+        *data = cpu->WRAM[adress - 0xE000];
+    }
+    //sprite attribute table (OAM)
+    else if(adress >= 0xFE00 && adress <= 0xFE9F)
+    {
+        *data = cpu->OAM[adress - 0xFE00];
+    }
+    else if(adress >= 0xFEA0 && adress <= 0xFEFF)
+    {
+        fprintf(stderr, "ERROR: attempt to read at adress 0x%04X (prohibited)\n", adress);
+        return EXIT_FAILURE;
+    }
+    else if(adress >= 0xFF00 && adress <= 0xFF7F)
+    {
+        fprintf(stderr, "ERROR: attempt to read in I/O Registers at adress 0x%04X (unimplemented)!\n", adress);
+        return EXIT_FAILURE;
+    }    
+    //HRAM
+    else if(adress >= 0xFF80 && adress <= 0xFFFE)
+    {
+        *data = cpu->HRAM[adress - 0xFF80];
+    }
+    else if(adress == 0xFFFF)
+    {
+        fprintf(stderr, "ERROR: attempt to read in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
+        return EXIT_FAILURE;
+    }
+    
+    emu->in.quit = SDL_FALSE;
+    return EXIT_SUCCESS;
+}
+
 int initialize_cpu(s_cpu *cpu)
 {
     memset(cpu, 0, sizeof(s_cpu));
@@ -13,14 +137,27 @@ int initialize_cpu(s_cpu *cpu)
     return EXIT_SUCCESS;
 }
 
-uint32_t get_opcode(s_cpu *cpu)
+uint32_t get_opcode(s_emu *emu)
 {
-    uint32_t op = 0;
-    op = (cpu->mem[cpu->pc] << 16);
+    s_cpu *cpu = &emu->cpu;
+    uint32_t op;
+    uint8_t tmp;
+    
+    if(0 != read_memory(emu, cpu->pc, &tmp))
+        return 0;
+    op = tmp << 16;
     if(cpu->pc < MEM_SIZE)
-        op += (cpu->mem[cpu->pc + 1] << 8);
+    {
+        if(0 != read_memory(emu, cpu->pc + 1, &tmp))
+            return 0;
+        op += tmp << 8;
+    }
     if(cpu->pc < MEM_SIZE - 1)
-        op += (cpu->mem[cpu->pc + 2]);
+    {
+        if(0 != read_memory(emu, cpu->pc + 2, &tmp))
+            return 0;
+        op += tmp;
+    }
     return op;
 }
 
@@ -37,7 +174,7 @@ uint8_t get_cb_opcode(uint32_t op32)
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
-    uint32_t opcode = get_opcode(cpu);
+    uint32_t opcode = get_opcode(emu);
     uint8_t action = get_action(opcode);
     printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%02X\n", opcode, emu->mnemonic_index[action], cpu->pc);
     (*opcode_functions[action])(emu, opcode);

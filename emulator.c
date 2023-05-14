@@ -342,7 +342,7 @@ int load_boot_rom(s_cpu *cpu)
         return EXIT_FAILURE;
     }
     
-    fread(&cpu->mem[0], sizeof(cpu->mem[0]), 0x100, bootrom);
+    fread(&cpu->ROM_Bank[0][0], sizeof(cpu->ROM_Bank[0][0]), 0x100, bootrom);
     fclose(bootrom);
     
     printf("Boot rom loaded.\n");
