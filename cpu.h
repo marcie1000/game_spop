@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "emulator.h"
 
+extern int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data);
+extern int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data);
 extern int write_memory(s_emu *emu, uint16_t adress, uint8_t data);
 extern int read_memory(s_emu *emu, uint16_t adress, uint8_t *data);
 extern int initialize_cpu(s_cpu *cpu);

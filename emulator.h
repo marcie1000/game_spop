@@ -15,6 +15,8 @@
 #define HRAM_SIZE (0x80)
 #define OAM_SIZE (0xA0)
 #define EXTERNAL_RAM_SIZE (0x2000)
+#define PIX_BY_W (160)
+#define PIX_BY_H (144)
 #define UNUSED __attribute__((unused))
 
 enum flags_masks {
@@ -33,6 +35,11 @@ typedef struct s_input{
     SDL_bool resize;
 } s_input;
 
+//I/O registers
+typedef struct s_io{
+    uint8_t NR11, NR12, NR50, NR51, NR52, BGP;
+}s_io;
+
 typedef struct s_cpu {
     //uint8_t mem[MEM_SIZE];
     uint8_t ROM_Bank[1][ROM_BANK_SIZE];
@@ -40,6 +47,7 @@ typedef struct s_cpu {
     uint8_t WRAM[WRAM_SIZE];
     uint8_t HRAM[HRAM_SIZE];
     uint8_t OAM[OAM_SIZE];
+    s_io io_reg;
     uint8_t external_RAM[EXTERNAL_RAM_SIZE];
     uint8_t regA; //accumulator
     uint8_t regB, regC, regD, regE, regH, regL; //normal registers
@@ -50,8 +58,14 @@ typedef struct s_cpu {
     size_t cycles; //cycles counter
 } s_cpu;
 
+typedef struct s_screen{
+    SDL_Renderer *r;
+    SDL_Window *w;
+    uint32_t pixel_h, pixel_w;
+}s_screen;
 
 typedef struct s_emu{
+    s_screen screen;
     uint8_t length_table[OPCODE_NB];
     char mnemonic_index[OPCODE_NB][15];
     void (*opcode_functions[OPCODE_NB])(void*, uint32_t);
@@ -63,7 +77,7 @@ typedef struct s_emu{
 extern void update_event(s_input *input);
 extern int initialize_SDL(void);
 extern int initialize_emulator(s_emu *emu);
-extern void destroy_emulator(void);
+extern void destroy_emulator(s_emu *emu);
 extern void destroy_SDL(void);
 extern void emulate(s_emu *emu);
 extern int load_boot_rom(s_cpu *cpu);

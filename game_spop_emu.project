@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Project Name="game_spop_emu" Version="11000" InternalType="User templates">
+  <VirtualDirectory Name="misc">
+    <File Name="CMakeLists.txt"/>
+  </VirtualDirectory>
   <VirtualDirectory Name="headers">
+    <File Name="graphics.h"/>
     <File Name="prefixed_opcodes.h"/>
     <File Name="emulator.h"/>
     <File Name="opcodes.h"/>
     <File Name="cpu.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="sources">
+    <File Name="graphics.c"/>
     <File Name="prefixed_opcodes.c"/>
     <File Name="emulator.c"/>
     <File Name="opcodes.c"/>

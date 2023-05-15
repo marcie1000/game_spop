@@ -286,7 +286,8 @@ void LD_L_d8(void *arg, uint32_t op)
 void LD_SP_d16(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
-    emu->cpu.sp = (op & 0x0000ffff);
+    emu->cpu.sp = (op &  0x0000ff00) >> 8;
+    emu->cpu.sp += (op & 0x000000ff) << 8;
     emu->cpu.cycles += 12;
 }
 
@@ -355,7 +356,14 @@ void LD_A_d8(void *arg, uint32_t op)
 //void LD_C_H(void *arg, uint32_t op)
 //void LD_C_L(void *arg, uint32_t op)
 //void LD_C_derefHL(void *arg, uint32_t op)
-//void LD_C_A(void *arg, uint32_t op)
+void LD_C_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regC = cpu->regA;
+    cpu->cycles += 4;
+}
 //void LD_D_B(void *arg, uint32_t op)
 //void LD_D_C(void *arg, uint32_t op)
 //void LD_D_D(void *arg, uint32_t op)

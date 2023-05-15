@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include "emulator.h"
 #include "cpu.h"
+#include "graphics.h"
 
 void update_event(s_input *input)
 {
@@ -66,6 +67,7 @@ int initialize_emulator(s_emu *emu)
     init_opcodes_pointers(emu->opcode_functions);
     init_cb_pointers(emu->cb_functions);
     init_mnemonic_index(emu);
+    initialize_screen(&emu->screen);
     
     if(0 != load_boot_rom(&emu->cpu))
         return EXIT_FAILURE;
@@ -350,8 +352,9 @@ int load_boot_rom(s_cpu *cpu)
     return EXIT_SUCCESS;
 }
 
-void destroy_emulator(void)
+void destroy_emulator(s_emu *emu)
 {
+    destroy_screen(&emu->screen);
     destroy_SDL();
 }
 
@@ -362,20 +365,26 @@ void destroy_SDL(void)
 
 void emulate(s_emu *emu)
 {
-    emu->cpu.cycles = 70224;
+    emu->cpu.cycles = 0;
     
     while(!emu->in.quit)
     {
-        emu->cpu.cycles -= 70224;
-        
         update_event(&emu->in);
+        if(emu->in.resize)
+        {
+            resize_screen(&emu->screen);
+            emu->in.resize = SDL_FALSE;
+        }
+        
+        interpret(emu, emu->opcode_functions);
         
         //one frame takes 70224 instructions
-        while(!emu->in.quit && emu->cpu.cycles < 70224)
-            interpret(emu, emu->opcode_functions);
-        
-        SDL_Delay(16);
-        
+        if(emu->cpu.cycles >= 70224)
+        {
+            SDL_Delay(16);
+            emu->cpu.cycles -= 70224;
+        }
     }
+
 }
 

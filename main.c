@@ -11,12 +11,12 @@ int main(void)
     
     if(0 != initialize_emulator(&emu))
     {
-        destroy_emulator();
+        destroy_emulator(&emu);
         return EXIT_FAILURE;
     }
     
     emulate(&emu);
-    destroy_emulator();
+    destroy_emulator(&emu);
     
     return 0;
 }

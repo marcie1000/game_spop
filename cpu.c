@@ -6,6 +6,72 @@
 #include "opcodes.h"
 #include "prefixed_opcodes.h"
 
+int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
+{
+    s_cpu *cpu = &emu->cpu;
+    
+    switch(adress)
+    {
+        case 0xFF11:
+            cpu->io_reg.NR11 = data;
+            break;
+        case 0xFF12:
+            cpu->io_reg.NR12 = data;
+            break;
+        case 0xFF24:
+            cpu->io_reg.NR50 = data;
+            break;
+        case 0xFF25:
+            cpu->io_reg.NR51 = data;
+            break;
+        case 0xFF26:
+            flag_assign(data, &cpu->io_reg.NR52, 0x80);
+            break;
+        case 0xFF47:
+            cpu->io_reg.BGP = data;
+            break;
+        default:
+            fprintf(stderr, "WARNING: attempt to write I/O register at adress 0x%04X (unimplemented!)\n", adress);
+            return EXIT_FAILURE;
+            break;
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
+{
+    s_cpu *cpu = &emu->cpu;
+    
+    switch(adress)
+    {
+        case 0xFF11:
+            *data = cpu->io_reg.NR11 & 0xC0;
+            break;
+        case 0xFF12:
+            *data = cpu->io_reg.NR12;
+            break;
+        case 0xFF24:
+            *data = cpu->io_reg.NR50;
+            break;
+        case 0xFF25:
+            *data = cpu->io_reg.NR51;
+            break;
+        case 0xFF26:
+            *data = cpu->io_reg.NR52;
+            break;
+        case 0xFF47:
+            *data = cpu->io_reg.BGP;
+            break;
+        default:
+            fprintf(stderr, "WARNING: attempt to read I/O register at adress 0x%04X (unimplemented!)\n", adress);
+            return EXIT_FAILURE;
+            break;
+    }
+    
+    return EXIT_SUCCESS;
+}
+
 int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
@@ -35,8 +101,8 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //ECHO RAM
     else if(adress >= 0xE000 && adress <= 0xFDFF)
     {
-        fprintf(stderr, "WARNING: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
-        cpu->WRAM[adress - 0xE000] = data;
+        fprintf(stderr, "ERROR: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
+        return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
     else if(adress >= 0xFE00 && adress <= 0xFE9F)
@@ -50,8 +116,8 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if(adress >= 0xFF00 && adress <= 0xFF7F)
     {
-        fprintf(stderr, "ERROR: attempt to write in I/O Registers at adress 0x%04X (unimplemented)!\n", adress);
-        return EXIT_FAILURE;
+        if(0 != write_io_registers(emu, adress, data))
+            return EXIT_FAILURE;
     }    
     //HRAM
     else if(adress >= 0xFF80 && adress <= 0xFFFE)
@@ -60,7 +126,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if(adress == 0xFFFF)
     {
-        fprintf(stderr, "ERROR: attempt to write in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
+        fprintf(stderr, "WARNING: attempt to write in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
         return EXIT_FAILURE;
     }
     
@@ -96,8 +162,8 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     //ECHO RAM
     else if(adress >= 0xE000 && adress <= 0xFDFF)
     {
-        fprintf(stderr, "WARNING: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
-        *data = cpu->WRAM[adress - 0xE000];
+        fprintf(stderr, "ERROR: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
+        return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
     else if(adress >= 0xFE00 && adress <= 0xFE9F)
@@ -111,8 +177,8 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if(adress >= 0xFF00 && adress <= 0xFF7F)
     {
-        fprintf(stderr, "ERROR: attempt to read in I/O Registers at adress 0x%04X (unimplemented)!\n", adress);
-        return EXIT_FAILURE;
+        if(0 != read_io_registers(emu, adress, data))
+            return EXIT_FAILURE;
     }    
     //HRAM
     else if(adress >= 0xFF80 && adress <= 0xFFFE)
@@ -121,7 +187,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if(adress == 0xFFFF)
     {
-        fprintf(stderr, "ERROR: attempt to read in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
+        fprintf(stderr, "WARNING: attempt to read in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
         return EXIT_FAILURE;
     }
     
@@ -175,13 +241,17 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     s_cpu *cpu = &emu->cpu;
     uint32_t opcode = get_opcode(emu);
     uint8_t action = get_action(opcode);
-    printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%02X\n", opcode, emu->mnemonic_index[action], cpu->pc);
+    printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%02X, sp = 0x%02X\n", 
+           opcode, emu->mnemonic_index[action], cpu->pc, cpu->sp);
     (*opcode_functions[action])(emu, opcode);
     printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
            cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
     printf("Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n\n",
            (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
     cpu->pc += emu->length_table[action];
+    
+    if(cpu->sp == 0xFEFF)
+        printf("");
 }
 
 void initialize_length_table(s_emu *emu)
@@ -331,7 +401,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x4C] = &LD_C_H;
     //opcode_functions[0x4D] = &LD_C_L;
     //opcode_functions[0x4E] = &LD_C_derefHL;
-    //opcode_functions[0x4F] = &LD_C_A;
+    opcode_functions[0x4F] = &LD_C_A;
     //opcode_functions[0x50] = &LD_D_B;
     //opcode_functions[0x51] = &LD_D_C;
     //opcode_functions[0x52] = &LD_D_D;
