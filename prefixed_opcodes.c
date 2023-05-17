@@ -10,8 +10,9 @@
 void cb_opcode_unimplemented(void *arg, uint8_t op)
 {
     s_emu *emu = arg;
-    fprintf(stderr, "WARNING: 0xCB prefixed instruction 0x%02X unimplemented!\n", op);
-    emu->in.quit = SDL_TRUE;
+    fprintf(stderr, "WARNING: Prefixed instruction %s (0x%02X) unimplemented!\n",
+            emu->prefixed_mnemonic_index[op], op);
+    destroy_emulator(emu, EXIT_FAILURE);
 }
 
 //void prefixed_RLC_B(void *arg, uint8_t op)
@@ -31,7 +32,20 @@ void cb_opcode_unimplemented(void *arg, uint8_t op)
 //void prefixed_RRC_derefHL(void *arg, uint8_t op)
 //void prefixed_RRC_A(void *arg, uint8_t op)
 //void prefixed_RL_B(void *arg, uint8_t op)
-//void prefixed_RL_C(void *arg, uint8_t op)
+void prefixed_RL_C(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newC = cpu->regC;
+    newC <<= 1;
+    flag_assign(cpu->regF & CARRY_FMASK, &newC, 0x01);
+    flag_assign(cpu->regC & 0x80, &cpu->regF, CARRY_FMASK);
+    flag_assign(newC == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK + HALF_CARRY_FMASK);
+    cpu->regC = newC;
+    cpu->cycles += 8;
+}
 //void prefixed_RL_D(void *arg, uint8_t op)
 //void prefixed_RL_E(void *arg, uint8_t op)
 //void prefixed_RL_H(void *arg, uint8_t op)

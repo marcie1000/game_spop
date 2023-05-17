@@ -1,5 +1,7 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <SDL.h>
 #include "emulator.h"
 #include "cpu.h"
@@ -56,8 +58,10 @@ int initialize_SDL(void)
     return EXIT_SUCCESS;
 }
 
-int initialize_emulator(s_emu *emu)
+int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename)
 {
+    if(0 != initialize_screen(&emu->screen))
+        return EXIT_FAILURE;
     if(0 != initialize_cpu(&emu->cpu))
         return EXIT_FAILURE;
     initialize_length_table(emu);
@@ -67,12 +71,278 @@ int initialize_emulator(s_emu *emu)
     init_opcodes_pointers(emu->opcode_functions);
     init_cb_pointers(emu->cb_functions);
     init_mnemonic_index(emu);
-    initialize_screen(&emu->screen);
+    init_prefix_mnemonic_index(emu);
+    
+    if(rom_argument)
+    {
+        if(0 != load_rom(&emu->cpu, rom_filename))
+            return EXIT_FAILURE;
+    }
     
     if(0 != load_boot_rom(&emu->cpu))
         return EXIT_FAILURE;
     
     return EXIT_SUCCESS;
+}
+
+void init_prefix_mnemonic_index(s_emu *emu)
+{
+    snprintf(emu->prefixed_mnemonic_index[0x00], 15, "RLC B");
+    snprintf(emu->prefixed_mnemonic_index[0x01], 15, "RLC C");
+    snprintf(emu->prefixed_mnemonic_index[0x02], 15, "RLC D");
+    snprintf(emu->prefixed_mnemonic_index[0x03], 15, "RLC E");
+    snprintf(emu->prefixed_mnemonic_index[0x04], 15, "RLC H");
+    snprintf(emu->prefixed_mnemonic_index[0x05], 15, "RLC L");
+    snprintf(emu->prefixed_mnemonic_index[0x06], 15, "RLC (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x07], 15, "RLC A");
+    snprintf(emu->prefixed_mnemonic_index[0x08], 15, "RRC B");
+    snprintf(emu->prefixed_mnemonic_index[0x09], 15, "RRC C");
+    snprintf(emu->prefixed_mnemonic_index[0x0A], 15, "RRC D");
+    snprintf(emu->prefixed_mnemonic_index[0x0B], 15, "RRC E");
+    snprintf(emu->prefixed_mnemonic_index[0x0C], 15, "RRC H");
+    snprintf(emu->prefixed_mnemonic_index[0x0D], 15, "RRC L");
+    snprintf(emu->prefixed_mnemonic_index[0x0E], 15, "RRC (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x0F], 15, "RRC A");
+    snprintf(emu->prefixed_mnemonic_index[0x10], 15, "RL B");
+    snprintf(emu->prefixed_mnemonic_index[0x11], 15, "RL C");
+    snprintf(emu->prefixed_mnemonic_index[0x12], 15, "RL D");
+    snprintf(emu->prefixed_mnemonic_index[0x13], 15, "RL E");
+    snprintf(emu->prefixed_mnemonic_index[0x14], 15, "RL H");
+    snprintf(emu->prefixed_mnemonic_index[0x15], 15, "RL L");
+    snprintf(emu->prefixed_mnemonic_index[0x16], 15, "RL (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x17], 15, "RL A");
+    snprintf(emu->prefixed_mnemonic_index[0x18], 15, "RR B");
+    snprintf(emu->prefixed_mnemonic_index[0x19], 15, "RR C");
+    snprintf(emu->prefixed_mnemonic_index[0x1A], 15, "RR D");
+    snprintf(emu->prefixed_mnemonic_index[0x1B], 15, "RR E");
+    snprintf(emu->prefixed_mnemonic_index[0x1C], 15, "RR H");
+    snprintf(emu->prefixed_mnemonic_index[0x1D], 15, "RR L");
+    snprintf(emu->prefixed_mnemonic_index[0x1E], 15, "RR (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x1F], 15, "RR A");
+    snprintf(emu->prefixed_mnemonic_index[0x20], 15, "SLA B");
+    snprintf(emu->prefixed_mnemonic_index[0x21], 15, "SLA C");
+    snprintf(emu->prefixed_mnemonic_index[0x22], 15, "SLA D");
+    snprintf(emu->prefixed_mnemonic_index[0x23], 15, "SLA E");
+    snprintf(emu->prefixed_mnemonic_index[0x24], 15, "SLA H");
+    snprintf(emu->prefixed_mnemonic_index[0x25], 15, "SLA L");
+    snprintf(emu->prefixed_mnemonic_index[0x26], 15, "SLA (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x27], 15, "SLA A");
+    snprintf(emu->prefixed_mnemonic_index[0x28], 15, "SRA B");
+    snprintf(emu->prefixed_mnemonic_index[0x29], 15, "SRA C");
+    snprintf(emu->prefixed_mnemonic_index[0x2A], 15, "SRA D");
+    snprintf(emu->prefixed_mnemonic_index[0x2B], 15, "SRA E");
+    snprintf(emu->prefixed_mnemonic_index[0x2C], 15, "SRA H");
+    snprintf(emu->prefixed_mnemonic_index[0x2D], 15, "SRA L");
+    snprintf(emu->prefixed_mnemonic_index[0x2E], 15, "SRA (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x2F], 15, "SRA A");
+    snprintf(emu->prefixed_mnemonic_index[0x30], 15, "SWAP B");
+    snprintf(emu->prefixed_mnemonic_index[0x31], 15, "SWAP C");
+    snprintf(emu->prefixed_mnemonic_index[0x32], 15, "SWAP D");
+    snprintf(emu->prefixed_mnemonic_index[0x33], 15, "SWAP E");
+    snprintf(emu->prefixed_mnemonic_index[0x34], 15, "SWAP H");
+    snprintf(emu->prefixed_mnemonic_index[0x35], 15, "SWAP L");
+    snprintf(emu->prefixed_mnemonic_index[0x36], 15, "SWAP (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x37], 15, "SWAP A");
+    snprintf(emu->prefixed_mnemonic_index[0x38], 15, "SRL B");
+    snprintf(emu->prefixed_mnemonic_index[0x39], 15, "SRL C");
+    snprintf(emu->prefixed_mnemonic_index[0x3A], 15, "SRL D");
+    snprintf(emu->prefixed_mnemonic_index[0x3B], 15, "SRL E");
+    snprintf(emu->prefixed_mnemonic_index[0x3C], 15, "SRL H");
+    snprintf(emu->prefixed_mnemonic_index[0x3D], 15, "SRL L");
+    snprintf(emu->prefixed_mnemonic_index[0x3E], 15, "SRL (HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x3F], 15, "SRL A");
+    snprintf(emu->prefixed_mnemonic_index[0x40], 15, "BIT 0,B");
+    snprintf(emu->prefixed_mnemonic_index[0x41], 15, "BIT 0,C");
+    snprintf(emu->prefixed_mnemonic_index[0x42], 15, "BIT 0,D");
+    snprintf(emu->prefixed_mnemonic_index[0x43], 15, "BIT 0,E");
+    snprintf(emu->prefixed_mnemonic_index[0x44], 15, "BIT 0,H");
+    snprintf(emu->prefixed_mnemonic_index[0x45], 15, "BIT 0,L");
+    snprintf(emu->prefixed_mnemonic_index[0x46], 15, "BIT 0,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x47], 15, "BIT 0,A");
+    snprintf(emu->prefixed_mnemonic_index[0x48], 15, "BIT 1,B");
+    snprintf(emu->prefixed_mnemonic_index[0x49], 15, "BIT 1,C");
+    snprintf(emu->prefixed_mnemonic_index[0x4A], 15, "BIT 1,D");
+    snprintf(emu->prefixed_mnemonic_index[0x4B], 15, "BIT 1,E");
+    snprintf(emu->prefixed_mnemonic_index[0x4C], 15, "BIT 1,H");
+    snprintf(emu->prefixed_mnemonic_index[0x4D], 15, "BIT 1,L");
+    snprintf(emu->prefixed_mnemonic_index[0x4E], 15, "BIT 1,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x4F], 15, "BIT 1,A");
+    snprintf(emu->prefixed_mnemonic_index[0x50], 15, "BIT 2,B");
+    snprintf(emu->prefixed_mnemonic_index[0x51], 15, "BIT 2,C");
+    snprintf(emu->prefixed_mnemonic_index[0x52], 15, "BIT 2,D");
+    snprintf(emu->prefixed_mnemonic_index[0x53], 15, "BIT 2,E");
+    snprintf(emu->prefixed_mnemonic_index[0x54], 15, "BIT 2,H");
+    snprintf(emu->prefixed_mnemonic_index[0x55], 15, "BIT 2,L");
+    snprintf(emu->prefixed_mnemonic_index[0x56], 15, "BIT 2,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x57], 15, "BIT 2,A");
+    snprintf(emu->prefixed_mnemonic_index[0x58], 15, "BIT 3,B");
+    snprintf(emu->prefixed_mnemonic_index[0x59], 15, "BIT 3,C");
+    snprintf(emu->prefixed_mnemonic_index[0x5A], 15, "BIT 3,D");
+    snprintf(emu->prefixed_mnemonic_index[0x5B], 15, "BIT 3,E");
+    snprintf(emu->prefixed_mnemonic_index[0x5C], 15, "BIT 3,H");
+    snprintf(emu->prefixed_mnemonic_index[0x5D], 15, "BIT 3,L");
+    snprintf(emu->prefixed_mnemonic_index[0x5E], 15, "BIT 3,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x5F], 15, "BIT 3,A");
+    snprintf(emu->prefixed_mnemonic_index[0x60], 15, "BIT 4,B");
+    snprintf(emu->prefixed_mnemonic_index[0x61], 15, "BIT 4,C");
+    snprintf(emu->prefixed_mnemonic_index[0x62], 15, "BIT 4,D");
+    snprintf(emu->prefixed_mnemonic_index[0x63], 15, "BIT 4,E");
+    snprintf(emu->prefixed_mnemonic_index[0x64], 15, "BIT 4,H");
+    snprintf(emu->prefixed_mnemonic_index[0x65], 15, "BIT 4,L");
+    snprintf(emu->prefixed_mnemonic_index[0x66], 15, "BIT 4,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x67], 15, "BIT 4,A");
+    snprintf(emu->prefixed_mnemonic_index[0x68], 15, "BIT 5,B");
+    snprintf(emu->prefixed_mnemonic_index[0x69], 15, "BIT 5,C");
+    snprintf(emu->prefixed_mnemonic_index[0x6A], 15, "BIT 5,D");
+    snprintf(emu->prefixed_mnemonic_index[0x6B], 15, "BIT 5,E");
+    snprintf(emu->prefixed_mnemonic_index[0x6C], 15, "BIT 5,H");
+    snprintf(emu->prefixed_mnemonic_index[0x6D], 15, "BIT 5,L");
+    snprintf(emu->prefixed_mnemonic_index[0x6E], 15, "BIT 5,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x6F], 15, "BIT 5,A");
+    snprintf(emu->prefixed_mnemonic_index[0x70], 15, "BIT 6,B");
+    snprintf(emu->prefixed_mnemonic_index[0x71], 15, "BIT 6,C");
+    snprintf(emu->prefixed_mnemonic_index[0x72], 15, "BIT 6,D");
+    snprintf(emu->prefixed_mnemonic_index[0x73], 15, "BIT 6,E");
+    snprintf(emu->prefixed_mnemonic_index[0x74], 15, "BIT 6,H");
+    snprintf(emu->prefixed_mnemonic_index[0x75], 15, "BIT 6,L");
+    snprintf(emu->prefixed_mnemonic_index[0x76], 15, "BIT 6,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x77], 15, "BIT 6,A");
+    snprintf(emu->prefixed_mnemonic_index[0x78], 15, "BIT 7,B");
+    snprintf(emu->prefixed_mnemonic_index[0x79], 15, "BIT 7,C");
+    snprintf(emu->prefixed_mnemonic_index[0x7A], 15, "BIT 7,D");
+    snprintf(emu->prefixed_mnemonic_index[0x7B], 15, "BIT 7,E");
+    snprintf(emu->prefixed_mnemonic_index[0x7C], 15, "BIT 7,H");
+    snprintf(emu->prefixed_mnemonic_index[0x7D], 15, "BIT 7,L");
+    snprintf(emu->prefixed_mnemonic_index[0x7E], 15, "BIT 7,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x7F], 15, "BIT 7,A");
+    snprintf(emu->prefixed_mnemonic_index[0x80], 15, "RES 0,B");
+    snprintf(emu->prefixed_mnemonic_index[0x81], 15, "RES 0,C");
+    snprintf(emu->prefixed_mnemonic_index[0x82], 15, "RES 0,D");
+    snprintf(emu->prefixed_mnemonic_index[0x83], 15, "RES 0,E");
+    snprintf(emu->prefixed_mnemonic_index[0x84], 15, "RES 0,H");
+    snprintf(emu->prefixed_mnemonic_index[0x85], 15, "RES 0,L");
+    snprintf(emu->prefixed_mnemonic_index[0x86], 15, "RES 0,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x87], 15, "RES 0,A");
+    snprintf(emu->prefixed_mnemonic_index[0x88], 15, "RES 1,B");
+    snprintf(emu->prefixed_mnemonic_index[0x89], 15, "RES 1,C");
+    snprintf(emu->prefixed_mnemonic_index[0x8A], 15, "RES 1,D");
+    snprintf(emu->prefixed_mnemonic_index[0x8B], 15, "RES 1,E");
+    snprintf(emu->prefixed_mnemonic_index[0x8C], 15, "RES 1,H");
+    snprintf(emu->prefixed_mnemonic_index[0x8D], 15, "RES 1,L");
+    snprintf(emu->prefixed_mnemonic_index[0x8E], 15, "RES 1,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x8F], 15, "RES 1,A");
+    snprintf(emu->prefixed_mnemonic_index[0x90], 15, "RES 2,B");
+    snprintf(emu->prefixed_mnemonic_index[0x91], 15, "RES 2,C");
+    snprintf(emu->prefixed_mnemonic_index[0x92], 15, "RES 2,D");
+    snprintf(emu->prefixed_mnemonic_index[0x93], 15, "RES 2,E");
+    snprintf(emu->prefixed_mnemonic_index[0x94], 15, "RES 2,H");
+    snprintf(emu->prefixed_mnemonic_index[0x95], 15, "RES 2,L");
+    snprintf(emu->prefixed_mnemonic_index[0x96], 15, "RES 2,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x97], 15, "RES 2,A");
+    snprintf(emu->prefixed_mnemonic_index[0x98], 15, "RES 3,B");
+    snprintf(emu->prefixed_mnemonic_index[0x99], 15, "RES 3,C");
+    snprintf(emu->prefixed_mnemonic_index[0x9A], 15, "RES 3,D");
+    snprintf(emu->prefixed_mnemonic_index[0x9B], 15, "RES 3,E");
+    snprintf(emu->prefixed_mnemonic_index[0x9C], 15, "RES 3,H");
+    snprintf(emu->prefixed_mnemonic_index[0x9D], 15, "RES 3,L");
+    snprintf(emu->prefixed_mnemonic_index[0x9E], 15, "RES 3,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0x9F], 15, "RES 3,A");
+    snprintf(emu->prefixed_mnemonic_index[0xA0], 15, "RES 4,B");
+    snprintf(emu->prefixed_mnemonic_index[0xA1], 15, "RES 4,C");
+    snprintf(emu->prefixed_mnemonic_index[0xA2], 15, "RES 4,D");
+    snprintf(emu->prefixed_mnemonic_index[0xA3], 15, "RES 4,E");
+    snprintf(emu->prefixed_mnemonic_index[0xA4], 15, "RES 4,H");
+    snprintf(emu->prefixed_mnemonic_index[0xA5], 15, "RES 4,L");
+    snprintf(emu->prefixed_mnemonic_index[0xA6], 15, "RES 4,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xA7], 15, "RES 4,A");
+    snprintf(emu->prefixed_mnemonic_index[0xA8], 15, "RES 5,B");
+    snprintf(emu->prefixed_mnemonic_index[0xA9], 15, "RES 5,C");
+    snprintf(emu->prefixed_mnemonic_index[0xAA], 15, "RES 5,D");
+    snprintf(emu->prefixed_mnemonic_index[0xAB], 15, "RES 5,E");
+    snprintf(emu->prefixed_mnemonic_index[0xAC], 15, "RES 5,H");
+    snprintf(emu->prefixed_mnemonic_index[0xAD], 15, "RES 5,L");
+    snprintf(emu->prefixed_mnemonic_index[0xAE], 15, "RES 5,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xAF], 15, "RES 5,A");
+    snprintf(emu->prefixed_mnemonic_index[0xB0], 15, "RES 6,B");
+    snprintf(emu->prefixed_mnemonic_index[0xB1], 15, "RES 6,C");
+    snprintf(emu->prefixed_mnemonic_index[0xB2], 15, "RES 6,D");
+    snprintf(emu->prefixed_mnemonic_index[0xB3], 15, "RES 6,E");
+    snprintf(emu->prefixed_mnemonic_index[0xB4], 15, "RES 6,H");
+    snprintf(emu->prefixed_mnemonic_index[0xB5], 15, "RES 6,L");
+    snprintf(emu->prefixed_mnemonic_index[0xB6], 15, "RES 6,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xB7], 15, "RES 6,A");
+    snprintf(emu->prefixed_mnemonic_index[0xB8], 15, "RES 7,B");
+    snprintf(emu->prefixed_mnemonic_index[0xB9], 15, "RES 7,C");
+    snprintf(emu->prefixed_mnemonic_index[0xBA], 15, "RES 7,D");
+    snprintf(emu->prefixed_mnemonic_index[0xBB], 15, "RES 7,E");
+    snprintf(emu->prefixed_mnemonic_index[0xBC], 15, "RES 7,H");
+    snprintf(emu->prefixed_mnemonic_index[0xBD], 15, "RES 7,L");
+    snprintf(emu->prefixed_mnemonic_index[0xBE], 15, "RES 7,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xBF], 15, "RES 7,A");
+    snprintf(emu->prefixed_mnemonic_index[0xC0], 15, "SET 0,B");
+    snprintf(emu->prefixed_mnemonic_index[0xC1], 15, "SET 0,C");
+    snprintf(emu->prefixed_mnemonic_index[0xC2], 15, "SET 0,D");
+    snprintf(emu->prefixed_mnemonic_index[0xC3], 15, "SET 0,E");
+    snprintf(emu->prefixed_mnemonic_index[0xC4], 15, "SET 0,H");
+    snprintf(emu->prefixed_mnemonic_index[0xC5], 15, "SET 0,L");
+    snprintf(emu->prefixed_mnemonic_index[0xC6], 15, "SET 0,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xC7], 15, "SET 0,A");
+    snprintf(emu->prefixed_mnemonic_index[0xC8], 15, "SET 1,B");
+    snprintf(emu->prefixed_mnemonic_index[0xC9], 15, "SET 1,C");
+    snprintf(emu->prefixed_mnemonic_index[0xCA], 15, "SET 1,D");
+    snprintf(emu->prefixed_mnemonic_index[0xCB], 15, "SET 1,E");
+    snprintf(emu->prefixed_mnemonic_index[0xCC], 15, "SET 1,H");
+    snprintf(emu->prefixed_mnemonic_index[0xCD], 15, "SET 1,L");
+    snprintf(emu->prefixed_mnemonic_index[0xCE], 15, "SET 1,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xCF], 15, "SET 1,A");
+    snprintf(emu->prefixed_mnemonic_index[0xD0], 15, "SET 2,B");
+    snprintf(emu->prefixed_mnemonic_index[0xD1], 15, "SET 2,C");
+    snprintf(emu->prefixed_mnemonic_index[0xD2], 15, "SET 2,D");
+    snprintf(emu->prefixed_mnemonic_index[0xD3], 15, "SET 2,E");
+    snprintf(emu->prefixed_mnemonic_index[0xD4], 15, "SET 2,H");
+    snprintf(emu->prefixed_mnemonic_index[0xD5], 15, "SET 2,L");
+    snprintf(emu->prefixed_mnemonic_index[0xD6], 15, "SET 2,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xD7], 15, "SET 2,A");
+    snprintf(emu->prefixed_mnemonic_index[0xD8], 15, "SET 3,B");
+    snprintf(emu->prefixed_mnemonic_index[0xD9], 15, "SET 3,C");
+    snprintf(emu->prefixed_mnemonic_index[0xDA], 15, "SET 3,D");
+    snprintf(emu->prefixed_mnemonic_index[0xDB], 15, "SET 3,E");
+    snprintf(emu->prefixed_mnemonic_index[0xDC], 15, "SET 3,H");
+    snprintf(emu->prefixed_mnemonic_index[0xDD], 15, "SET 3,L");
+    snprintf(emu->prefixed_mnemonic_index[0xDE], 15, "SET 3,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xDF], 15, "SET 3,A");
+    snprintf(emu->prefixed_mnemonic_index[0xE0], 15, "SET 4,B");
+    snprintf(emu->prefixed_mnemonic_index[0xE1], 15, "SET 4,C");
+    snprintf(emu->prefixed_mnemonic_index[0xE2], 15, "SET 4,D");
+    snprintf(emu->prefixed_mnemonic_index[0xE3], 15, "SET 4,E");
+    snprintf(emu->prefixed_mnemonic_index[0xE4], 15, "SET 4,H");
+    snprintf(emu->prefixed_mnemonic_index[0xE5], 15, "SET 4,L");
+    snprintf(emu->prefixed_mnemonic_index[0xE6], 15, "SET 4,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xE7], 15, "SET 4,A");
+    snprintf(emu->prefixed_mnemonic_index[0xE8], 15, "SET 5,B");
+    snprintf(emu->prefixed_mnemonic_index[0xE9], 15, "SET 5,C");
+    snprintf(emu->prefixed_mnemonic_index[0xEA], 15, "SET 5,D");
+    snprintf(emu->prefixed_mnemonic_index[0xEB], 15, "SET 5,E");
+    snprintf(emu->prefixed_mnemonic_index[0xEC], 15, "SET 5,H");
+    snprintf(emu->prefixed_mnemonic_index[0xED], 15, "SET 5,L");
+    snprintf(emu->prefixed_mnemonic_index[0xEE], 15, "SET 5,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xEF], 15, "SET 5,A");
+    snprintf(emu->prefixed_mnemonic_index[0xF0], 15, "SET 6,B");
+    snprintf(emu->prefixed_mnemonic_index[0xF1], 15, "SET 6,C");
+    snprintf(emu->prefixed_mnemonic_index[0xF2], 15, "SET 6,D");
+    snprintf(emu->prefixed_mnemonic_index[0xF3], 15, "SET 6,E");
+    snprintf(emu->prefixed_mnemonic_index[0xF4], 15, "SET 6,H");
+    snprintf(emu->prefixed_mnemonic_index[0xF5], 15, "SET 6,L");
+    snprintf(emu->prefixed_mnemonic_index[0xF6], 15, "SET 6,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xF7], 15, "SET 6,A");
+    snprintf(emu->prefixed_mnemonic_index[0xF8], 15, "SET 7,B");
+    snprintf(emu->prefixed_mnemonic_index[0xF9], 15, "SET 7,C");
+    snprintf(emu->prefixed_mnemonic_index[0xFA], 15, "SET 7,D");
+    snprintf(emu->prefixed_mnemonic_index[0xFB], 15, "SET 7,E");
+    snprintf(emu->prefixed_mnemonic_index[0xFC], 15, "SET 7,H");
+    snprintf(emu->prefixed_mnemonic_index[0xFD], 15, "SET 7,L");
+    snprintf(emu->prefixed_mnemonic_index[0xFE], 15, "SET 7,(HL)");
+    snprintf(emu->prefixed_mnemonic_index[0xFF], 15, "SET 7,A");
 }
 
 void init_mnemonic_index(s_emu *emu)
@@ -352,10 +622,30 @@ int load_boot_rom(s_cpu *cpu)
     return EXIT_SUCCESS;
 }
 
-void destroy_emulator(s_emu *emu)
+int load_rom(s_cpu *cpu, char *filename)
+{
+    FILE *rom = fopen(filename, "rb");
+    if(NULL == rom)
+    {
+        fprintf(stderr, "ERROR: cannot open '%s': %s\n", filename, strerror(errno));
+        return EXIT_FAILURE;
+    }
+    
+    fread(&cpu->ROM_Bank[0][0], sizeof(cpu->ROM_Bank[0][0]), ROM_BANK_SIZE, rom);
+    memcpy(cpu->ROM_Bank_0_tmp, cpu->ROM_Bank[0], sizeof(cpu->ROM_Bank[0]));
+    fread(&cpu->ROM_Bank[1][0], sizeof(cpu->ROM_Bank[1][0]), ROM_BANK_SIZE, rom);
+    fclose(rom);
+    
+    printf("Rom loaded.\n");
+    
+    return EXIT_SUCCESS;
+}
+
+void destroy_emulator(s_emu *emu, int status)
 {
     destroy_screen(&emu->screen);
     destroy_SDL();
+    exit(status);
 }
 
 void destroy_SDL(void)
@@ -365,7 +655,10 @@ void destroy_SDL(void)
 
 void emulate(s_emu *emu)
 {
-    emu->cpu.cycles = 0;
+    s_cpu *cpu = &emu->cpu;
+    s_screen *screen = &emu->screen;
+    cpu->cycles = 0;
+    emu->frame_timer = SDL_GetTicks64();
     
     while(!emu->in.quit)
     {
@@ -377,14 +670,35 @@ void emulate(s_emu *emu)
         }
         
         interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+
         
-        //one frame takes 70224 instructions
-        if(emu->cpu.cycles >= 70224)
+        //one horizontal line takes 456 cycles
+        if(cpu->cycles >= 456)
         {
-            SDL_Delay(16);
-            emu->cpu.cycles -= 70224;
+            cpu->io_reg.LY++;
+            cpu->cycles -= 456;
+//            if(0 != draw_scanline(emu))
+//                destroy_emulator(emu, EXIT_FAILURE);
+        }
+        
+        //printf("cpu->cycles = %u, LY = %u\n", cpu->cycles, cpu->io_reg.LY);
+        if(cpu->io_reg.LY >= 154)
+        {
+            Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
+            if(elapsed <= 16)
+                SDL_Delay(16 - elapsed);
+            SDL_UnlockTexture(screen->scr);
+            SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
+            SDL_RenderPresent(screen->r);
+            if(0 != lockscreen(screen))
+                destroy_emulator(emu, EXIT_FAILURE);
+            emu->frame_timer = SDL_GetTicks64();
+            cpu->io_reg.LY = 0;
         }
     }
-
 }
 

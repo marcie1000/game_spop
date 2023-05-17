@@ -5,18 +5,23 @@
 
 #include "emulator.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
     s_emu emu;
+    bool rom_argument = true;
+    char filename[255] = "roms/Tetris (JUE) (V1.0) [!].gb";
     
-    if(0 != initialize_emulator(&emu))
+    if(argc > 1)
     {
-        destroy_emulator(&emu);
-        return EXIT_FAILURE;
+        rom_argument = true;
+        snprintf(filename, 255, "%s", argv[1]);
     }
     
+    if(0 != initialize_emulator(&emu, rom_argument, filename))
+        destroy_emulator(&emu, EXIT_FAILURE);
+    
     emulate(&emu);
-    destroy_emulator(&emu);
+    destroy_emulator(&emu, EXIT_SUCCESS);
     
     return 0;
 }
