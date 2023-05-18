@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <SDL.h>
 #include "cpu.h"
 #include "emulator.h"
 #include "opcodes.h"
@@ -46,8 +47,13 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF47:
             cpu->io_reg.BGP = data;
             break;
+        case 0xFF50:
+            cpu->io_reg.BANK = data;
+            memcpy(cpu->ROM_Bank[0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
+            break;
         default:
             fprintf(stderr, "WARNING: attempt to write I/O register at adress 0x%04X (unimplemented!)\n", adress);
+            SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
     }
@@ -97,6 +103,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             break;
         default:
             fprintf(stderr, "WARNING: attempt to read I/O register at adress 0x%04X (unimplemented!)\n", adress);
+            SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
     }
@@ -121,6 +128,10 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //VRAM
     else if(adress >= 0x8000 && adress <= 0x9FFF)
     {
+//        if(adress <= 0x8fff && data != 0)
+//        {
+//            
+//        }
         cpu->VRAM[adress - 0x8000] = data;
     }
     //8 KiB External RAM 
@@ -416,7 +427,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x31] = &LD_SP_d16;
     opcode_functions[0x32] = &LD_derefHLminus_A;
     //opcode_functions[0x33] = &INC_SP;
-    //opcode_functions[0x34] = &INC_derefHL;
+    opcode_functions[0x34] = &INC_derefHL;
     //opcode_functions[0x35] = &DEC_derefHL;
     //opcode_functions[0x36] = &LD_derefHL_d8;
     //opcode_functions[0x37] = &SCF;
@@ -559,7 +570,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0xC0] = &RET_NZ;
     opcode_functions[0xC1] = &POP_BC;
     //opcode_functions[0xC2] = &JP_NZ_a16;
-    //opcode_functions[0xC3] = &JP_a16;
+    opcode_functions[0xC3] = &JP_a16;
     //opcode_functions[0xC4] = &CALL_NZ_a16;
     opcode_functions[0xC5] = &PUSH_BC;
     //opcode_functions[0xC6] = &ADD_A_d8;

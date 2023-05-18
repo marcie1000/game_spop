@@ -58,7 +58,7 @@ int initialize_SDL(void)
     return EXIT_SUCCESS;
 }
 
-int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename)
+int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename, bool bootrom)
 {
     if(0 != initialize_screen(&emu->screen))
         return EXIT_FAILURE;
@@ -73,14 +73,14 @@ int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename)
     init_mnemonic_index(emu);
     init_prefix_mnemonic_index(emu);
     
-    if(rom_argument)
+    if(0 != load_rom(&emu->cpu, rom_argument, rom_filename))
+        return EXIT_FAILURE;
+    
+    if(bootrom)
     {
-        if(0 != load_rom(&emu->cpu, rom_filename))
+        if(0 != load_boot_rom(&emu->cpu))
             return EXIT_FAILURE;
     }
-    
-    if(0 != load_boot_rom(&emu->cpu))
-        return EXIT_FAILURE;
     
     return EXIT_SUCCESS;
 }
@@ -622,8 +622,14 @@ int load_boot_rom(s_cpu *cpu)
     return EXIT_SUCCESS;
 }
 
-int load_rom(s_cpu *cpu, char *filename)
+int load_rom(s_cpu *cpu, bool rom_arg, char *filename)
 {
+    if(!rom_arg)
+    {
+        memset(cpu->ROM_Bank, 0xFF, sizeof(cpu->ROM_Bank));
+        return EXIT_SUCCESS;
+    }
+    
     FILE *rom = fopen(filename, "rb");
     if(NULL == rom)
     {
@@ -653,12 +659,75 @@ void destroy_SDL(void)
     SDL_Quit();
 }
 
-void emulate(s_emu *emu)
+void draw_scanline_if_needed(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    //one horizontal line takes 456 cycles
+    if(cpu->cycles >= 456)
+    {
+        cpu->io_reg.LY++;
+        cpu->cycles -= 456;
+        if(0 != draw_scanline(emu))
+            destroy_emulator(emu, EXIT_FAILURE);
+    }
+}
+
+void render_if_needed(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_screen *screen = &emu->screen;
+    
+    if(cpu->io_reg.LY >= 154)
+    {
+        Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
+        if(elapsed <= 16)
+            SDL_Delay(16 - elapsed);
+        SDL_UnlockTexture(screen->scr);
+        SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
+        SDL_RenderPresent(screen->r);
+        if(0 != lockscreen(screen))
+            destroy_emulator(emu, EXIT_FAILURE);
+        if(elapsed > 16)
+            printf("elapsed = %lu\n", elapsed);
+        emu->frame_timer = SDL_GetTicks64();
+        cpu->io_reg.LY = 0;
+    }
+}
+
+void bypass_bootrom(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->pc = 0x100;
+    cpu->regA = 0x01;
+    cpu->regF = 0x80;
+    cpu->regC = 0x13;
+    cpu->regE = 0xD8;
+    cpu->regH = 0x01;
+    cpu->regL = 0x4D;
+    cpu->sp = 0xFFFE;
+    
+    cpu->io_reg.SCX = 0;
+    cpu->io_reg.SCY = 0;
+    cpu->io_reg.LCDC = 0x91;
+    cpu->io_reg.NR11 = 0xbf;
+    cpu->io_reg.NR14 = 0xbf;
+    cpu->io_reg.NR52 = 0xf1;
+    cpu->io_reg.NR12 = 0xf3;
+    cpu->io_reg.NR13 = 0xff;
+    cpu->io_reg.NR50 = 0x77;
+    cpu->io_reg.NR51 = 0xf3;
+    cpu->io_reg.BGP = 0xfc;    
+}
+
+void emulate(s_emu *emu, bool bootrom)
+{
+    s_cpu *cpu = &emu->cpu;
     cpu->cycles = 0;
     emu->frame_timer = SDL_GetTicks64();
+    
+    if(!bootrom)
+        bypass_bootrom(emu);
     
     while(!emu->in.quit)
     {
@@ -674,31 +743,19 @@ void emulate(s_emu *emu)
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
+        
+        draw_scanline_if_needed(emu);
+        
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        
+        draw_scanline_if_needed(emu);
+        
+        render_if_needed(emu);
 
-        
-        //one horizontal line takes 456 cycles
-        if(cpu->cycles >= 456)
-        {
-            cpu->io_reg.LY++;
-            cpu->cycles -= 456;
-//            if(0 != draw_scanline(emu))
-//                destroy_emulator(emu, EXIT_FAILURE);
-        }
-        
-        //printf("cpu->cycles = %u, LY = %u\n", cpu->cycles, cpu->io_reg.LY);
-        if(cpu->io_reg.LY >= 154)
-        {
-            Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-            if(elapsed <= 16)
-                SDL_Delay(16 - elapsed);
-            SDL_UnlockTexture(screen->scr);
-            SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
-            SDL_RenderPresent(screen->r);
-            if(0 != lockscreen(screen))
-                destroy_emulator(emu, EXIT_FAILURE);
-            emu->frame_timer = SDL_GetTicks64();
-            cpu->io_reg.LY = 0;
-        }
     }
 }
 

@@ -388,7 +388,25 @@ void LD_derefHLminus_A(void *arg, UNUSED uint32_t op)
 }
 
 //void INC_SP(void *arg, uint32_t op)
-//void INC_derefHL(void *arg, uint32_t op)
+void INC_derefHL(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t data;
+    if(0 != read_memory(emu, (cpu->regH << 8) + cpu->regL, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    uint8_t data4 = data & 0x0F;
+    flag_assign(data4 + 1 > 0x0F, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
+    data++;
+    flag_assign(data == 0, &cpu->regF, ZERO_FMASK);
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, data))
+        destroy_emulator(emu, EXIT_FAILURE);
+        
+    cpu->cycles += 12;
+    
+}
 //void DEC_derefHL(void *arg, uint32_t op)
 //void LD_derefHL_d8(void *arg, uint32_t op)
 //void SCF(void *arg, uint32_t op)
@@ -705,7 +723,14 @@ void POP_BC(void *arg, UNUSED uint32_t op)
     cpu->cycles += 12;
 }
 //void JP_NZ_a16(void *arg, uint32_t op)
-//void JP_a16(void *arg, uint32_t op)
+void JP_a16(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->pc = ((op & 0x0000FF00) >> 8) + ((op & 0x000000FF) << 8);
+    cpu->cycles += 16;
+}
 //void CALL_NZ_a16(void *arg, uint32_t op)
 void PUSH_BC(void *arg, UNUSED uint32_t op)
 {

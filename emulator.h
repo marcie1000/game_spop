@@ -39,7 +39,7 @@ typedef struct s_input{
 
 //I/O registers
 typedef struct s_io{
-    uint8_t NR11, NR12, NR13, NR14, NR50, NR51, NR52, LCDC, SCY, SCX, LY, BGP;
+    uint8_t NR11, NR12, NR13, NR14, NR50, NR51, NR52, LCDC, SCY, SCX, LY, BGP, BANK;
 }s_io;
 
 typedef struct s_cpu {
@@ -95,14 +95,16 @@ typedef struct s_emu{
 
 extern void update_event(s_input *input);
 extern int initialize_SDL(void);
-extern int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename);
+extern int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename, bool bootrom);
 extern void destroy_emulator(s_emu *emu, int status);
 extern void destroy_SDL(void);
-extern void emulate(s_emu *emu);
+extern void emulate(s_emu *emu, bool bootrom);
 extern int load_boot_rom(s_cpu *cpu);
-extern int load_rom(s_cpu *cpu, char *filename);
+extern int load_rom(s_cpu *cpu, bool rom_arg, char *filename);
 extern void init_mnemonic_index(s_emu *emu);
 extern void init_prefix_mnemonic_index(s_emu *emu);
+extern void draw_scanline_if_needed(s_emu *emu);
+extern void render_if_needed(s_emu *emu);
 
 
 #endif //EMULATOR_H
