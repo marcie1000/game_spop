@@ -1,5 +1,5 @@
-game_spop_emu.mk
-game_spop_emu
+game_spop.mk
+game_spop
 ..gitignore.swp
 .clangd
 .clang-format

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.10.0)
 
-project (game_spop_emu)
+project (game_spop)
 
 # Add cmake directory to the cmake module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -47,9 +47,9 @@ endif (NOT SDL2_FOUND)
 #endif (NOT SDL2_mixer_FOUND)
 
 set (CMAKE_C_STANDARD 11)
-add_executable (game_spop_emu ${SOURCES} ${HEADERS})
-#target_link_libraries (game_spop_emu ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
-target_link_libraries (game_spop_emu ${SDL2_LIBRARIES})
+add_executable (game_spop ${SOURCES} ${HEADERS})
+#target_link_libraries (game_spop ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
+target_link_libraries (game_spop ${SDL2_LIBRARIES})
 
 
 
