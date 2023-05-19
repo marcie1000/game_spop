@@ -144,8 +144,8 @@ int draw_scanline(s_emu *emu)
         uint8_t tileno = cpu->VRAM[map_start_adress + relative_adress];            
         uint16_t data_adress = data_start_adress + 16 * tileno;
         data_adress += 2 * ((io_reg->LY + io_reg->SCY) % 8);
-        screen->current_row[i] |= cpu->VRAM[data_adress]        & (0x80 >> ((i + io_reg->SCX) % 8));
-        screen->current_row[i] |= cpu->VRAM[data_adress + 1]    & (0x80 >> ((i + io_reg->SCX) % 8));
+        screen->current_row[i] |= (cpu->VRAM[data_adress]        & (0x80 >> ((i + io_reg->SCX) % 8))) >> (7 - i % 8);
+        screen->current_row[i] |= (cpu->VRAM[data_adress + 1]    & (0x80 >> ((i + io_reg->SCX) % 8))) >> (6 - i % 8);
         
         screen->pixels[io_reg->LY * PIX_BY_W + i] = SDL_MapRGBA(
             screen->format, 

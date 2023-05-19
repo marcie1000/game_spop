@@ -1,6 +1,7 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL.h>
@@ -27,6 +28,11 @@ enum flags_masks {
     HALF_CARRY_FMASK = 0x20,
     CARRY_FMASK = 0x10
 };
+
+typedef struct s_opt{
+    bool bootrom, rom_argument, debug_info;
+    char rom_filename[FILENAME_MAX];
+}s_opt;
 
 typedef struct s_input{
     SDL_bool key[SDL_NUM_SCANCODES];
@@ -57,7 +63,6 @@ typedef struct s_cpu {
     uint8_t regF; //flags
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
-    bool cartridge;
     size_t cycles; //cycles counter
 } s_cpu;
 
@@ -91,20 +96,22 @@ typedef struct s_emu{
     void (*cb_functions[CB_NB]) (void*, uint8_t);
     s_cpu cpu;
     s_input in;
+    s_opt opt;
 }s_emu;
 
 extern void update_event(s_input *input);
 extern int initialize_SDL(void);
-extern int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename, bool bootrom);
+extern int initialize_emulator(s_emu *emu);
 extern void destroy_emulator(s_emu *emu, int status);
 extern void destroy_SDL(void);
-extern void emulate(s_emu *emu, bool bootrom);
+extern void emulate(s_emu *emu);
 extern int load_boot_rom(s_cpu *cpu);
-extern int load_rom(s_cpu *cpu, bool rom_arg, char *filename);
+extern int load_rom(s_emu *emu);
 extern void init_mnemonic_index(s_emu *emu);
 extern void init_prefix_mnemonic_index(s_emu *emu);
 extern void draw_scanline_if_needed(s_emu *emu);
 extern void render_if_needed(s_emu *emu);
+extern int parse_options(s_opt *opt, int argc, char *argv[]);
 
 
 #endif //EMULATOR_H

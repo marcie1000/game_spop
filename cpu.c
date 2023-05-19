@@ -128,16 +128,12 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //VRAM
     else if(adress >= 0x8000 && adress <= 0x9FFF)
     {
-//        if(adress <= 0x8fff && data != 0)
-//        {
-//            
-//        }
         cpu->VRAM[adress - 0x8000] = data;
     }
     //8 KiB External RAM 
     else if(adress >= 0xA000 && adress <= 0xBFFF)
     {
-        if(cpu->cartridge)
+        if(emu->opt.rom_argument)
             cpu->external_RAM[adress - 0xA000] = data;
     }
     //WRAM
@@ -288,22 +284,28 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     s_cpu *cpu = &emu->cpu;
     uint32_t opcode = get_opcode(emu);
     uint8_t action = get_action(opcode);
-//    if(action == 0xCB)
-//        printf("Opcode 0x%06X      mnemonic %-10s %s    pc = 0x%04X, sp = 0x%02X\n", 
-//               opcode, emu->mnemonic_index[action], emu->prefixed_mnemonic_index[(opcode & 0x0000FF00) >> 8], cpu->pc, cpu->sp);
-//    else
-//        printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%04X, sp = 0x%02X\n", 
-//               opcode, emu->mnemonic_index[action], cpu->pc, cpu->sp);
+    if(emu->opt.debug_info)
+    {
+        if(action == 0xCB)
+            printf("Opcode 0x%06X      mnemonic %-10s %s    pc = 0x%04X, sp = 0x%02X\n", 
+                   opcode, emu->mnemonic_index[action], emu->prefixed_mnemonic_index[(opcode & 0x0000FF00) >> 8], cpu->pc, cpu->sp);
+        else
+            printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%04X, sp = 0x%02X\n", 
+                   opcode, emu->mnemonic_index[action], cpu->pc, cpu->sp);
+    }
     (*opcode_functions[action])(emu, opcode);
-//    printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
-//           cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
-//    printf("Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n\n",
-//           (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
-////    printf("LY = %u\n\n", cpu->io_reg.LY);
-//    if(cpu->pc == 0x00e0)
-//    {
-//        printf("");
-//    }
+    if(emu->opt.debug_info)
+    {
+        printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
+               cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
+        printf("Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n\n",
+               (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
+    //    printf("LY = %u\n\n", cpu->io_reg.LY);
+    }
+    if(cpu->pc == 0x0095)
+    {
+        printf("");
+    }
     cpu->pc += emu->length_table[action];
 }
 

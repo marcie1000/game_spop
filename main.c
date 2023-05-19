@@ -7,43 +7,14 @@
 
 int main(int argc, char *argv[])
 {
-    s_emu emu;
-    bool rom_argument = false;
-    bool bootrom = true;
-    char filename[255] = "roms/cpu_instrs.gb";
+    s_emu emu;    
+    if(0 != parse_options(&emu.opt, argc, argv))
+        exit(EXIT_FAILURE);
     
-    if(argc == 2)
-    {
-        if(NULL == strstr(argv[1], "--"))
-        {
-            snprintf(filename, 255, "%s", argv[1]);
-            rom_argument = true;
-        }
-    }
-    else if(argc > 2)
-    {
-        if(NULL == strstr(argv[1], "--"))
-        {
-            rom_argument = true;
-            snprintf(filename, 255, "%s", argv[1]);
-            if(NULL != strstr(argv[2], "--bypass-bootrom"))
-                bootrom = false;
-        }
-        else if(NULL != strstr(argv[1], "--bypass-bootrom"))
-        {
-            if(NULL == strstr(argv[2], "--"))
-            {
-                snprintf(filename, 255, "%s", argv[2]);
-                rom_argument = true;
-                bootrom = false;
-            }
-        }
-    }
-    
-    if(0 != initialize_emulator(&emu, rom_argument, filename, bootrom))
+    if(0 != initialize_emulator(&emu))
         destroy_emulator(&emu, EXIT_FAILURE);
     
-    emulate(&emu, bootrom);
+    emulate(&emu);
     destroy_emulator(&emu, EXIT_SUCCESS);
     
     return 0;

@@ -58,7 +58,7 @@ int initialize_SDL(void)
     return EXIT_SUCCESS;
 }
 
-int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename, bool bootrom)
+int initialize_emulator(s_emu *emu)
 {
     if(0 != initialize_screen(&emu->screen))
         return EXIT_FAILURE;
@@ -73,10 +73,10 @@ int initialize_emulator(s_emu *emu, bool rom_argument, char *rom_filename, bool 
     init_mnemonic_index(emu);
     init_prefix_mnemonic_index(emu);
     
-    if(0 != load_rom(&emu->cpu, rom_argument, rom_filename))
+    if(0 != load_rom(emu))
         return EXIT_FAILURE;
     
-    if(bootrom)
+    if(emu->opt.bootrom)
     {
         if(0 != load_boot_rom(&emu->cpu))
             return EXIT_FAILURE;
@@ -622,18 +622,19 @@ int load_boot_rom(s_cpu *cpu)
     return EXIT_SUCCESS;
 }
 
-int load_rom(s_cpu *cpu, bool rom_arg, char *filename)
+int load_rom(s_emu *emu)
 {
-    if(!rom_arg)
+    s_cpu *cpu = &emu->cpu;
+    if(!emu->opt.rom_argument)
     {
         memset(cpu->ROM_Bank, 0xFF, sizeof(cpu->ROM_Bank));
         return EXIT_SUCCESS;
     }
     
-    FILE *rom = fopen(filename, "rb");
+    FILE *rom = fopen(emu->opt.rom_filename, "rb");
     if(NULL == rom)
     {
-        fprintf(stderr, "ERROR: cannot open '%s': %s\n", filename, strerror(errno));
+        fprintf(stderr, "ERROR: cannot open '%s': %s\n", emu->opt.rom_filename, strerror(errno));
         return EXIT_FAILURE;
     }
     
@@ -720,13 +721,13 @@ void bypass_bootrom(s_emu *emu)
     cpu->io_reg.BGP = 0xfc;    
 }
 
-void emulate(s_emu *emu, bool bootrom)
+void emulate(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     cpu->cycles = 0;
     emu->frame_timer = SDL_GetTicks64();
     
-    if(!bootrom)
+    if(!emu->opt.bootrom)
         bypass_bootrom(emu);
     
     while(!emu->in.quit)
@@ -759,3 +760,55 @@ void emulate(s_emu *emu, bool bootrom)
     }
 }
 
+int parse_options(s_opt *opt, int argc, char *argv[])
+{
+    opt->bootrom = true;
+    opt->rom_argument = false;
+    opt->debug_info = false;
+    if(argc <= 1)
+        return EXIT_SUCCESS;
+    
+    const char help_msg[] = "Usage\n"
+                            "\n"
+                            "   ./game_spop <ROM file> [option]\n"
+                            "\n"
+                            "Options\n"
+                            "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
+                            "                          in argument).\n"
+                            "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
+                            "                          3 bytes object code, and all registers, PC, SP and\n"
+                            "                          register F flags values in the console. Emulator is\n"
+                            "                          much slower when this option is enabled.\n"
+                            "   --help, -h           = show this help message and exit.\n";
+    
+    for(size_t i = 1; i < (size_t)argc; i++)
+    {
+        if(0 == strcmp(argv[i], "--bypass-bootrom"))
+            opt->bootrom = false;
+        else if(0 == strcmp(argv[i], "--debug-info"))
+            opt->debug_info = true;
+        else if(0 == strcmp(argv[i], "--help") || (0 == strcmp(argv[i], "-h")))
+        {
+            printf("%s", help_msg);
+            exit(EXIT_SUCCESS);
+        }
+        else if(0 == strncmp(argv[i], "--", 2))
+        {
+            fprintf(stderr, "Unknown argument '%s', abort.\n\n%s", argv[i], help_msg);
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            opt->rom_argument = true;
+            snprintf(opt->rom_filename, FILENAME_MAX, "%s", argv[i]);
+        }
+    }
+    
+    if(!opt->rom_argument && !opt->bootrom)
+    {
+        printf("No ROM provided: boot rom will be executed.\n");
+        opt->bootrom = true;
+    }
+    
+    return EXIT_SUCCESS;
+}
