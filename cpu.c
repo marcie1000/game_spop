@@ -302,7 +302,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
                (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
     //    printf("LY = %u\n\n", cpu->io_reg.LY);
     }
-    if(cpu->pc == 0x0095)
+    if(cpu->pc == 0x0021)
     {
         printf("");
     }

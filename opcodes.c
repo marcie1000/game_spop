@@ -329,7 +329,7 @@ void JR_Z_r8(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    if(cpu->regF & 0x80)
+    if(cpu->regF & ZERO_FMASK)
     {
         int8_t r8 = (op & 0x0000ff00) >> 8;
         cpu->pc += r8;
@@ -757,11 +757,11 @@ void RET(void *arg, UNUSED uint32_t op)
     uint8_t data;
     if(0 != read_memory(emu, cpu->sp, &data))
         destroy_emulator(emu, EXIT_FAILURE);
-    cpu->pc = 0x00ff & data;
+    cpu->pc = data;
     cpu->sp++;
     if(0 != read_memory(emu, cpu->sp, &data))
         destroy_emulator(emu, EXIT_FAILURE);
-    cpu->pc += 0xff00 & data;
+    cpu->pc += data;
     cpu->sp++;
     
     //take the pc incrementation in the interpret function into account

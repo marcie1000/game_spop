@@ -13,7 +13,7 @@ int initialize_screen(s_screen *screen)
     screen->pixel_w = 2;
     screen->pixel_h = 2;
     
-    screen->w = SDL_CreateWindow("Game_spop emulator", SDL_WINDOWPOS_CENTERED,
+    screen->w = SDL_CreateWindow("Game_spop", SDL_WINDOWPOS_CENTERED,
                                  SDL_WINDOWPOS_CENTERED, PIX_BY_W * screen->pixel_w, PIX_BY_H * screen->pixel_h,
                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if(screen->w == NULL)
@@ -85,17 +85,6 @@ void resize_screen(s_screen *screen)
     screen->pixel_h = h / PIX_BY_H;
 }
 
-//int read_tilemap(s_emu *emu)
-//{
-//    s_screen *screen = &emu->screen;
-//    s_cpu *cpu = &emu->cpu;
-//    
-//    uint16_t map_start_adress = screen->BG_tile_map_area ? 0x9C00 : 0x9800;
-//    uint16_t data_start_adress = screen->BG_win_tile_data_area ? 0x8000 : 0x8800;
-//    
-//    return EXIT_FAILURE;
-//}
-
 int draw_scanline(s_emu *emu)
 {
     s_screen *screen = &emu->screen;
@@ -113,51 +102,104 @@ int draw_scanline(s_emu *emu)
     screen->obj_size                = io_reg->LCDC & 0x04;
     screen->obj_enable              = io_reg->LCDC & 0x02;
     screen->bg_win_enable_priority  = io_reg->LCDC & 0x01;
-    
-    memset(screen->current_row, 0, sizeof(screen->current_row));
 
     uint16_t map_start_adress = screen->BG_tile_map_area ? 0x1C00 : 0x1800;
     uint16_t data_start_adress = screen->BG_win_tile_data_area ? 0 : 0x800;
 
     if(io_reg->LY + io_reg->SCY > 255)
     {
-        fprintf(stderr, "WARNING: LY + SCY > 255 !!\n");
+        fprintf(stderr, "WARNING: LY + SCY is out of tile map area!!\n");
         return EXIT_FAILURE;
     }
     //95 + 160 = 255
     if(io_reg->SCX > 95)
     {
-        fprintf(stderr, "WARNING: SCX > 95 !!\n");
+        fprintf(stderr, "WARNING: SCX + screen width is out of tilemap area!!\n");
         return EXIT_FAILURE;
     }
     
+    //for each pixel of the scanline
     for(size_t i = 0; i < PIX_BY_W; i++)
     {
-        uint16_t relative_adress = (io_reg->LY + io_reg->SCY) / 8;
-        relative_adress *= 32;
-        relative_adress += (io_reg->SCX + i) / 8;
-        if(relative_adress > 0x400)
+        //relative adress of the tile in the tile map
+        uint16_t rel_tilemap_adress = (io_reg->LY + io_reg->SCY) / 8;
+        rel_tilemap_adress *= 32;
+        rel_tilemap_adress += (io_reg->SCX + i) / 8;
+        if(rel_tilemap_adress > 0x400)
         {
-            fprintf(stderr, "ERROR: Relative tile map adress > 0x400 !!\n");
+            fprintf(stderr, "ERROR: adress is out of tile map bounds!\n");
             return EXIT_FAILURE;
         }
-        uint8_t tileno = cpu->VRAM[map_start_adress + relative_adress];            
-        uint16_t data_adress = data_start_adress + 16 * tileno;
+        //number of the tile by its place in tile data
+        uint8_t tilenum = cpu->VRAM[map_start_adress + rel_tilemap_adress]; 
+        // adress of the two bytes in tiles data we want to read (corresponding
+        // to the current scanline we are drawing)
+        uint16_t data_adress = data_start_adress + 16 * tilenum;
         data_adress += 2 * ((io_reg->LY + io_reg->SCY) % 8);
-        screen->current_row[i] |= (cpu->VRAM[data_adress]        & (0x80 >> ((i + io_reg->SCX) % 8))) >> (7 - i % 8);
-        screen->current_row[i] |= (cpu->VRAM[data_adress + 1]    & (0x80 >> ((i + io_reg->SCX) % 8))) >> (6 - i % 8);
         
+        uint8_t pixel;
+        uint8_t bitmask = (0x80 >> ((i + io_reg->SCX) % 8));
+        
+        pixel =     (cpu->VRAM[data_adress] 
+                    //Selects the pixel we are currently drawing
+                    & bitmask)
+                    //Shifts to the lsb
+                    >> (7 - i % 8);
+                    
+        //does the same for the second byte of data
+        pixel |=    (cpu->VRAM[data_adress + 1]
+                    & bitmask)
+                    >> (6 - i % 8);
+        
+        //modify pixel color through the palette
+        pixel = (io_reg->BGP & (0x03 << 2 * pixel)) >> 2 * pixel;
+        
+        //convert to 4 possible grayscales [0, 255] values
+        pixel = 255 - 85 * pixel;
+        //draw in texture
         screen->pixels[io_reg->LY * PIX_BY_W + i] = SDL_MapRGBA(
-            screen->format, 
-            255 - 85 * screen->current_row[i], 
-            255 - 85 * screen->current_row[i], 
-            255 - 85 * screen->current_row[i], 
-            255
+            screen->format, pixel, pixel, pixel, 255
         );
     }
     
     return EXIT_SUCCESS;
 }
+
+void draw_scanline_if_needed(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    //one horizontal line takes 456 cycles
+    if(cpu->cycles >= 456)
+    {
+        cpu->io_reg.LY++;
+        cpu->cycles -= 456;
+        if(0 != draw_scanline(emu))
+            destroy_emulator(emu, EXIT_FAILURE);
+    }
+}
+
+void render_if_needed(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_screen *screen = &emu->screen;
+    
+    if(cpu->io_reg.LY >= 154)
+    {
+        Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
+        if(elapsed <= 16)
+            SDL_Delay(16 - elapsed);
+        SDL_UnlockTexture(screen->scr);
+        SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
+        SDL_RenderPresent(screen->r);
+        if(0 != lockscreen(screen))
+            destroy_emulator(emu, EXIT_FAILURE);
+        if(elapsed > 16)
+            printf("last frame = %lu ms\n", elapsed);
+        emu->frame_timer = SDL_GetTicks64();
+        cpu->io_reg.LY = 0;
+    }
+}
+
 
 //int load_tile(s_emu *emu, uint8_t x_pos, uint8_t y_pos, uint8_t index, UNUSED uint8_t attributes)
 //{

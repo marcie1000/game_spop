@@ -639,6 +639,7 @@ int load_rom(s_emu *emu)
     }
     
     fread(&cpu->ROM_Bank[0][0], sizeof(cpu->ROM_Bank[0][0]), ROM_BANK_SIZE, rom);
+    //keeps the rom bytes separatly during bootrom execution
     memcpy(cpu->ROM_Bank_0_tmp, cpu->ROM_Bank[0], sizeof(cpu->ROM_Bank[0]));
     fread(&cpu->ROM_Bank[1][0], sizeof(cpu->ROM_Bank[1][0]), ROM_BANK_SIZE, rom);
     fclose(rom);
@@ -658,41 +659,6 @@ void destroy_emulator(s_emu *emu, int status)
 void destroy_SDL(void)
 {
     SDL_Quit();
-}
-
-void draw_scanline_if_needed(s_emu *emu)
-{
-    s_cpu *cpu = &emu->cpu;
-    //one horizontal line takes 456 cycles
-    if(cpu->cycles >= 456)
-    {
-        cpu->io_reg.LY++;
-        cpu->cycles -= 456;
-        if(0 != draw_scanline(emu))
-            destroy_emulator(emu, EXIT_FAILURE);
-    }
-}
-
-void render_if_needed(s_emu *emu)
-{
-    s_cpu *cpu = &emu->cpu;
-    s_screen *screen = &emu->screen;
-    
-    if(cpu->io_reg.LY >= 154)
-    {
-        Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-        if(elapsed <= 16)
-            SDL_Delay(16 - elapsed);
-        SDL_UnlockTexture(screen->scr);
-        SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
-        SDL_RenderPresent(screen->r);
-        if(0 != lockscreen(screen))
-            destroy_emulator(emu, EXIT_FAILURE);
-        if(elapsed > 16)
-            printf("elapsed = %lu\n", elapsed);
-        emu->frame_timer = SDL_GetTicks64();
-        cpu->io_reg.LY = 0;
-    }
 }
 
 void bypass_bootrom(s_emu *emu)
@@ -768,18 +734,19 @@ int parse_options(s_opt *opt, int argc, char *argv[])
     if(argc <= 1)
         return EXIT_SUCCESS;
     
-    const char help_msg[] = "Usage\n"
-                            "\n"
-                            "   ./game_spop <ROM file> [option]\n"
-                            "\n"
-                            "Options\n"
-                            "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
-                            "                          in argument).\n"
-                            "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
-                            "                          3 bytes object code, and all registers, PC, SP and\n"
-                            "                          register F flags values in the console. Emulator is\n"
-                            "                          much slower when this option is enabled.\n"
-                            "   --help, -h           = show this help message and exit.\n";
+    const char help_msg[] = 
+    "Usage\n"
+    "\n"
+    "   ./game_spop <ROM file> [option]\n"
+    "\n"
+    "Options\n"
+    "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
+    "                          in argument).\n"
+    "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
+    "                          3 bytes object code, and all registers, PC, SP and\n"
+    "                          register F flags values in the console. Emulator is\n"
+    "                          much slower when this option is enabled.\n"
+    "   --help, -h           = show this help message and exit.\n";
     
     for(size_t i = 1; i < (size_t)argc; i++)
     {

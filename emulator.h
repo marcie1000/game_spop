@@ -74,7 +74,6 @@ typedef struct s_screen{
     int pitch;
     Uint32 *pixels;
     SDL_PixelFormat *format;
-    uint8_t current_row[SPRITEPOS_X_LIMIT];
     
     bool LCD_PPU_enable;
     bool win_tile_map_area;
@@ -109,8 +108,6 @@ extern int load_boot_rom(s_cpu *cpu);
 extern int load_rom(s_emu *emu);
 extern void init_mnemonic_index(s_emu *emu);
 extern void init_prefix_mnemonic_index(s_emu *emu);
-extern void draw_scanline_if_needed(s_emu *emu);
-extern void render_if_needed(s_emu *emu);
 extern int parse_options(s_opt *opt, int argc, char *argv[]);
 
 
