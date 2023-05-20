@@ -402,7 +402,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x16] = &LD_D_d8;
     opcode_functions[0x17] = &RLA;
     opcode_functions[0x18] = &JR_r8;
-    //opcode_functions[0x19] = &ADD_HL_DE;
+    opcode_functions[0x19] = &ADD_HL_DE;
     opcode_functions[0x1A] = &LD_A_derefDE;
     //opcode_functions[0x1B] = &DEC_DE;
     //opcode_functions[0x1C] = &INC_E;
@@ -472,7 +472,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x5C] = &LD_E_H;
     //opcode_functions[0x5D] = &LD_E_L;
     //opcode_functions[0x5E] = &LD_E_derefHL;
-    //opcode_functions[0x5F] = &LD_E_A;
+    opcode_functions[0x5F] = &LD_E_A;
     //opcode_functions[0x60] = &LD_H_B;
     //opcode_functions[0x61] = &LD_H_C;
     //opcode_functions[0x62] = &LD_H_D;
@@ -591,7 +591,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xD3] = &opcode_non_existant;
     //opcode_functions[0xD4] = &CALL_NC_a16;
     //opcode_functions[0xD5] = &PUSH_DE;
-    //opcode_functions[0xD6] = &SUB_d8;
+    opcode_functions[0xD6] = &SUB_d8;
     //opcode_functions[0xD7] = &RST_10H;
     //opcode_functions[0xD8] = &RET_C;
     //opcode_functions[0xD9] = &RETI;
@@ -633,8 +633,6 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xFD] = &opcode_non_existant;
     opcode_functions[0xFE] = &CP_d8;
     //opcode_functions[0xFF] = &RST_38H;
-
-
 }
 
 void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
@@ -707,7 +705,7 @@ void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
     //cb_functions[0x3C] = &prefixed_SRL_H;
     //cb_functions[0x3D] = &prefixed_SRL_L;
     //cb_functions[0x3E] = &prefixed_SRL_derefHL;
-    //cb_functions[0x3F] = &prefixed_SRL_A;
+    cb_functions[0x3F] = &prefixed_SRL_A;
     //cb_functions[0x40] = &prefixed_BIT_0_B;
     //cb_functions[0x41] = &prefixed_BIT_0_C;
     //cb_functions[0x42] = &prefixed_BIT_0_D;

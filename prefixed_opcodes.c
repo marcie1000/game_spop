@@ -91,7 +91,18 @@ void prefixed_RL_C(void *arg, UNUSED uint8_t op)
 //void prefixed_SRL_H(void *arg, uint8_t op)
 //void prefixed_SRL_L(void *arg, uint8_t op)
 //void prefixed_SRL_derefHL(void *arg, uint8_t op)
-//void prefixed_SRL_A(void *arg, uint8_t op)
+void prefixed_SRL_A(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regA & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regA >>= 1;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->cycles += 8;
+}
 //void prefixed_BIT_0_B(void *arg, uint8_t op)
 //void prefixed_BIT_0_C(void *arg, uint8_t op)
 //void prefixed_BIT_0_D(void *arg, uint8_t op)

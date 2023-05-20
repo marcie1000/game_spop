@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <SDL.h>
 
 #include "cpu.h"
@@ -220,7 +221,30 @@ void JR_r8(void *arg, uint32_t op)
     cpu->pc += r8;
     cpu->cycles += 12;
 }
-//void ADD_HL_DE(void *arg, uint32_t op)
+
+void ADD_HL_DE(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint16_t HL = (cpu->regH << 8) + cpu->regL;
+    uint16_t DE = (cpu->regD << 8) + cpu->regE;
+    
+    uint16_t HL12bits = HL & 0x0FFF;
+    uint16_t DE12bits = DE & 0x0FFF;
+    
+    flag_assign(HL12bits + DE12bits > 0x0FFF, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(HL > UINT16_MAX - DE, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
+    
+    HL += DE;
+    
+    cpu->regH = (HL & 0xFF00) >> 8;
+    cpu->regL = HL & 0x00FF;
+    
+    cpu->cycles += 8;
+}
+
 void LD_A_derefDE(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -485,7 +509,14 @@ void LD_D_A(void *arg, UNUSED uint32_t op)
 //void LD_E_H(void *arg, uint32_t op)
 //void LD_E_L(void *arg, uint32_t op)
 //void LD_E_derefHL(void *arg, uint32_t op)
-//void LD_E_A(void *arg, uint32_t op)
+void LD_E_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regA;
+    cpu->cycles += 4;
+}
 //void LD_H_B(void *arg, uint32_t op)
 //void LD_H_C(void *arg, uint32_t op)
 //void LD_H_D(void *arg, uint32_t op)
@@ -729,6 +760,7 @@ void JP_a16(void *arg, uint32_t op)
     s_cpu *cpu = &emu->cpu;
     
     cpu->pc = ((op & 0x0000FF00) >> 8) + ((op & 0x000000FF) << 8);
+    cpu->pc -= 3;
     cpu->cycles += 16;
 }
 //void CALL_NZ_a16(void *arg, uint32_t op)
@@ -808,7 +840,22 @@ void CALL_a16(void *arg, uint32_t op)
 //void dont_exist(void *arg, uint32_t op)
 //void CALL_NC_a16(void *arg, uint32_t op)
 //void PUSH_DE(void *arg, uint32_t op)
-//void SUB_d8(void *arg, uint32_t op)
+void SUB_d8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t d8 = (op & 0x0000FF00) >> 8;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    uint8_t d8_4bit = d8 & 0x0F;
+    flag_assign(d8_4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    
+    flag_assign(d8 > cpu->regA, &cpu->regF, CARRY_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    cpu->regA -= d8;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    cpu->cycles += 8;   
+}
 //void RST_10H(void *arg, uint32_t op)
 //void RET_C(void *arg, uint32_t op)
 //void RETI(void *arg, uint32_t op)
@@ -911,5 +958,32 @@ void CP_d8(void *arg, uint32_t op)
     
     cpu->cycles += 8;
 }
-//void RST_38H(void *arg, uint32_t op)
 
+//void RST_38H(void *arg, UNUSED uint32_t op)
+//{
+//    s_emu *emu = arg;
+//    s_cpu *cpu = &emu->cpu;
+//    
+////    uint16_t pc_old_value = cpu->pc + 3;
+////    cpu->sp--;
+////    if(0 != write_memory(emu, cpu->sp, (pc_old_value & 0xff00) >> 8))
+////        destroy_emulator(emu, EXIT_FAILURE);
+////    cpu->sp--;
+////
+////    if(0 != write_memory(emu, cpu->sp, (pc_old_value & 0x00ff)))
+////        destroy_emulator(emu, EXIT_FAILURE);
+////    cpu->pc = ((op & 0x0000ff00) >> 8) + ((op & 0x000000ff) << 8);
+////    //take the pc incrementation in the interpret function into account
+////    cpu->pc -= 3;
+////    cpu->cycles += 24;   
+//
+//    cpu->sp--;
+//    if(0 != write_memory(emu, cpu->sp, (cpu->pc & 0xff00) >> 8))
+//        destroy_emulator(emu, EXIT_FAILURE);
+//    cpu->sp--;
+//
+//    if(0 != write_memory(emu, cpu->sp, (cpu->pc & 0x00ff)))
+//        destroy_emulator(emu, EXIT_FAILURE);
+//    
+//    cpu->pc = 0x0038;
+//}
