@@ -6,50 +6,89 @@
 #include "emulator.h"
 #include "opcodes.h"
 #include "prefixed_opcodes.h"
+#include "gb_interrupts.h"
 
 int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
+    s_io *io_reg = &cpu->io_reg;
+    s_screen *screen = &emu->screen;
     
     switch(adress)
     {
+        case 0xFF01:
+            io_reg->SB = data;
+            break;
+        case 0xFF02:
+            io_reg->SC = data;
+            break;
+        case 0xFF0F:
+            io_reg->IF = data;
+            break;
         case 0xFF11:
-            cpu->io_reg.NR11 = data;
+            io_reg->NR11 = data;
             break;
         case 0xFF12:
-            cpu->io_reg.NR12 = data;
+            io_reg->NR12 = data;
             break;
         case 0xFF13:
-            cpu->io_reg.NR13 = data;
+            io_reg->NR13 = data;
             break;
         case 0xFF14:
-            cpu->io_reg.NR14 = data & 0xC7;
+            io_reg->NR14 = data & 0xC7;
             break;
         case 0xFF24:
-            cpu->io_reg.NR50 = data;
+            io_reg->NR50 = data;
             break;
         case 0xFF25:
-            cpu->io_reg.NR51 = data;
+            io_reg->NR51 = data;
             break;
         case 0xFF26:
-            flag_assign(data, &cpu->io_reg.NR52, 0x80);
+            flag_assign(data, &io_reg->NR52, 0x80);
             break;
         case 0xFF40:
-            cpu->io_reg.LCDC = data;
+            io_reg->LCDC = data;
+                
+            screen->LCD_PPU_enable          = io_reg->LCDC & 0x80;
+            screen->win_tile_map_area       = io_reg->LCDC & 0x40;
+            screen->window_enable           = io_reg->LCDC & 0x20;
+            screen->BG_win_tile_data_area   = io_reg->LCDC & 0x10;
+            screen->BG_tile_map_area        = io_reg->LCDC & 0x08;
+            screen->obj_size                = io_reg->LCDC & 0x04;
+            screen->obj_enable              = io_reg->LCDC & 0x02;
+            screen->bg_win_enable_priority  = io_reg->LCDC & 0x01;
+            
+            break;
+        case 0xFF41:
+            io_reg->STAT = data & 0x78;
             break;
         case 0xFF42:
-            cpu->io_reg.SCY = data;
+            io_reg->SCY = data;
+            break;
+        case 0xFF43:
+            io_reg->SCX = data;
             break;
         case 0xFF44:
             fprintf(stderr, "ERROR: attempt to write in I/O register LY (0xFF44), read only!\n");
             return EXIT_FAILURE;
             break;
+        case 0xFF45:
+            io_reg->LYC = data;
+            break;
         case 0xFF47:
-            cpu->io_reg.BGP = data;
+            io_reg->BGP = data;
+            break;
+        case 0xFF48:
+            io_reg->OBP0 = data;
+            break;
+        case 0xFF49:
+            io_reg->OBP1 = data;
             break;
         case 0xFF50:
-            cpu->io_reg.BANK = data;
+            io_reg->BANK = data;
             memcpy(cpu->ROM_Bank[0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
+            break;
+        case 0xFF7F:
             break;
         default:
             fprintf(stderr, "WARNING: attempt to write I/O register at adress 0x%04X (unimplemented!)\n", adress);
@@ -64,42 +103,67 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
+    s_io *io_reg = &cpu->io_reg;
     
     switch(adress)
     {
+        case 0xFF01:
+            *data = io_reg->SB;
+            break;
+        case 0xFF02:
+            *data = io_reg->SC;
+            break;
+        case 0xFF0F:
+            *data = io_reg->IF;
+            break;
         case 0xFF11:
-            *data = cpu->io_reg.NR11 & 0xC0;
+            *data = io_reg->NR11 & 0xC0;
             break;
         case 0xFF12:
-            *data = cpu->io_reg.NR12;
+            *data = io_reg->NR12;
             break;
         case 0xFF13:
             fprintf(stderr, "ERROR: attempt to read at adress FF13, NR13 I/O register (write only)\n");
             return EXIT_FAILURE;
             break;
         case 0xFF14:
-            *data = 0x40 & cpu->io_reg.NR14;
+            *data = 0x40 & io_reg->NR14;
             break;
         case 0xFF24:
-            *data = cpu->io_reg.NR50;
+            *data = io_reg->NR50;
             break;
         case 0xFF25:
-            *data = cpu->io_reg.NR51;
+            *data = io_reg->NR51;
             break;
         case 0xFF26:
-            *data = cpu->io_reg.NR52;
+            *data = io_reg->NR52;
             break;
         case 0xFF40:
-            *data = cpu->io_reg.LCDC;
+            *data = io_reg->LCDC;
+            break;
+        case 0xFF41:
+            *data = io_reg->STAT;
             break;
         case 0xFF42:
-            *data = cpu->io_reg.SCY;
+            *data = io_reg->SCY;
+            break;
+        case 0xFF43:
+            *data = io_reg->SCX;
             break;
         case 0xFF44:
-            *data = cpu->io_reg.LY;
+            *data = io_reg->LY;
+            break;
+        case 0xFF45:
+            *data = io_reg->LYC;
             break;
         case 0xFF47:
-            *data = cpu->io_reg.BGP;
+            *data = io_reg->BGP;
+            break;
+        case 0xFF48:
+            *data = io_reg->OBP0;
+            break;
+        case 0xFF49:
+            *data = io_reg->OBP1;
             break;
         default:
             fprintf(stderr, "WARNING: attempt to read I/O register at adress 0x%04X (unimplemented!)\n", adress);
@@ -115,12 +179,13 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
     
-    if(adress < 0x3FFF)
+    //TETRIS ROM exception
+    if((adress < 0x3FFF) && (adress != 0x2000) && (cpu->pc != 0x0254))
     {
         fprintf(stderr, "ERROR: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
         return EXIT_FAILURE;
     }
-    else if(adress <= 0x7FFF)
+    else if(adress >= 0x4000 && adress <= 0x7FFF)
     {
         fprintf(stderr, "ERROR: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n", adress);
         return EXIT_FAILURE;
@@ -152,7 +217,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     {
         cpu->OAM[adress - 0xFE00] = data;
     }
-    else if(adress >= 0xFEA0 && adress <= 0xFEFF)
+    else if(adress >= 0xFEA0 && adress <= 0xFEFF & data != 0)
     {
         fprintf(stderr, "ERROR: attempt to write at adress 0x%04X (prohibited)\n", adress);
         return EXIT_FAILURE;
@@ -169,8 +234,12 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if(adress == 0xFFFF)
     {
-        fprintf(stderr, "WARNING: attempt to write in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
-        return EXIT_FAILURE;
+        cpu->io_reg.IE = data;
+        if(data & (~0x03))
+        {
+            fprintf(stderr, "WARNING: IE value = 0x%02X (flags unimplemented!)\n");
+            return EXIT_FAILURE;
+        }
     }
     
     return EXIT_SUCCESS;
@@ -231,8 +300,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if(adress == 0xFFFF)
     {
-        fprintf(stderr, "WARNING: attempt to read in Interrupt Enable register (IE) at adress 0x%04X (unimplemented)\n", adress);
-        return EXIT_FAILURE;
+        *data = cpu->io_reg.IE;
     }
     
     return EXIT_SUCCESS;
@@ -282,6 +350,9 @@ uint8_t get_cb_opcode(uint32_t op32)
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
+    
+    interrupt_handler(emu);
+    
     uint32_t opcode = get_opcode(emu);
     uint8_t action = get_action(opcode);
     if(emu->opt.debug_info)
@@ -300,11 +371,6 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
                cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
         printf("Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n\n",
                (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
-    //    printf("LY = %u\n\n", cpu->io_reg.LY);
-    }
-    if(cpu->pc == 0x0021)
-    {
-        printf("");
     }
     cpu->pc += emu->length_table[action];
 }
@@ -431,7 +497,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x33] = &INC_SP;
     opcode_functions[0x34] = &INC_derefHL;
     //opcode_functions[0x35] = &DEC_derefHL;
-    //opcode_functions[0x36] = &LD_derefHL_d8;
+    opcode_functions[0x36] = &LD_derefHL_d8;
     //opcode_functions[0x37] = &SCF;
     //opcode_functions[0x38] = &JR_C_r8;
     //opcode_functions[0x39] = &ADD_HL_SP;

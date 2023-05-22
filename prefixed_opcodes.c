@@ -44,7 +44,7 @@ void prefixed_RL_C(void *arg, UNUSED uint8_t op)
     flag_assign(newC == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK + HALF_CARRY_FMASK);
     cpu->regC = newC;
-    cpu->cycles += 8;
+    cpu->t_cycles += 8;
 }
 //void prefixed_RL_D(void *arg, uint8_t op)
 //void prefixed_RL_E(void *arg, uint8_t op)
@@ -101,7 +101,7 @@ void prefixed_SRL_A(void *arg, UNUSED uint8_t op)
     cpu->regA >>= 1;
     flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     
-    cpu->cycles += 8;
+    cpu->t_cycles += 8;
 }
 //void prefixed_BIT_0_B(void *arg, uint8_t op)
 //void prefixed_BIT_0_C(void *arg, uint8_t op)
@@ -176,7 +176,7 @@ void prefixed_BIT_7_H(void *arg, UNUSED uint8_t op)
     //negative flag
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
-    emu->cpu.cycles += 8;
+    emu->cpu.t_cycles += 8;
 }
 
 //void prefixed_BIT_7_L(void *arg, uint8_t op)

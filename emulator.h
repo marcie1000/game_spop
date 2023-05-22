@@ -29,6 +29,13 @@ enum flags_masks {
     CARRY_FMASK = 0x10
 };
 
+enum ppu_modes_durations {
+    PPU_MODE2 = 80,
+    PPU_MODE3 = 200,
+    PPU_MODE0 = 176,
+    PPU_MODE1 = 4560
+};
+
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info;
     char rom_filename[FILENAME_MAX];
@@ -45,7 +52,9 @@ typedef struct s_input{
 
 //I/O registers
 typedef struct s_io{
-    uint8_t NR11, NR12, NR13, NR14, NR50, NR51, NR52, LCDC, SCY, SCX, LY, BGP, BANK;
+    uint8_t NR11, NR12, NR13, NR14, NR50, NR51, NR52, LCDC, SCY, SCX, LY, BGP, BANK,
+            IE, IF, STAT, LYC, SB, SC, OBP0, OBP1;
+    bool IME;
 }s_io;
 
 typedef struct s_cpu {
@@ -63,7 +72,7 @@ typedef struct s_cpu {
     uint8_t regF; //flags
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
-    size_t cycles; //cycles counter
+    size_t t_cycles; //t_cycles counter at 4,194,304 Hz
 } s_cpu;
 
 typedef struct s_screen{
@@ -83,6 +92,10 @@ typedef struct s_screen{
     bool obj_size;
     bool obj_enable;
     bool bg_win_enable_priority;
+    
+    //2: searching OAM, 3: reading OAM and VRAM,
+    //0: HBlank, 1: VBlank
+    uint8_t PPU_mode;
 }s_screen;
 
 typedef struct s_emu{

@@ -4,14 +4,14 @@
     <File Name="README.md"/>
     <File Name="CMakeLists.txt"/>
   </VirtualDirectory>
-  <VirtualDirectory Name="headers">
-    <File Name="graphics.h"/>
-    <File Name="prefixed_opcodes.h"/>
-    <File Name="emulator.h"/>
-    <File Name="opcodes.h"/>
-    <File Name="cpu.h"/>
-  </VirtualDirectory>
   <VirtualDirectory Name="sources">
+    <File Name="gb_interrupts.h"/>
+    <File Name="gb_interrupts.c"/>
+    <File Name="prefixed_opcodes.h"/>
+    <File Name="opcodes.h"/>
+    <File Name="graphics.h"/>
+    <File Name="emulator.h"/>
+    <File Name="cpu.h"/>
     <File Name="graphics.c"/>
     <File Name="prefixed_opcodes.c"/>
     <File Name="emulator.c"/>
@@ -43,7 +43,7 @@
         <Library Value="SDL2_mixer"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(ProjectName)" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="&quot;roms/Tetris (JUE) (V1.0) [!].gb&quot; --bypass-bootrom --debug-info" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="/home/adelia/Programmation/CodeLite/game_spop_emu/game_spop" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(ProjectName)" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="&quot;roms/Tetris (World) (Rev 1).gb&quot; --bypass-bootrom" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="/home/adelia/Programmation/CodeLite/game_spop_emu/game_spop" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="CodeLite Makefile Generator"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>

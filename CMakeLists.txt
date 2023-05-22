@@ -12,6 +12,7 @@ set (HEADERS
     opcodes.h
     prefixed_opcodes.h
     graphics.h
+    interrupts.h
 )
 
 set (SOURCES
@@ -21,6 +22,7 @@ set (SOURCES
     opcodes.c
     prefixed_opcodes.c
     graphics.c
+    interrupts.c
 )
 
 find_package (SDL2 REQUIRED)

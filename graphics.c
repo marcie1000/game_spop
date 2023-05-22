@@ -4,8 +4,9 @@
 #include "emulator.h"
 #include "graphics.h"
 
-int initialize_screen(s_screen *screen)
+int initialize_screen(s_emu *emu)
 {
+    s_screen *screen = &emu->screen;
     screen->r = NULL;
     screen->w = NULL;
     screen->scr = NULL;
@@ -48,6 +49,8 @@ int initialize_screen(s_screen *screen)
         return EXIT_FAILURE;
     }
     
+    emu->cpu.io_reg.STAT |= 2;
+    
     return EXIT_SUCCESS;
 }
 
@@ -85,26 +88,95 @@ void resize_screen(s_screen *screen)
     screen->pixel_h = h / PIX_BY_H;
 }
 
-int draw_scanline(s_emu *emu)
+int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
 {
     s_screen *screen = &emu->screen;
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
     
+    if(!screen->bg_win_enable_priority)
+        return EXIT_SUCCESS;
+        
+    uint16_t bg_map_start_adress = screen->BG_tile_map_area ? 0x1C00 : 0x1800;
+    uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x800;
+    
+    //relative adress of the tile in the tile map
+    uint16_t rel_bg_tilemap_adress = (io_reg->LY + io_reg->SCY) / 8;
+    rel_bg_tilemap_adress *= 32;
+    rel_bg_tilemap_adress += (io_reg->SCX + i) / 8;
+    if(rel_bg_tilemap_adress > 0x400)
+    {
+        fprintf(stderr, "ERROR: adress is out of tile map bounds!\n");
+        return EXIT_FAILURE;
+    }
+    //number of the tile by its place in tile data
+    uint8_t tilenum = cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress]; 
+    // adress of the two bytes in tiles data we want to read (corresponding
+    // to the current scanline we are drawing)
+    uint16_t bg_data_adress = bg_win_data_start_adr + 16 * tilenum;
+    bg_data_adress += 2 * ((io_reg->LY + io_reg->SCY) % 8);
+    
+    uint8_t bitmask = (0x80 >> ((i + io_reg->SCX) % 8));
+    
+    *pixel =     (cpu->VRAM[bg_data_adress] 
+                //Selects the pixel we are currently drawing
+                & bitmask)
+                //Shifts to the lsb
+                >> (7 - i % 8);
+                
+    //does the same for the second byte of data
+    *pixel |=    (cpu->VRAM[bg_data_adress + 1]
+                & bitmask)
+                >> (6 - i % 8);
+    
+    //modify pixel color through the palette
+    *pixel = (io_reg->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
+    
+    return EXIT_SUCCESS;
+}
+
+int draw_window(s_emu *emu, UNUSED size_t i)
+{
+    s_screen *screen = &emu->screen;
+    if(!screen->window_enable)
+        return EXIT_SUCCESS;
+        
+    fprintf(stderr, "WARNING: Attempt to draw window! (unimplemented)\n");
+    return EXIT_FAILURE;
+}
+
+int draw_OBJ(s_emu *emu, UNUSED size_t i)
+{
+    s_screen *screen = &emu->screen;
+    if(!screen->obj_enable)
+        return EXIT_SUCCESS;
+        
+    fprintf(stderr, "WARNING: Attempt to draw OBJ! (unimplemented)\n");
+    return EXIT_FAILURE;
+}
+
+int draw_scanline(s_emu *emu)
+{
+    //s_screen *screen = &emu->screen;
+    s_cpu *cpu = &emu->cpu;
+    s_io *io_reg = &cpu->io_reg;
+    s_screen *screen = &emu->screen;
+    
     if(io_reg->LY >= 144)
         return EXIT_SUCCESS;
-    
-    screen->LCD_PPU_enable          = io_reg->LCDC & 0x80;
-    screen->win_tile_map_area       = io_reg->LCDC & 0x40;
-    screen->window_enable           = io_reg->LCDC & 0x20;
-    screen->BG_win_tile_data_area   = io_reg->LCDC & 0x10;
-    screen->BG_tile_map_area        = io_reg->LCDC & 0x08;
-    screen->obj_size                = io_reg->LCDC & 0x04;
-    screen->obj_enable              = io_reg->LCDC & 0x02;
-    screen->bg_win_enable_priority  = io_reg->LCDC & 0x01;
 
-    uint16_t map_start_adress = screen->BG_tile_map_area ? 0x1C00 : 0x1800;
-    uint16_t data_start_adress = screen->BG_win_tile_data_area ? 0 : 0x800;
+    if(!screen->LCD_PPU_enable)
+    {
+        for(size_t i = 0; i < PIX_BY_W; i++)
+        {
+            //draw blank line
+            screen->pixels[io_reg->LY * PIX_BY_W + i] = SDL_MapRGBA(
+                screen->format, 255, 255, 255, 255
+            );
+        }
+        return EXIT_SUCCESS;
+    }
+    //uint16_t win_map_start_adress = screen->win_tile_map_area ? 0x9C00 : 0x9800;
 
     if(io_reg->LY + io_reg->SCY > 255)
     {
@@ -121,39 +193,14 @@ int draw_scanline(s_emu *emu)
     //for each pixel of the scanline
     for(size_t i = 0; i < PIX_BY_W; i++)
     {
-        //relative adress of the tile in the tile map
-        uint16_t rel_tilemap_adress = (io_reg->LY + io_reg->SCY) / 8;
-        rel_tilemap_adress *= 32;
-        rel_tilemap_adress += (io_reg->SCX + i) / 8;
-        if(rel_tilemap_adress > 0x400)
-        {
-            fprintf(stderr, "ERROR: adress is out of tile map bounds!\n");
+        uint8_t pixel = 0;
+        if(0 != draw_background(emu, i, &pixel))
             return EXIT_FAILURE;
-        }
-        //number of the tile by its place in tile data
-        uint8_t tilenum = cpu->VRAM[map_start_adress + rel_tilemap_adress]; 
-        // adress of the two bytes in tiles data we want to read (corresponding
-        // to the current scanline we are drawing)
-        uint16_t data_adress = data_start_adress + 16 * tilenum;
-        data_adress += 2 * ((io_reg->LY + io_reg->SCY) % 8);
-        
-        uint8_t pixel;
-        uint8_t bitmask = (0x80 >> ((i + io_reg->SCX) % 8));
-        
-        pixel =     (cpu->VRAM[data_adress] 
-                    //Selects the pixel we are currently drawing
-                    & bitmask)
-                    //Shifts to the lsb
-                    >> (7 - i % 8);
-                    
-        //does the same for the second byte of data
-        pixel |=    (cpu->VRAM[data_adress + 1]
-                    & bitmask)
-                    >> (6 - i % 8);
-        
-        //modify pixel color through the palette
-        pixel = (io_reg->BGP & (0x03 << 2 * pixel)) >> 2 * pixel;
-        
+        if(0 != draw_window(emu, i))
+            return EXIT_FAILURE;
+        if(0 != draw_OBJ(emu, i))
+            return EXIT_FAILURE;
+            
         //convert to 4 possible grayscales [0, 255] values
         pixel = 255 - 85 * pixel;
         //draw in texture
@@ -165,39 +212,88 @@ int draw_scanline(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
-void draw_scanline_if_needed(s_emu *emu)
+void ppu_modes_and_scanlines(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    //one horizontal line takes 456 cycles
-    if(cpu->cycles >= 456)
+    s_io *io_reg = &cpu->io_reg;
+    s_screen *screen = &emu->screen;
+    
+    io_reg->STAT &= ~0x03;
+    
+    if(cpu->t_cycles >= 456)
     {
         cpu->io_reg.LY++;
-        cpu->cycles -= 456;
+        cpu->t_cycles -= 456;
+        //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
+        io_reg->STAT |= (screen->LCD_PPU_enable) ? 2 : 1;    
         if(0 != draw_scanline(emu))
             destroy_emulator(emu, EXIT_FAILURE);
+        return;
+    }
+    
+    if(!screen->LCD_PPU_enable)
+    {
+        //vblank
+        io_reg->STAT |= 1;
+        return;
+    }
+    
+    if(cpu->t_cycles < PPU_MODE2)
+    {
+        //Searching OAM for OBJs whose Y coordinate overlap this line
+        io_reg->STAT |= 2;
+        return;
+    }
+    
+    if(cpu->t_cycles < PPU_MODE3 + PPU_MODE2)
+    {
+        //Reading OAM and VRAM to generate the picture
+        io_reg->STAT |= 3;
+        return;
+    }
+    
+    if(cpu->t_cycles < PPU_MODE0 + PPU_MODE3 + PPU_MODE2)
+    {
+        //Nothing (HBlank)
+        io_reg->STAT |= 0;
+        return;
     }
 }
 
-void render_if_needed(s_emu *emu)
+void render_frame_and_vblank_if_needed(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_screen *screen = &emu->screen;
+    s_io *io_reg = &cpu->io_reg;
     
-    if(cpu->io_reg.LY >= 154)
+    if(io_reg->LY < 144)
     {
-        Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-        if(elapsed <= 16)
-            SDL_Delay(16 - elapsed);
-        SDL_UnlockTexture(screen->scr);
-        SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
-        SDL_RenderPresent(screen->r);
-        if(0 != lockscreen(screen))
-            destroy_emulator(emu, EXIT_FAILURE);
-        if(elapsed > 16)
-            printf("last frame = %lu ms\n", elapsed);
-        emu->frame_timer = SDL_GetTicks64();
-        cpu->io_reg.LY = 0;
+        io_reg->IF &= ~0x01;
+        return;
     }
+    
+    //set VBlank interrupt flag 
+    io_reg->IF |= 0x01;
+    io_reg->STAT &= ~0x03;
+    io_reg->STAT |= 1;
+    
+    if(cpu->io_reg.LY < 154)
+        return;
+        
+    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
+    if(elapsed <= 16)
+        SDL_Delay(16 - elapsed);
+    SDL_UnlockTexture(screen->scr);
+    SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
+    SDL_RenderPresent(screen->r);
+    if(0 != lockscreen(screen))
+        destroy_emulator(emu, EXIT_FAILURE);
+    if(elapsed > 16)
+        printf("last frame = %lu ms\n", elapsed);
+    emu->frame_timer = SDL_GetTicks64();
+    cpu->io_reg.LY = 0;
+    //clear VBlank flag
+    io_reg->IF &= (~0x01);
 }
 
 

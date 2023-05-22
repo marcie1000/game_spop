@@ -60,7 +60,7 @@ int initialize_SDL(void)
 
 int initialize_emulator(s_emu *emu)
 {
-    if(0 != initialize_screen(&emu->screen))
+    if(0 != initialize_screen(emu))
         return EXIT_FAILURE;
     if(0 != initialize_cpu(&emu->cpu))
         return EXIT_FAILURE;
@@ -690,7 +690,7 @@ void bypass_bootrom(s_emu *emu)
 void emulate(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    cpu->cycles = 0;
+    cpu->t_cycles = 0;
     emu->frame_timer = SDL_GetTicks64();
     
     if(!emu->opt.bootrom)
@@ -710,19 +710,19 @@ void emulate(s_emu *emu)
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
-        
-        draw_scanline_if_needed(emu);
-        
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        
-        draw_scanline_if_needed(emu);
-        
-        render_if_needed(emu);
 
+        
+        ppu_modes_and_scanlines(emu);
+        
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+
+        ppu_modes_and_scanlines(emu);
+        render_frame_and_vblank_if_needed(emu);        
+        
     }
 }
 
