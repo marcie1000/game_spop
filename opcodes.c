@@ -1529,7 +1529,7 @@ void JP_derefHL(void *arg, UNUSED uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->pc = (cpu->regL >> 8) + (cpu->regH << 8);
+    cpu->pc = (cpu->regH << 8) + cpu->regL;
     cpu->pc -= 1;
     cpu->t_cycles += 4;
 }
