@@ -16,6 +16,7 @@ extern void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, ui
 extern void initialize_length_table(s_emu *emu);
 extern void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t));
 extern void init_cb_pointers(void (*cb_functions[CB_NB]) (void *, uint8_t));
+extern void breakpoint_handle(s_emu *emu, uint8_t action);
 
 #endif //CPU_H
 

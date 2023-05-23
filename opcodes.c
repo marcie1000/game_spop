@@ -42,7 +42,14 @@ void LD_BC_d16(void *arg, uint32_t op)
     emu->cpu.t_cycles += 12;
 }
 
-//void LD_derefBC_A(void *arg, UNUSED uint32_t op)
+void LD_derefBC_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regB << 8) + cpu->regC, cpu->regA))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
 void INC_BC(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -171,7 +178,14 @@ void LD_DE_d16(void *arg, uint32_t op)
     
     cpu->t_cycles += 12;
 }
-//void LD_derefDE_A(void *arg, UNUSED uint32_t op)
+void LD_derefDE_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regD << 8) + cpu->regE, cpu->regA))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
 void INC_DE(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -727,12 +741,54 @@ void LD_H_A(void *arg, UNUSED uint32_t op)
     cpu->regH = cpu->regA;
     cpu->t_cycles += 4;
 }
-//void LD_L_B(void *arg, UNUSED uint32_t op)
-//void LD_L_C(void *arg, UNUSED uint32_t op)
-//void LD_L_D(void *arg, UNUSED uint32_t op)
-//void LD_L_E(void *arg, UNUSED uint32_t op)
-//void LD_L_H(void *arg, UNUSED uint32_t op)
-//void LD_L_L(void *arg, UNUSED uint32_t op)
+void LD_L_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regB;
+    cpu->t_cycles += 4;
+}
+void LD_L_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regC;
+    cpu->t_cycles += 4;
+}
+void LD_L_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regD;
+    cpu->t_cycles += 4;
+}
+void LD_L_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regE;
+    cpu->t_cycles += 4;
+}
+void LD_L_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regH;
+    cpu->t_cycles += 4;
+}
+void LD_L_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regL;
+    cpu->t_cycles += 4;
+}
 void LD_L_derefHL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -743,13 +799,62 @@ void LD_L_derefHL(void *arg, UNUSED uint32_t op)
 
     cpu->t_cycles += 8;
 }
-//void LD_L_A(void *arg, UNUSED uint32_t op)
-//void LD_derefHL_B(void *arg, UNUSED uint32_t op)
-//void LD_derefHL_C(void *arg, UNUSED uint32_t op)
-//void LD_derefHL_D(void *arg, UNUSED uint32_t op)
-//void LD_derefHL_E(void *arg, UNUSED uint32_t op)
-//void LD_derefHL_H(void *arg, UNUSED uint32_t op)
-//void LD_derefHL_L(void *arg, UNUSED uint32_t op)
+void LD_L_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regL = cpu->regA;
+    cpu->t_cycles += 4;
+}
+void LD_derefHL_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regB))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
+void LD_derefHL_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regC))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
+void LD_derefHL_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regD))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
+void LD_derefHL_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regE))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
+void LD_derefHL_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regH))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
+void LD_derefHL_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    if(0 != write_memory(emu, (cpu->regH << 8) + cpu->regL, cpu->regL))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->t_cycles += 8;
+}
 //void HALT(void *arg, UNUSED uint32_t op)
 void LD_derefHL_A(void *arg, UNUSED uint32_t op)
 {
@@ -991,7 +1096,28 @@ void ADD_A_A(void *arg, UNUSED uint32_t op)
     cpu->t_cycles += 4;
 }
 //void ADC_A_B(void *arg, UNUSED uint32_t op)
-//void ADC_A_C(void *arg, UNUSED uint32_t op)
+void ADC_A_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint16_t newA = cpu->regA;
+    
+    uint8_t A4bit = cpu->regA & 0x0F;
+    uint8_t C4bit = cpu->regC & 0x0F;
+    bool carry = cpu->regF & CARRY_FMASK;
+    
+    flag_assign(A4bit + C4bit + carry > 0x0F, &cpu->regF, HALF_CARRY_FMASK);
+    
+    newA += cpu->regC + carry;
+    flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
+    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
+
+    cpu->regA += cpu->regC + carry;
+    
+    cpu->t_cycles += 4;
+}
 //void ADC_A_D(void *arg, UNUSED uint32_t op)
 //void ADC_A_E(void *arg, UNUSED uint32_t op)
 //void ADC_A_H(void *arg, UNUSED uint32_t op)
@@ -1254,7 +1380,32 @@ void CP_derefHL(void *arg, UNUSED uint32_t op)
     cpu->t_cycles += 8;    
 }
 //void CP_A(void *arg, UNUSED uint32_t op)
-//void RET_NZ(void *arg, UNUSED uint32_t op)
+void RET_NZ(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    if(cpu->regF & ZERO_FMASK)
+    {
+        cpu->t_cycles += 8;
+        return;
+    }
+    
+    uint8_t data;
+    if(0 != read_memory(emu, cpu->sp, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->pc = data;
+    cpu->sp++;
+    if(0 != read_memory(emu, cpu->sp, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->pc |= data << 8;
+    cpu->sp++;
+    
+    //take the pc incrementation in the interpret function into account
+    cpu->pc -= 1;
+    
+    cpu->t_cycles += 20;
+}
 void POP_BC(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -1439,7 +1590,28 @@ void SUB_d8(void *arg, uint32_t op)
 }
 //void RST_10H(void *arg, UNUSED uint32_t op)
 //void RET_C(void *arg, UNUSED uint32_t op)
-//void RETI(void *arg, UNUSED uint32_t op)
+void RETI(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t data;
+    if(0 != read_memory(emu, cpu->sp, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->pc = data;
+    cpu->sp++;
+    if(0 != read_memory(emu, cpu->sp, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->pc |= data << 8;
+    cpu->sp++;
+    
+    cpu->io_reg.IME = true;
+    
+    //take the pc incrementation in the interpret function into account
+    cpu->pc -= 1;
+    
+    cpu->t_cycles += 16;
+}
 //void JP_C_a16(void *arg, uint32_t op)
 //void dont_exist(void *arg, uint32_t op)
 //void CALL_C_a16(void *arg, uint32_t op)
@@ -1611,7 +1783,16 @@ void PUSH_AF(void *arg, UNUSED uint32_t op)
     
     cpu->t_cycles += 16;
 }
-//void OR_d8(void *arg, uint32_t op)
+void OR_d8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    cpu->regA |= (op & 0x0000ff00) >> 8;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK | CARRY_FMASK);
+    cpu->t_cycles += 8;   
+}
+
 //void RST_30H(void *arg, UNUSED uint32_t op)
 //void LD_HL_SPplusr8(void *arg, uint32_t op)
 //void LD_SP_HL(void *arg, UNUSED uint32_t op)

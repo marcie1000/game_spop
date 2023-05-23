@@ -9,38 +9,37 @@
 
 void update_event(s_input *input)
 {
-    SDL_Event event;
-    while(SDL_PollEvent(&event))
+    while(SDL_PollEvent(&input->event))
     {
-        switch(event.type)
+        switch(input->event.type)
         {
             case(SDL_QUIT):
                 input->quit = SDL_TRUE;
                 break;
             case(SDL_KEYDOWN):
-                input->key[event.key.keysym.scancode] = SDL_TRUE;
+                input->key[input->event.key.keysym.scancode] = SDL_TRUE;
                 break;
             case(SDL_KEYUP):
-                input->key[event.key.keysym.scancode] = SDL_FALSE;
+                input->key[input->event.key.keysym.scancode] = SDL_FALSE;
                 break;
             case(SDL_MOUSEMOTION):
-                input->x = event.motion.x;
-                input->y = event.motion.y;
-                input->xrel = event.motion.xrel;
-                input->yrel = event.motion.yrel;
+                input->x = input->event.motion.x;
+                input->y = input->event.motion.y;
+                input->xrel = input->event.motion.xrel;
+                input->yrel = input->event.motion.yrel;
                 break;
             case(SDL_MOUSEWHEEL):
-                input->xwheel = event.wheel.x;
-                input->ywheel = event.wheel.y;
+                input->xwheel = input->event.wheel.x;
+                input->ywheel = input->event.wheel.y;
                 break;
             case(SDL_MOUSEBUTTONDOWN):
-                input->mouse[event.button.button] = SDL_TRUE;
+                input->mouse[input->event.button.button] = SDL_TRUE;
                 break;
             case(SDL_MOUSEBUTTONUP):
-                input->mouse[event.button.button] = SDL_FALSE;
+                input->mouse[input->event.button.button] = SDL_FALSE;
                 break;
             case(SDL_WINDOWEVENT):
-                if(event.window.event == SDL_WINDOWEVENT_RESIZED)
+                if(input->event.window.event == SDL_WINDOWEVENT_RESIZED)
                     input->resize = SDL_TRUE;
                 break;
         }
@@ -704,6 +703,10 @@ void emulate(s_emu *emu)
             resize_screen(&emu->screen);
             emu->in.resize = SDL_FALSE;
         }
+        if(emu->in.key[SDL_SCANCODE_P])
+        {
+            pause_menu(emu);
+        }
         
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -725,15 +728,49 @@ void emulate(s_emu *emu)
     }
 }
 
-int parse_options(s_opt *opt, int argc, char *argv[])
+void pause_menu(s_emu *emu)
 {
-    opt->bootrom = true;
-    opt->rom_argument = false;
-    opt->debug_info = false;
-    if(argc <= 1)
-        return EXIT_SUCCESS;
+    //wait for P key release
+    while(!emu->in.quit && emu->in.key[SDL_SCANCODE_P])
+    {
+        update_event(&emu->in);
+        SDL_Delay(5);
+    }
     
-    const char help_msg[] = 
+    printf(
+        "Emulator paused.\n"
+        "Press P to continue, O to options.\n"
+    );
+    
+    while(!emu->in.quit)
+    {
+        update_event(&emu->in);
+        if(emu->in.key[SDL_SCANCODE_P])
+        {
+            while(emu->in.key[SDL_SCANCODE_P])
+                update_event(&emu->in);
+            return;
+        }
+        if(emu->in.key[SDL_SCANCODE_O])
+        {
+            if(0 == parse_options_during_exec(&emu->opt))
+                return;
+        }
+        SDL_Delay(5);
+    }
+}
+
+/**
+ * @brief Handle options at program launch or when O is pressed during pause.
+ * @param opt
+ * @param argc
+ * @param argv
+ * @param is_program_beginning: to distinguish both cases.
+ * @returns 0 if user input OK, 1 if need to exit/re-ask user input.
+ */
+int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning)
+{
+    const char help_msg_beginning[] = 
     "Usage\n"
     "\n"
     "   ./game_spop <ROM file> [option]\n"
@@ -745,30 +782,124 @@ int parse_options(s_opt *opt, int argc, char *argv[])
     "                          3 bytes object code, and all registers, PC, SP and\n"
     "                          register F flags values in the console. Emulator is\n"
     "                          much slower when this option is enabled.\n"
+    "   --breakpoint         = enable debugging with breakpoints. The program will\n"
+    "                          ask to enter a PC value breakpoint at start, and will\n"
+    "                          ask for a new breakpoint when the previous one is\n"
+    "                          reached.\n"
     "   --help, -h           = show this help message and exit.\n";
     
-    for(size_t i = 1; i < (size_t)argc; i++)
+    const char help_msg_during_exec[] = 
+    "Options\n"
+    "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
+    "                          3 bytes object code, and all registers, PC, SP and\n"
+    "                          register F flags values in the console. Emulator is\n"
+    "                          much slower when this option is enabled.\n"
+    "   --breakpoint         = enable debugging with breakpoints. The program will\n"
+    "                          ask to enter a PC value breakpoint at start, and will\n"
+    "                          ask for a new breakpoint when the previous one is\n"
+    "                          reached.\n"
+    "   --help, -h           = show this help message and exit.\n";
+    
+    for(size_t i = 0 + is_program_beginning; i < argc; i++)
     {
-        if(0 == strcmp(argv[i], "--bypass-bootrom"))
+        if((0 == strcmp(argv[i], "--bypass-bootrom")) && (is_program_beginning))
             opt->bootrom = false;
         else if(0 == strcmp(argv[i], "--debug-info"))
-            opt->debug_info = true;
+            opt->debug_info = !opt->debug_info;
         else if(0 == strcmp(argv[i], "--help") || (0 == strcmp(argv[i], "-h")))
         {
-            printf("%s", help_msg);
-            exit(EXIT_SUCCESS);
+            if(is_program_beginning)
+                printf("%s", help_msg_beginning);
+            else
+                printf("%s", help_msg_during_exec);
+            return EXIT_FAILURE;
+        }
+        else if(0 == strcmp(argv[i], "--breakpoint"))
+        {
+            opt->breakpoints = !opt->breakpoints;
         }
         else if(0 == strncmp(argv[i], "--", 2))
         {
-            fprintf(stderr, "Unknown argument '%s', abort.\n\n%s", argv[i], help_msg);
+            if(is_program_beginning)
+                fprintf(stderr, "Unknown argument '%s', abort.\n\n%s", argv[i], help_msg_beginning);
+            else
+                fprintf(stderr, "Unknown argument '%s', abort.\n\n%s", argv[i], help_msg_during_exec);
             return EXIT_FAILURE;
         }
-        else
+        else if(is_program_beginning)
         {
             opt->rom_argument = true;
             snprintf(opt->rom_filename, FILENAME_MAX, "%s", argv[i]);
         }
     }
+
+    ask_breakpoint(opt);
+    
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Handle the options menu during pause.
+ */
+int parse_options_during_exec(s_opt *opt)
+{
+    bool quit = false;
+    char entry[FILENAME_MAX] = "";
+    char *sub;
+    size_t argc = 0;
+    //count number of args
+    while(!quit)
+    {
+        printf(
+            "Enter an option to toggle or press ENTER to continue without changes.\n"
+            "See --help to have a list of available options.\n"
+        );
+        if(NULL == fgets(entry, FILENAME_MAX, stdin))
+            continue;
+        if(entry[0] == '\0')
+            continue;
+        if(entry[0] == '\n')
+            return EXIT_SUCCESS;
+        //argc count
+        sub = strtok(entry, " \n");
+        while(NULL != sub)
+        {
+            argc++;
+            sub = strtok(NULL, " \n");
+        }
+        char argv[argc][30];
+        char *ptr[30];
+        //copy to argv
+        sub = strtok(entry, " \n");
+        snprintf(argv[0], 30, "%s", sub);
+        ptr[0] = argv[0];
+        for(size_t i = 1; i < argc; i++)
+        {
+            sub = strtok(NULL, " \n");
+            snprintf(argv[i], 30, "%s", sub);
+            ptr[i] = argv[i];
+        }
+        if(0 == parse_options(opt, argc, ptr, false))
+            quit = true;
+    }
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Handle the command lines arguments gived to the program
+ * when lauching. 
+ */
+int parse_start_options(s_opt *opt, int argc, char *argv[])
+{
+    opt->bootrom = true;
+    opt->rom_argument = false;
+    opt->debug_info = false;
+    opt->breakpoints = false;
+    if(argc <= 1)
+        return EXIT_SUCCESS;
+    
+    if(0 != parse_options(opt, (size_t) argc, argv, true))
+        return EXIT_FAILURE;
     
     if(!opt->rom_argument && !opt->bootrom)
     {
@@ -778,3 +909,57 @@ int parse_options(s_opt *opt, int argc, char *argv[])
     
     return EXIT_SUCCESS;
 }
+
+void ask_breakpoint(s_opt *opt)
+{
+    if(!opt->breakpoints)
+        return;
+        
+    bool quit = false;
+    char bp[10] = "";
+    while(!quit)
+    {
+        printf("Enter a breakpoint value OR press ENTER to start/continue program normally OR\n"
+               "enter 'O' to see options menu:\n");
+        if(NULL == fgets(bp, 10, stdin))
+            continue;
+        if(bp[0] == 'O' || bp[0] == 'o')
+        {
+            while(0 != parse_options_during_exec(opt));
+            return;
+        }
+        if(bp[0] == '\n')
+        {
+            opt->breakpoints = false;
+            printf("Starting/continuing execution with no breakpoint.\n");
+            break;
+        }
+        errno = 0;
+        char *endptr;
+        long val = strtol(bp, &endptr, 0);
+        if(errno != 0)
+        {
+            fprintf(stderr, "strtol: %s\n", strerror(errno));
+            continue;
+        }
+        if(val == 0 && endptr == bp)
+        {
+            fprintf(stderr, "Error: no digits were found.\n");
+            continue;
+        }
+        if(val > 0xFFFF)
+        {
+            fprintf(stderr, "Error: breakpoint value must not exceed 0xFFFF!\n");
+            continue;
+        }
+        if(val < 0)
+        {
+            fprintf(stderr, "Error: breakpoint value cannot be negative\n");
+            continue;
+        }
+        opt->breakpoint_value = val;
+        printf("Breakpoint value set to 0x%04X.\n");
+        quit = true;            
+    }
+}
+

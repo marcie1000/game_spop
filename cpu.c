@@ -328,10 +328,10 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     s_cpu *cpu = &emu->cpu;
     
     //TETRIS ROM exception
-    if((adress < 0x3FFF) && (adress != 0x2000) && (cpu->pc != 0x0254))
+    if((adress < 0x3FFF) /* && (adress != 0x2000) && (adress != 0x1B08) && (cpu->pc != 0x0254)*/)
     {
         fprintf(stderr, "ERROR: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
-        return EXIT_FAILURE;
+        //return EXIT_FAILURE;
     }
     else if(adress >= 0x4000 && adress <= 0x7FFF)
     {
@@ -495,6 +495,21 @@ uint8_t get_cb_opcode(uint32_t op32)
     return (op32 & 0x0000FF00) >> 8;
 }
 
+void breakpoint_handle(s_emu *emu, uint8_t action)
+{
+    if(!emu->opt.breakpoints)
+        return;
+    s_cpu *cpu = &emu->cpu;
+    
+    if(cpu->pc <= emu->opt.breakpoint_value &&
+       cpu->pc + emu->length_table[action] >= emu->opt.breakpoint_value)
+    {
+        printf("Breakpoint 0x%04X reached!\n", emu->opt.breakpoint_value);
+        ask_breakpoint(&emu->opt);
+    }
+    
+}
+
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
@@ -512,6 +527,9 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
             printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%04X, sp = 0x%02X\n", 
                    opcode, emu->mnemonic_index[action], cpu->pc, cpu->sp);
     }
+    
+    breakpoint_handle(emu, action);
+    
     (*opcode_functions[action])(emu, opcode);
     if(emu->opt.debug_info)
     {
@@ -593,7 +611,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
     opcode_functions[0x00] = &NOP;
     opcode_functions[0x01] = &LD_BC_d16;
-    //opcode_functions[0x02] = &LD_derefBC_A;
+    opcode_functions[0x02] = &LD_derefBC_A;
     opcode_functions[0x03] = &INC_BC;
     opcode_functions[0x04] = &INC_B;
     opcode_functions[0x05] = &DEC_B;
@@ -609,7 +627,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x0F] = &RRCA;
     //opcode_functions[0x10] = &STOP_0;
     opcode_functions[0x11] = &LD_DE_d16;
-    //opcode_functions[0x12] = &LD_derefDE_A;
+    opcode_functions[0x12] = &LD_derefDE_A;
     opcode_functions[0x13] = &INC_DE;
     opcode_functions[0x14] = &INC_D;
     opcode_functions[0x15] = &DEC_D;
@@ -695,20 +713,20 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0x65] = &LD_H_L;
     opcode_functions[0x66] = &LD_H_derefHL;
     opcode_functions[0x67] = &LD_H_A;
-    //opcode_functions[0x68] = &LD_L_B;
-    //opcode_functions[0x69] = &LD_L_C;
-    //opcode_functions[0x6A] = &LD_L_D;
-    //opcode_functions[0x6B] = &LD_L_E;
-    //opcode_functions[0x6C] = &LD_L_H;
-    //opcode_functions[0x6D] = &LD_L_L;
+    opcode_functions[0x68] = &LD_L_B;
+    opcode_functions[0x69] = &LD_L_C;
+    opcode_functions[0x6A] = &LD_L_D;
+    opcode_functions[0x6B] = &LD_L_E;
+    opcode_functions[0x6C] = &LD_L_H;
+    opcode_functions[0x6D] = &LD_L_L;
     opcode_functions[0x6E] = &LD_L_derefHL;
-    //opcode_functions[0x6F] = &LD_L_A;
-    //opcode_functions[0x70] = &LD_derefHL_B;
-    //opcode_functions[0x71] = &LD_derefHL_C;
-    //opcode_functions[0x72] = &LD_derefHL_D;
-    //opcode_functions[0x73] = &LD_derefHL_E;
-    //opcode_functions[0x74] = &LD_derefHL_H;
-    //opcode_functions[0x75] = &LD_derefHL_L;
+    opcode_functions[0x6F] = &LD_L_A;
+    opcode_functions[0x70] = &LD_derefHL_B;
+    opcode_functions[0x71] = &LD_derefHL_C;
+    opcode_functions[0x72] = &LD_derefHL_D;
+    opcode_functions[0x73] = &LD_derefHL_E;
+    opcode_functions[0x74] = &LD_derefHL_H;
+    opcode_functions[0x75] = &LD_derefHL_L;
     //opcode_functions[0x76] = &HALT;
     opcode_functions[0x77] = &LD_derefHL_A;
     opcode_functions[0x78] = &LD_A_B;
@@ -728,7 +746,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x86] = &ADD_A_derefHL;
     opcode_functions[0x87] = &ADD_A_A;
     //opcode_functions[0x88] = &ADC_A_B;
-    //opcode_functions[0x89] = &ADC_A_C;
+    opcode_functions[0x89] = &ADC_A_C;
     //opcode_functions[0x8A] = &ADC_A_D;
     //opcode_functions[0x8B] = &ADC_A_E;
     //opcode_functions[0x8C] = &ADC_A_H;
@@ -783,7 +801,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0xBD] = &CP_L;
     opcode_functions[0xBE] = &CP_derefHL;
     //opcode_functions[0xBF] = &CP_A;
-    //opcode_functions[0xC0] = &RET_NZ;
+    opcode_functions[0xC0] = &RET_NZ;
     opcode_functions[0xC1] = &POP_BC;
     //opcode_functions[0xC2] = &JP_NZ_a16;
     opcode_functions[0xC3] = &JP_a16;
@@ -808,7 +826,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xD6] = &SUB_d8;
     //opcode_functions[0xD7] = &RST_10H;
     //opcode_functions[0xD8] = &RET_C;
-    //opcode_functions[0xD9] = &RETI;
+    opcode_functions[0xD9] = &RETI;
     //opcode_functions[0xDA] = &JP_C_a16;
     opcode_functions[0xDB] = &opcode_non_existant;
     //opcode_functions[0xDC] = &CALL_C_a16;
@@ -837,7 +855,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xF3] = &DI;
     opcode_functions[0xF4] = &opcode_non_existant;
     opcode_functions[0xF5] = &PUSH_AF;
-    //opcode_functions[0xF6] = &OR_d8;
+    opcode_functions[0xF6] = &OR_d8;
     //opcode_functions[0xF7] = &RST_30H;
     //opcode_functions[0xF8] = &LD_HL_SPplusr8;
     //opcode_functions[0xF9] = &LD_SP_HL;
@@ -960,30 +978,30 @@ void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
     //cb_functions[0x65] = &prefixed_BIT_4_L;
     //cb_functions[0x66] = &prefixed_BIT_4_derefHL;
     //cb_functions[0x67] = &prefixed_BIT_4_A;
-    //cb_functions[0x68] = &prefixed_BIT_5_B;
-    //cb_functions[0x69] = &prefixed_BIT_5_C;
-    //cb_functions[0x6A] = &prefixed_BIT_5_D;
-    //cb_functions[0x6B] = &prefixed_BIT_5_E;
-    //cb_functions[0x6C] = &prefixed_BIT_5_H;
-    //cb_functions[0x6D] = &prefixed_BIT_5_L;
+    cb_functions[0x68] = &prefixed_BIT_5_B;
+    cb_functions[0x69] = &prefixed_BIT_5_C;
+    cb_functions[0x6A] = &prefixed_BIT_5_D;
+    cb_functions[0x6B] = &prefixed_BIT_5_E;
+    cb_functions[0x6C] = &prefixed_BIT_5_H;
+    cb_functions[0x6D] = &prefixed_BIT_5_L;
     //cb_functions[0x6E] = &prefixed_BIT_5_derefHL;
-    //cb_functions[0x6F] = &prefixed_BIT_5_A;
-    //cb_functions[0x70] = &prefixed_BIT_6_B;
-    //cb_functions[0x71] = &prefixed_BIT_6_C;
-    //cb_functions[0x72] = &prefixed_BIT_6_D;
-    //cb_functions[0x73] = &prefixed_BIT_6_E;
-    //cb_functions[0x74] = &prefixed_BIT_6_H;
-    //cb_functions[0x75] = &prefixed_BIT_6_L;
+    cb_functions[0x6F] = &prefixed_BIT_5_A;
+    cb_functions[0x70] = &prefixed_BIT_6_B;
+    cb_functions[0x71] = &prefixed_BIT_6_C;
+    cb_functions[0x72] = &prefixed_BIT_6_D;
+    cb_functions[0x73] = &prefixed_BIT_6_E;
+    cb_functions[0x74] = &prefixed_BIT_6_H;
+    cb_functions[0x75] = &prefixed_BIT_6_L;
     //cb_functions[0x76] = &prefixed_BIT_6_derefHL;
-    //cb_functions[0x77] = &prefixed_BIT_6_A;
-    //cb_functions[0x78] = &prefixed_BIT_7_B;
-    //cb_functions[0x79] = &prefixed_BIT_7_C;
-    //cb_functions[0x7A] = &prefixed_BIT_7_D;
-    //cb_functions[0x7B] = &prefixed_BIT_7_E;
+    cb_functions[0x77] = &prefixed_BIT_6_A;
+    cb_functions[0x78] = &prefixed_BIT_7_B;
+    cb_functions[0x79] = &prefixed_BIT_7_C;
+    cb_functions[0x7A] = &prefixed_BIT_7_D;
+    cb_functions[0x7B] = &prefixed_BIT_7_E;
     cb_functions[0x7C] = &prefixed_BIT_7_H;
-    //cb_functions[0x7D] = &prefixed_BIT_7_L;
+    cb_functions[0x7D] = &prefixed_BIT_7_L;
     //cb_functions[0x7E] = &prefixed_BIT_7_derefHL;
-    //cb_functions[0x7F] = &prefixed_BIT_7_A;
+    cb_functions[0x7F] = &prefixed_BIT_7_A;
     //cb_functions[0x80] = &prefixed_RES_0_B;
     //cb_functions[0x81] = &prefixed_RES_0_C;
     //cb_functions[0x82] = &prefixed_RES_0_D;
@@ -1110,7 +1128,7 @@ void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
     //cb_functions[0xFB] = &prefixed_SET_7_E;
     //cb_functions[0xFC] = &prefixed_SET_7_H;
     //cb_functions[0xFD] = &prefixed_SET_7_L;
-    //cb_functions[0xFE] = &prefixed_SET_7_derefHL;
+    cb_functions[0xFE] = &prefixed_SET_7_derefHL;
     //cb_functions[0xFF] = &prefixed_SET_7_A;
 
 }

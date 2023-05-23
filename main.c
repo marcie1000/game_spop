@@ -8,7 +8,7 @@
 int main(int argc, char *argv[])
 {
     s_emu emu;    
-    if(0 != parse_options(&emu.opt, argc, argv))
+    if(0 != parse_start_options(&emu.opt, argc, argv))
         exit(EXIT_FAILURE);
     
     if(0 != initialize_emulator(&emu))

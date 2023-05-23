@@ -37,11 +37,13 @@ enum ppu_modes_durations {
 };
 
 typedef struct s_opt{
-    bool bootrom, rom_argument, debug_info;
+    bool bootrom, rom_argument, debug_info, breakpoints;
+    uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
 }s_opt;
 
 typedef struct s_input{
+    SDL_Event event;
     SDL_bool key[SDL_NUM_SCANCODES];
     SDL_bool quit;
     int x, y, xrel, yrel;
@@ -127,7 +129,11 @@ extern int load_boot_rom(s_cpu *cpu);
 extern int load_rom(s_emu *emu);
 extern void init_mnemonic_index(s_emu *emu);
 extern void init_prefix_mnemonic_index(s_emu *emu);
-extern int parse_options(s_opt *opt, int argc, char *argv[]);
+extern int parse_start_options(s_opt *opt, int argc, char *argv[]);
+extern int parse_options_during_exec(s_opt *opt);
+extern int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning);
+extern void ask_breakpoint(s_opt *opt);
+extern void pause_menu(s_emu *emu);
 
 
 #endif //EMULATOR_H
