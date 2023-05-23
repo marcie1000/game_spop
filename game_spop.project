@@ -43,7 +43,7 @@
         <Library Value="SDL2_mixer"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(ProjectName)" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="&quot;roms/Tetris (World) (Rev 1).gb&quot; --bypass-bootrom" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="/home/adelia/Programmation/CodeLite/game_spop_emu/game_spop" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(ProjectName)" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="&quot;/home/adelia/Programmation/CodeLite/game_spop_emu/game_spop/roms/Tetris (World) (Rev 1).gb&quot; --bypass-bootrom" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="/home/adelia/Programmation/CodeLite/game_spop_emu/game_spop" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="CodeLite Makefile Generator"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>

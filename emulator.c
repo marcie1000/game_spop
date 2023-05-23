@@ -710,7 +710,6 @@ void emulate(s_emu *emu)
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
-
         
         ppu_modes_and_scanlines(emu);
         

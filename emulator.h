@@ -52,8 +52,16 @@ typedef struct s_input{
 
 //I/O registers
 typedef struct s_io{
-    uint8_t NR11, NR12, NR13, NR14, NR50, NR51, NR52, LCDC, SCY, SCX, LY, BGP, BANK,
-            IE, IF, STAT, LYC, SB, SC, OBP0, OBP1;
+    uint8_t P1_JOYP,
+            NR10, NR11, NR12, NR13, NR14,
+            NR21, NR22, NR23, NR24,
+            NR30, NR31, NR32, NR33, NR34,
+            NR41, NR42, NR43, NR44,
+            NR50, NR51, NR52, LCDC, 
+            SCY, SCX, WY, WX, LY, BGP, BANK,
+            IE, IF, STAT, LYC, SB, SC, OBP0, OBP1,
+            TMA;
+    uint8_t wave_RAM[16];
     bool IME;
 }s_io;
 
@@ -67,9 +75,7 @@ typedef struct s_cpu {
     uint8_t OAM[OAM_SIZE];
     s_io io_reg;
     uint8_t external_RAM[EXTERNAL_RAM_SIZE];
-    uint8_t regA; //accumulator
-    uint8_t regB, regC, regD, regE, regH, regL; //normal registers
-    uint8_t regF; //flags
+    uint8_t regA, regB, regC, regD, regE, regH, regL, regF; //registers
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
     size_t t_cycles; //t_cycles counter at 4,194,304 Hz

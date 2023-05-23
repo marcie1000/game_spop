@@ -12,6 +12,7 @@ void cb_opcode_unimplemented(void *arg, uint8_t op)
     s_emu *emu = arg;
     fprintf(stderr, "WARNING: Prefixed instruction %s (0x%02X) unimplemented!\n",
             emu->prefixed_mnemonic_index[op], op);
+    SDL_Delay(2000);
     destroy_emulator(emu, EXIT_FAILURE);
 }
 
@@ -83,7 +84,18 @@ void prefixed_RL_C(void *arg, UNUSED uint8_t op)
 //void prefixed_SWAP_H(void *arg, uint8_t op)
 //void prefixed_SWAP_L(void *arg, uint8_t op)
 //void prefixed_SWAP_derefHL(void *arg, uint8_t op)
-//void prefixed_SWAP_A(void *arg, uint8_t op)
+void prefixed_SWAP_A(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regA = ((cpu->regA & 0xF0) >> 4) | ((cpu->regA & 0x0F) << 4);
+    
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK | CARRY_FMASK);
+    
+    cpu->t_cycles += 8;
+}
 //void prefixed_SRL_B(void *arg, uint8_t op)
 //void prefixed_SRL_C(void *arg, uint8_t op)
 //void prefixed_SRL_D(void *arg, uint8_t op)

@@ -60,6 +60,8 @@ void interrupt_handler(s_emu *emu)
         if(!(io_reg->IF & (0x01 << i)))
             continue;
             
+        //disables interrupt when entering in interrupt routine
+        io_reg->IME = false;
         //push PC into stack
         cpu->sp--;
         if(0 != write_memory(emu, cpu->sp, (cpu->pc & 0xff00) >> 8))
