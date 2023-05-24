@@ -31,5 +31,5 @@ Options:
                           ask for a new breakpoint when the previous one is
                           reached.
 * ```--step```, ```-s```        = enable step by step debugging. Emulator will stop
-                          at each new instruction.\n"
+                          at each new instruction.
 * ```--help```, ```-h```        = show this help message and exit.
