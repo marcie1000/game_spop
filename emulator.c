@@ -777,7 +777,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "\n"
     "Options\n"
     "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
-    "                          in argument). This option can only be provided at launch.\n"
+    "                          in argument). This option can only be provided at\n"
+    "                          launch.\n"
     "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
     "                          3 bytes object code, and all registers, PC, SP and\n"
     "                          register F flags values in the console. Emulator is\n"
@@ -787,7 +788,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
     "   --step, -s           = enable step by step debugging. Emulator will stop\n"
-    "                          at each new instruction.\n"
+    "                          at each new instruction and ask to continue or edit\n"
+    "                          options.\n"
     "   --help, -h           = show this help message and exit.\n";
     
     const char help_msg_during_exec[] = 
@@ -801,7 +803,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
     "   --step, -s           = enable step by step debugging. Emulator will stop\n"
-    "                          at each new instruction.\n"
+    "                          at each new instruction and ask to continue or edit\n"
+    "                          options.\n"
     "   --help, -h           = show this help message and exit.\n";
     
     for(size_t i = 0 + is_program_beginning; i < argc; i++)
