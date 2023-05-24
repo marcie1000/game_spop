@@ -40,7 +40,6 @@
       </Compiler>
       <Linker Options="" Required="yes">
         <Library Value="SDL2"/>
-        <Library Value="SDL2_mixer"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="$(ProjectName)" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="&quot;roms/Tetris (World) (Rev 1).gb&quot;" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="/home/adelia/Programmation/CodeLite/game_spop_emu/game_spop" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
