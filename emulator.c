@@ -777,7 +777,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "\n"
     "Options\n"
     "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
-    "                          in argument).\n"
+    "                          in argument). This option can only be provided at launch.\n"
     "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
     "                          3 bytes object code, and all registers, PC, SP and\n"
     "                          register F flags values in the console. Emulator is\n"
@@ -786,6 +786,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
+    "   --step, -s           = enable step by step debugging. Emulator will stop\n"
+    "                          at each new instruction.\n"
     "   --help, -h           = show this help message and exit.\n";
     
     const char help_msg_during_exec[] = 
@@ -798,6 +800,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
+    "   --step, -s           = enable step by step debugging. Emulator will stop\n"
+    "                          at each new instruction.\n"
     "   --help, -h           = show this help message and exit.\n";
     
     for(size_t i = 0 + is_program_beginning; i < argc; i++)
@@ -817,6 +821,10 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         else if(0 == strcmp(argv[i], "--breakpoint"))
         {
             opt->breakpoints = !opt->breakpoints;
+        }
+        else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
+        {
+            opt->step_by_step = !opt->step_by_step;
         }
         else if(0 == strncmp(argv[i], "--", 2))
         {
@@ -850,8 +858,18 @@ int parse_options_during_exec(s_opt *opt)
     //count number of args
     while(!quit)
     {
+        printf("Active options:\n");
+        if(opt->breakpoints)
+            printf("  --breakpoints\n");
+        if(opt->debug_info)
+            printf("  --debug-info\n");
+        if(opt->step_by_step)
+            printf("  --step\n");
+        if(!opt->breakpoints && !opt->debug_info && !opt->step_by_step)
+            printf("  none.\n");
+        
         printf(
-            "Enter an option to toggle or press ENTER to continue without changes.\n"
+            "\nEnter an option to toggle or press ENTER to continue without changes.\n"
             "See --help to have a list of available options.\n"
         );
         if(NULL == fgets(entry, FILENAME_MAX, stdin))
@@ -895,6 +913,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->rom_argument = false;
     opt->debug_info = false;
     opt->breakpoints = false;
+    opt->step_by_step = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     
@@ -912,7 +931,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
 
 void ask_breakpoint(s_opt *opt)
 {
-    if(!opt->breakpoints)
+    if(!opt->breakpoints && !opt->step_by_step)
         return;
         
     bool quit = false;

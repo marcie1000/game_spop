@@ -37,7 +37,7 @@ enum ppu_modes_durations {
 };
 
 typedef struct s_opt{
-    bool bootrom, rom_argument, debug_info, breakpoints;
+    bool bootrom, rom_argument, debug_info, breakpoints, step_by_step;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
 }s_opt;

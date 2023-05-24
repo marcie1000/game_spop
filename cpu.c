@@ -330,12 +330,12 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //TETRIS ROM exception
     if((adress < 0x3FFF) /* && (adress != 0x2000) && (adress != 0x1B08) && (cpu->pc != 0x0254)*/)
     {
-        fprintf(stderr, "ERROR: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
+        fprintf(stderr, "WARNING: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
         //return EXIT_FAILURE;
     }
     else if(adress >= 0x4000 && adress <= 0x7FFF)
     {
-        fprintf(stderr, "ERROR: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n", adress);
+        fprintf(stderr, "WARNING: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n", adress);
         return EXIT_FAILURE;
     }
     //VRAM
@@ -507,7 +507,13 @@ void breakpoint_handle(s_emu *emu, uint8_t action)
         printf("Breakpoint 0x%04X reached!\n", emu->opt.breakpoint_value);
         ask_breakpoint(&emu->opt);
     }
-    
+}
+
+void step_by_step_handle(s_emu *emu)
+{
+    if(!emu->opt.step_by_step)
+        return;
+    ask_breakpoint(&emu->opt);
 }
 
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
@@ -529,6 +535,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     }
     
     breakpoint_handle(emu, action);
+    step_by_step_handle(emu);
     
     (*opcode_functions[action])(emu, opcode);
     if(emu->opt.debug_info)

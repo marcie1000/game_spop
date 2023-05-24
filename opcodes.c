@@ -428,8 +428,8 @@ void LD_A_derefHLplus(void *arg, UNUSED uint32_t op)
     cpu->regA = data;
     
     HL++;
-    cpu->regH = (HL & 0xF0) >> 8;
-    cpu->regL = HL & 0x0F;
+    cpu->regH = (HL & 0xFF00) >> 8;
+    cpu->regL = HL & 0x00FF;
     
     cpu->t_cycles += 8;
 }
@@ -514,8 +514,8 @@ void INC_derefHL(void *arg, UNUSED uint32_t op)
     uint8_t data;
     if(0 != read_memory(emu, (cpu->regH << 8) + cpu->regL, &data))
         destroy_emulator(emu, EXIT_FAILURE);
-    uint8_t data4 = data & 0x0F;
-    flag_assign(data4 + 1 > 0x0F, &cpu->regF, HALF_CARRY_FMASK);
+    uint8_t data4bit = data & 0x0F;
+    flag_assign(data4bit + 1 > 0x0F, &cpu->regF, HALF_CARRY_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     data++;
     flag_assign(data == 0, &cpu->regF, ZERO_FMASK);
@@ -1060,17 +1060,17 @@ void ADD_A_derefHL(void *arg, UNUSED uint32_t op)
     s_cpu *cpu = &emu->cpu;
     
     uint16_t newA = cpu->regA;
-    uint8_t HL;
-    if(0 != read_memory(emu, (cpu->regH << 8) + cpu->regL, &HL))
+    uint8_t data;
+    if(0 != read_memory(emu, (cpu->regH << 8) + cpu->regL, &data))
         destroy_emulator(emu, EXIT_FAILURE);
         
     uint8_t A4bit = newA & 0x0F;
-    uint8_t HL4bit = HL & 0x0F;
-    flag_assign(A4bit + HL4bit > 0x0F, &cpu->regF, HALF_CARRY_FMASK);
+    uint8_t data4bit = data & 0x0F;
+    flag_assign(A4bit + data4bit > 0x0F, &cpu->regF, HALF_CARRY_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-    newA += HL;
+    newA += data;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    cpu->regA += HL;
+    cpu->regA += data;
     flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     
     cpu->t_cycles += 8;
