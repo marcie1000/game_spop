@@ -49,7 +49,7 @@ int initialize_screen(s_emu *emu)
         return EXIT_FAILURE;
     }
     
-    emu->cpu.io_reg.STAT |= 2;
+    emu->cpu.io_reg.STAT = 2;
     
     return EXIT_SUCCESS;
 }
@@ -94,6 +94,9 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
     
+    uint8_t Ytemp = io_reg->LY + io_reg->SCY;
+    uint8_t Xtemp = io_reg->SCX + i;
+    
     if(!screen->bg_win_enable_priority)
         return EXIT_SUCCESS;
         
@@ -101,9 +104,9 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x800;
     
     //relative adress of the tile in the tile map
-    uint16_t rel_bg_tilemap_adress = (io_reg->LY + io_reg->SCY) / 8;
+    uint16_t rel_bg_tilemap_adress = (Ytemp) / 8;
     rel_bg_tilemap_adress *= 32;
-    rel_bg_tilemap_adress += (io_reg->SCX + i) / 8;
+    rel_bg_tilemap_adress += (Xtemp) / 8;
     if(rel_bg_tilemap_adress > 0x400)
     {
         fprintf(stderr, "ERROR: adress is out of tile map bounds!\n");
@@ -114,9 +117,9 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     // adress of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
     uint16_t bg_data_adress = bg_win_data_start_adr + 16 * tilenum;
-    bg_data_adress += 2 * ((io_reg->LY + io_reg->SCY) % 8);
+    bg_data_adress += 2 * ((Ytemp) % 8);
     
-    uint8_t bitmask = (0x80 >> ((i + io_reg->SCX) % 8));
+    uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
     
     *pixel =     (cpu->VRAM[bg_data_adress] 
                 //Selects the pixel we are currently drawing
@@ -178,17 +181,17 @@ int draw_scanline(s_emu *emu)
     }
     //uint16_t win_map_start_adress = screen->win_tile_map_area ? 0x9C00 : 0x9800;
 
-    if(io_reg->LY + io_reg->SCY > 255)
-    {
-        fprintf(stderr, "WARNING: LY + SCY is out of tile map area!!\n");
-        return EXIT_FAILURE;
-    }
-    //95 + 160 = 255
-    if(io_reg->SCX > 95)
-    {
-        fprintf(stderr, "WARNING: SCX + screen width is out of tilemap area!!\n");
-        return EXIT_FAILURE;
-    }
+//    if(io_reg->LY + io_reg->SCY > 255)
+//    {
+//        fprintf(stderr, "WARNING: LY + SCY is out of tile map area!!\n");
+//        return EXIT_FAILURE;
+//    }
+//    //95 + 160 = 255
+//    if(io_reg->SCX > 95)
+//    {
+//        fprintf(stderr, "WARNING: SCX + screen width is out of tilemap area!!\n");
+//        return EXIT_FAILURE;
+//    }
     
     //for each pixel of the scanline
     for(size_t i = 0; i < PIX_BY_W; i++)
@@ -294,6 +297,54 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     cpu->io_reg.LY = 0;
     //clear VBlank flag
     io_reg->IF &= (~0x01);
+}
+
+int DMA_transfer(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_io *io_reg = &cpu->io_reg;
+    
+    if(io_reg->DMA > 0xDF)
+    {
+        fprintf(stderr, "ERROR: DMA value exceed 0xDF! (DMA = 0x%02X)\n", io_reg->DMA);
+        return EXIT_FAILURE;
+    }
+    
+    //ROM bank 00
+    if(io_reg->DMA <= 0x3F)
+    {
+        memcpy(cpu->OAM, &cpu->ROM_Bank[0][io_reg->DMA << 8], OAM_SIZE);
+    }
+    
+    //ROM bank 01
+    else if(io_reg->DMA <= 0x7F)
+    {
+        uint16_t start_adress = (io_reg->DMA << 8) - 0x4000;
+        memcpy(cpu->OAM, &cpu->ROM_Bank[1][start_adress], OAM_SIZE);
+    }
+    
+    //VRAM
+    else if(io_reg->DMA <= 0x9F)
+    {
+        uint16_t start_adress = (io_reg->DMA << 8) - 0x8000;
+        memcpy(cpu->OAM, &cpu->VRAM[start_adress], OAM_SIZE);
+    }
+    
+    //external RAM
+    else if(io_reg->DMA <= 0xBF)
+    {
+        uint16_t start_adress = (io_reg->DMA << 8) - 0xA000;
+        memcpy(cpu->OAM, &cpu->external_RAM[start_adress], OAM_SIZE);
+    }
+    
+    //external WRAM
+    else if(io_reg->DMA <= 0xDF)
+    {
+        uint16_t start_adress = (io_reg->DMA << 8) - 0xC000;
+        memcpy(cpu->OAM, &cpu->WRAM[start_adress], OAM_SIZE);
+    }
+    
+    return EXIT_SUCCESS;
 }
 
 

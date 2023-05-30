@@ -863,7 +863,7 @@ int parse_options_during_exec(s_opt *opt)
     {
         printf("Active options:\n");
         if(opt->breakpoints)
-            printf("  --breakpoints\n");
+            printf("  --breakpoint\n");
         if(opt->debug_info)
             printf("  --debug-info\n");
         if(opt->step_by_step)

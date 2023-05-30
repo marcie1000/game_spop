@@ -7,6 +7,7 @@
 #include "opcodes.h"
 #include "prefixed_opcodes.h"
 #include "gb_interrupts.h"
+#include "graphics.h"
 
 int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
@@ -27,6 +28,9 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF06:
             io_reg->TMA = data;
+            break;
+        case 0xFF07:
+            io_reg->TAC = data & 0x07;
             break;
         case 0xFF0F:
             io_reg->IF = data;
@@ -141,6 +145,11 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF45:
             io_reg->LYC = data;
             break;
+        case 0xFF46:
+            io_reg->DMA = data;
+            if(0 != DMA_transfer(emu))
+                return EXIT_FAILURE;
+            break;
         case 0xFF47:
             io_reg->BGP = data;
             break;
@@ -193,6 +202,9 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             break;
         case 0xFF06:
             *data = io_reg->TMA;
+            break;
+        case 0xFF07:
+            *data = io_reg->TAC & 0x07;
             break;
         case 0xFF10:
             *data = io_reg->NR10;
@@ -298,6 +310,9 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
         case 0xFF45:
             *data = io_reg->LYC;
             break;
+        case 0xFF46:
+            *data = io_reg->DMA;
+            break;
         case 0xFF47:
             *data = io_reg->BGP;
             break;
@@ -390,6 +405,12 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
         }
     }
     
+    if(emu->opt.debug_info && emu->opt.test_debug)
+    {
+        printf(ANSI_COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" ANSI_COLOR_RESET "\n", data, adress);
+        //update_event(&emu->in);
+    }
+    
     return EXIT_SUCCESS;
 }
 
@@ -451,6 +472,12 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
         *data = cpu->io_reg.IE;
     }
     
+    if(emu->opt.debug_info && emu->opt.test_debug)
+    {
+        printf(ANSI_COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" ANSI_COLOR_RESET "\n", *data, adress);
+        //update_event(&emu->in);
+    }
+    
     return EXIT_SUCCESS;
 }
 
@@ -504,7 +531,7 @@ void breakpoint_handle(s_emu *emu, uint8_t action)
     if(cpu->pc <= emu->opt.breakpoint_value &&
        cpu->pc + emu->length_table[action] >= emu->opt.breakpoint_value)
     {
-        printf("Breakpoint 0x%04X reached!\n", emu->opt.breakpoint_value);
+        printf(ANSI_COLOR_GREEN "Breakpoint 0x%04X reached!" ANSI_COLOR_RESET "\n", emu->opt.breakpoint_value);
         ask_breakpoint(&emu->opt);
     }
 }
@@ -522,27 +549,29 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
     interrupt_handler(emu);
     
+    emu->opt.test_debug = false;
     uint32_t opcode = get_opcode(emu);
     uint8_t action = get_action(opcode);
     if(emu->opt.debug_info)
     {
         if(action == 0xCB)
-            printf("Opcode 0x%06X      mnemonic %-10s %s    pc = 0x%04X, sp = 0x%02X\n", 
+            printf(ANSI_COLOR_MAGENTA "Opcode 0x%06X      mnemonic %-10s %s    pc = 0x%04X, sp = 0x%02X\n" ANSI_COLOR_RESET, 
                    opcode, emu->mnemonic_index[action], emu->prefixed_mnemonic_index[(opcode & 0x0000FF00) >> 8], cpu->pc, cpu->sp);
         else
-            printf("Opcode 0x%06X      mnemonic %-15s      pc = 0x%04X, sp = 0x%02X\n", 
+            printf(ANSI_COLOR_MAGENTA "Opcode 0x%06X      mnemonic %-15s      pc = 0x%04X, sp = 0x%02X\n" ANSI_COLOR_RESET, 
                    opcode, emu->mnemonic_index[action], cpu->pc, cpu->sp);
     }
     
     breakpoint_handle(emu, action);
     step_by_step_handle(emu);
     
+    emu->opt.test_debug = true;
     (*opcode_functions[action])(emu, opcode);
     if(emu->opt.debug_info)
     {
-        printf("A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
+        printf(ANSI_COLOR_CYAN "A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
                cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
-        printf("Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n\n",
+        printf(ANSI_COLOR_CYAN "Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n" ANSI_COLOR_RESET "\n",
                (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
     }
     cpu->pc += emu->length_table[action];
@@ -647,29 +676,29 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x1C] = &INC_E;
     opcode_functions[0x1D] = &DEC_E;
     opcode_functions[0x1E] = &LD_E_d8;
-    //opcode_functions[0x1F] = &RRA;
+    opcode_functions[0x1F] = &RRA;
     opcode_functions[0x20] = &JR_NZ_r8;
     opcode_functions[0x21] = &LD_HL_d16;
     opcode_functions[0x22] = &LD_derefHLplus_A;
     opcode_functions[0x23] = &INC_HL;
     opcode_functions[0x24] = &INC_H;
-    //opcode_functions[0x25] = &DEC_H;
-    //opcode_functions[0x26] = &LD_H_d8;
+    opcode_functions[0x25] = &DEC_H;
+    opcode_functions[0x26] = &LD_H_d8;
     //opcode_functions[0x27] = &DAA;
     opcode_functions[0x28] = &JR_Z_r8;
-    //opcode_functions[0x29] = &ADD_HL_HL;
+    opcode_functions[0x29] = &ADD_HL_HL;
     opcode_functions[0x2A] = &LD_A_derefHLplus;
     opcode_functions[0x2B] = &DEC_HL;
     opcode_functions[0x2C] = &INC_L;
-    //opcode_functions[0x2D] = &DEC_L;
+    opcode_functions[0x2D] = &DEC_L;
     opcode_functions[0x2E] = &LD_L_d8;
     opcode_functions[0x2F] = &CPL;
-    //opcode_functions[0x30] = &JR_NC_r8;
+    opcode_functions[0x30] = &JR_NC_r8;
     opcode_functions[0x31] = &LD_SP_d16;
     opcode_functions[0x32] = &LD_derefHLminus_A;
     //opcode_functions[0x33] = &INC_SP;
     opcode_functions[0x34] = &INC_derefHL;
-    //opcode_functions[0x35] = &DEC_derefHL;
+    opcode_functions[0x35] = &DEC_derefHL;
     opcode_functions[0x36] = &LD_derefHL_d8;
     //opcode_functions[0x37] = &SCF;
     //opcode_functions[0x38] = &JR_C_r8;
@@ -752,22 +781,22 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x85] = &ADD_A_L;
     opcode_functions[0x86] = &ADD_A_derefHL;
     opcode_functions[0x87] = &ADD_A_A;
-    //opcode_functions[0x88] = &ADC_A_B;
+    opcode_functions[0x88] = &ADC_A_B;
     opcode_functions[0x89] = &ADC_A_C;
-    //opcode_functions[0x8A] = &ADC_A_D;
-    //opcode_functions[0x8B] = &ADC_A_E;
-    //opcode_functions[0x8C] = &ADC_A_H;
-    //opcode_functions[0x8D] = &ADC_A_L;
+    opcode_functions[0x8A] = &ADC_A_D;
+    opcode_functions[0x8B] = &ADC_A_E;
+    opcode_functions[0x8C] = &ADC_A_H;
+    opcode_functions[0x8D] = &ADC_A_L;
     //opcode_functions[0x8E] = &ADC_A_derefHL;
-    //opcode_functions[0x8F] = &ADC_A_A;
+    opcode_functions[0x8F] = &ADC_A_A;
     opcode_functions[0x90] = &SUB_B;
-    //opcode_functions[0x91] = &SUB_C;
-    //opcode_functions[0x92] = &SUB_D;
-    //opcode_functions[0x93] = &SUB_E;
-    //opcode_functions[0x94] = &SUB_H;
-    //opcode_functions[0x95] = &SUB_L;
+    opcode_functions[0x91] = &SUB_C;
+    opcode_functions[0x92] = &SUB_D;
+    opcode_functions[0x93] = &SUB_E;
+    opcode_functions[0x94] = &SUB_H;
+    opcode_functions[0x95] = &SUB_L;
     //opcode_functions[0x96] = &SUB_derefHL;
-    //opcode_functions[0x97] = &SUB_A;
+    opcode_functions[0x97] = &SUB_A;
     //opcode_functions[0x98] = &SBC_A_B;
     //opcode_functions[0x99] = &SBC_A_C;
     //opcode_functions[0x9A] = &SBC_A_D;
@@ -790,7 +819,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xAB] = &XOR_E;
     opcode_functions[0xAC] = &XOR_H;
     opcode_functions[0xAD] = &XOR_L;
-    //opcode_functions[0xAE] = &XOR_derefHL;
+    opcode_functions[0xAE] = &XOR_derefHL;
     opcode_functions[0xAF] = &XOR_A;
     opcode_functions[0xB0] = &OR_B;
     opcode_functions[0xB1] = &OR_C;
@@ -798,7 +827,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xB3] = &OR_E;
     opcode_functions[0xB4] = &OR_H;
     opcode_functions[0xB5] = &OR_L;
-    //opcode_functions[0xB6] = &OR_derefHL;
+    opcode_functions[0xB6] = &OR_derefHL;
     opcode_functions[0xB7] = &OR_A;
     //opcode_functions[0xB8] = &CP_B;
     //opcode_functions[0xB9] = &CP_C;
@@ -810,11 +839,11 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     //opcode_functions[0xBF] = &CP_A;
     opcode_functions[0xC0] = &RET_NZ;
     opcode_functions[0xC1] = &POP_BC;
-    //opcode_functions[0xC2] = &JP_NZ_a16;
+    opcode_functions[0xC2] = &JP_NZ_a16;
     opcode_functions[0xC3] = &JP_a16;
-    //opcode_functions[0xC4] = &CALL_NZ_a16;
+    opcode_functions[0xC4] = &CALL_NZ_a16;
     opcode_functions[0xC5] = &PUSH_BC;
-    //opcode_functions[0xC6] = &ADD_A_d8;
+    opcode_functions[0xC6] = &ADD_A_d8;
     //opcode_functions[0xC7] = &RST_00H;
     opcode_functions[0xC8] = &RET_Z;
     opcode_functions[0xC9] = &RET;
@@ -822,9 +851,9 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xCB] = &PREFIX_CB;
     //opcode_functions[0xCC] = &CALL_Z_a16;
     opcode_functions[0xCD] = &CALL_a16;
-    //opcode_functions[0xCE] = &ADC_A_d8;
+    opcode_functions[0xCE] = &ADC_A_d8;
     //opcode_functions[0xCF] = &RST_08H;
-    //opcode_functions[0xD0] = &RET_NC;
+    opcode_functions[0xD0] = &RET_NC;
     opcode_functions[0xD1] = &POP_DE;
     //opcode_functions[0xD2] = &JP_NC_a16;
     opcode_functions[0xD3] = &opcode_non_existant;
@@ -854,7 +883,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xEB] = &opcode_non_existant;
     opcode_functions[0xEC] = &opcode_non_existant;
     opcode_functions[0xED] = &opcode_non_existant;
-    //opcode_functions[0xEE] = &XOR_d8;
+    opcode_functions[0xEE] = &XOR_d8;
     opcode_functions[0xEF] = &RST_28H;
     opcode_functions[0xF0] = &LDH_A_derefa8;
     opcode_functions[0xF1] = &POP_AF;
@@ -905,14 +934,14 @@ void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
     //cb_functions[0x15] = &prefixed_RL_L;
     //cb_functions[0x16] = &prefixed_RL_derefHL;
     //cb_functions[0x17] = &prefixed_RL_A;
-    //cb_functions[0x18] = &prefixed_RR_B;
-    //cb_functions[0x19] = &prefixed_RR_C;
-    //cb_functions[0x1A] = &prefixed_RR_D;
-    //cb_functions[0x1B] = &prefixed_RR_E;
-    //cb_functions[0x1C] = &prefixed_RR_H;
-    //cb_functions[0x1D] = &prefixed_RR_L;
+    cb_functions[0x18] = &prefixed_RR_B;
+    cb_functions[0x19] = &prefixed_RR_C;
+    cb_functions[0x1A] = &prefixed_RR_D;
+    cb_functions[0x1B] = &prefixed_RR_E;
+    cb_functions[0x1C] = &prefixed_RR_H;
+    cb_functions[0x1D] = &prefixed_RR_L;
     //cb_functions[0x1E] = &prefixed_RR_derefHL;
-    //cb_functions[0x1F] = &prefixed_RR_A;
+    cb_functions[0x1F] = &prefixed_RR_A;
     //cb_functions[0x20] = &prefixed_SLA_B;
     //cb_functions[0x21] = &prefixed_SLA_C;
     //cb_functions[0x22] = &prefixed_SLA_D;
@@ -937,12 +966,12 @@ void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
     //cb_functions[0x35] = &prefixed_SWAP_L;
     //cb_functions[0x36] = &prefixed_SWAP_derefHL;
     cb_functions[0x37] = &prefixed_SWAP_A;
-    //cb_functions[0x38] = &prefixed_SRL_B;
-    //cb_functions[0x39] = &prefixed_SRL_C;
-    //cb_functions[0x3A] = &prefixed_SRL_D;
-    //cb_functions[0x3B] = &prefixed_SRL_E;
-    //cb_functions[0x3C] = &prefixed_SRL_H;
-    //cb_functions[0x3D] = &prefixed_SRL_L;
+    cb_functions[0x38] = &prefixed_SRL_B;
+    cb_functions[0x39] = &prefixed_SRL_C;
+    cb_functions[0x3A] = &prefixed_SRL_D;
+    cb_functions[0x3B] = &prefixed_SRL_E;
+    cb_functions[0x3C] = &prefixed_SRL_H;
+    cb_functions[0x3D] = &prefixed_SRL_L;
     //cb_functions[0x3E] = &prefixed_SRL_derefHL;
     cb_functions[0x3F] = &prefixed_SRL_A;
     //cb_functions[0x40] = &prefixed_BIT_0_B;

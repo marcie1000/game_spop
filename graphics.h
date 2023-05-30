@@ -15,6 +15,7 @@ extern void render_frame_and_vblank_if_needed(s_emu *emu);
 extern int draw_window(s_emu *emu, UNUSED size_t i);
 extern int draw_background(s_emu *emu, size_t i, uint8_t *pixel);
 extern int draw_OBJ(s_emu *emu, UNUSED size_t i);
+extern int DMA_transfer(s_emu *emu);
 
 #endif //GRAPHICS_H
 

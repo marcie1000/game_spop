@@ -22,6 +22,14 @@
 #define SPRITEPOS_X_LIMIT (168)
 #define UNUSED __attribute__((unused))
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 enum flags_masks {
     ZERO_FMASK = 0x80,
     NEGATIVE_FMASK = 0x40,
@@ -40,6 +48,7 @@ typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
+    bool test_debug;
 }s_opt;
 
 typedef struct s_input{
@@ -62,7 +71,7 @@ typedef struct s_io{
             NR50, NR51, NR52, LCDC, 
             SCY, SCX, WY, WX, LY, BGP, BANK,
             IE, IF, STAT, LYC, SB, SC, OBP0, OBP1,
-            TMA;
+            TMA, DMA, TAC;
     uint8_t wave_RAM[16];
     bool IME;
 }s_io;

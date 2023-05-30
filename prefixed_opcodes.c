@@ -53,14 +53,126 @@ void prefixed_RL_C(void *arg, UNUSED uint8_t op)
 //void prefixed_RL_L(void *arg, UNUSED uint8_t op)
 //void prefixed_RL_derefHL(void *arg, UNUSED uint8_t op)
 //void prefixed_RL_A(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_B(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_C(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_D(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_E(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_H(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_L(void *arg, UNUSED uint8_t op)
+void prefixed_RR_B(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newB = cpu->regB;
+    newB >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newB, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regB & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newB == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regB = newB;
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_RR_C(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newC = cpu->regC;
+    newC >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newC, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regC & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newC == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regC = newC;
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_RR_D(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newD = cpu->regD;
+    newD >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newD, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regD & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newD == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regD = newD;
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_RR_E(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newE = cpu->regE;
+    newE >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newE, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regE & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newE == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regE = newE;
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_RR_H(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newH = cpu->regH;
+    newH >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newH, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regH & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newH == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regH = newH;
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_RR_L(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newL = cpu->regL;
+    newL >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newL, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regL & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newL == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regL = newL;
+    
+    cpu->t_cycles += 8;
+}
 //void prefixed_RR_derefHL(void *arg, UNUSED uint8_t op)
-//void prefixed_RR_A(void *arg, UNUSED uint8_t op)
+void prefixed_RR_A(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t newA = cpu->regA;
+    newA >>= 1;
+    //copy previous carry flag to bit 7
+    flag_assign((cpu->regF & CARRY_FMASK), &newA, 0x80);
+    //copy previous bit 0 to carry flag
+    flag_assign((cpu->regA & 0x01), &cpu->regF, CARRY_FMASK);
+    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regA = newA;
+    
+    cpu->t_cycles += 8;
+}
 //void prefixed_SLA_B(void *arg, UNUSED uint8_t op)
 //void prefixed_SLA_C(void *arg, UNUSED uint8_t op)
 //void prefixed_SLA_D(void *arg, UNUSED uint8_t op)
@@ -96,12 +208,78 @@ void prefixed_SWAP_A(void *arg, UNUSED uint8_t op)
     
     cpu->t_cycles += 8;
 }
-//void prefixed_SRL_B(void *arg, UNUSED uint8_t op)
-//void prefixed_SRL_C(void *arg, UNUSED uint8_t op)
-//void prefixed_SRL_D(void *arg, UNUSED uint8_t op)
-//void prefixed_SRL_E(void *arg, UNUSED uint8_t op)
-//void prefixed_SRL_H(void *arg, UNUSED uint8_t op)
-//void prefixed_SRL_L(void *arg, UNUSED uint8_t op)
+void prefixed_SRL_B(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regB & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regB >>= 1;
+    flag_assign(cpu->regB == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_SRL_C(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regC & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regC >>= 1;
+    flag_assign(cpu->regC == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_SRL_D(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regD & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regD >>= 1;
+    flag_assign(cpu->regD == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_SRL_E(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regE & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regE >>= 1;
+    flag_assign(cpu->regE == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_SRL_H(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regH & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regH >>= 1;
+    flag_assign(cpu->regH == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->t_cycles += 8;
+}
+void prefixed_SRL_L(void *arg, UNUSED uint8_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(cpu->regL & 0x01, &cpu->regF, CARRY_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK);
+    cpu->regL >>= 1;
+    flag_assign(cpu->regL == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->t_cycles += 8;
+}
 //void prefixed_SRL_derefHL(void *arg, UNUSED uint8_t op)
 void prefixed_SRL_A(void *arg, UNUSED uint8_t op)
 {
