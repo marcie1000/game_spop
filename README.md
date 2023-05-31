@@ -3,6 +3,8 @@ A Gameboy emulator
 
 ### Build project:
 
+You need to have [SDL2](https://wiki.libsdl.org/SDL2/Installation) and [CMake](https://cmake.org/) installed.
+
 ```console
 mkdir build
 cd build
@@ -30,8 +32,8 @@ Options:
                                   3 bytes object code, and all registers, PC, SP and
                                   register F flags values in the console. Emulator is
                                   much slower when this option is enabled.
-* `--gb-doctor`          = log cpu state into a file to be used with the Gameboy
-                              doctor tool. Only at launch.
+* `--gb-doctor`          = log cpu state into a file to be used with the [Gameboy
+                              doctor tool](https://github.com/robert/gameboy-doctor). Only at launch.
 * `--step`, `-s`        = enable step by step debugging. Emulator will stop
                           at each new instruction and ask to continue or edit options.
 * `--help`, `-h`        = show this help message and exit.
