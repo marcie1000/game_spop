@@ -633,7 +633,20 @@ void LD_derefHL_d8(void *arg, uint32_t op)
     cpu->t_cycles += 12;
 }
 //void SCF(void *arg, UNUSED uint32_t op)
-//void JR_C_r8(void *arg, uint32_t op)
+void JR_C_r8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    if(cpu->regF & CARRY_FMASK) //if Z flag is 0
+    {
+        int8_t value = (op & 0x0000ff00) >> 8;
+        cpu->pc += value;
+        emu->cpu.t_cycles += 12;
+    }
+    else
+        emu->cpu.t_cycles += 8;
+}
 //void ADD_HL_SP(void *arg, UNUSED uint32_t op)
 //void LD_A_derefHLminus(void *arg, UNUSED uint32_t op)
 //void DEC_SP(void *arg, UNUSED uint32_t op)
@@ -1680,12 +1693,90 @@ void OR_A(void *arg, UNUSED uint32_t op)
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK | HALF_CARRY_FMASK | CARRY_FMASK);
     cpu->t_cycles += 4;
 }
-//void CP_B(void *arg, UNUSED uint32_t op)
-//void CP_C(void *arg, UNUSED uint32_t op)
-//void CP_D(void *arg, UNUSED uint32_t op)
-//void CP_E(void *arg, UNUSED uint32_t op)
-//void CP_H(void *arg, UNUSED uint32_t op)
-//void CP_L(void *arg, UNUSED uint32_t op)
+void CP_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t B4bit = cpu->regB & 0x0f;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    flag_assign(B4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cpu->regA - cpu->regB == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    flag_assign(cpu->regB > cpu->regA, &cpu->regF, CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
+void CP_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t C4bit = cpu->regC & 0x0f;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    flag_assign(C4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cpu->regA - cpu->regC == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    flag_assign(cpu->regC > cpu->regA, &cpu->regF, CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
+void CP_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t D4bit = cpu->regD & 0x0f;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    flag_assign(D4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cpu->regA - cpu->regD == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    flag_assign(cpu->regD > cpu->regA, &cpu->regF, CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
+void CP_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t E4bit = cpu->regE & 0x0f;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    flag_assign(E4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cpu->regA - cpu->regE == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    flag_assign(cpu->regE > cpu->regA, &cpu->regF, CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
+void CP_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t H4bit = cpu->regH & 0x0f;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    flag_assign(H4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cpu->regA - cpu->regH == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    flag_assign(cpu->regH > cpu->regA, &cpu->regF, CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
+void CP_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    uint8_t L4bit = cpu->regL & 0x0f;
+    uint8_t A4bit = cpu->regA & 0x0F;
+    flag_assign(L4bit > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cpu->regA - cpu->regL == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
+    flag_assign(cpu->regL > cpu->regA, &cpu->regF, CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
 void CP_derefHL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -1703,7 +1794,16 @@ void CP_derefHL(void *arg, UNUSED uint32_t op)
     
     cpu->t_cycles += 8;    
 }
-//void CP_A(void *arg, UNUSED uint32_t op)
+void CP_A(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    flag_assign(false, &cpu->regF, HALF_CARRY_FMASK | CARRY_FMASK);
+    flag_assign(true, &cpu->regF, ZERO_FMASK | NEGATIVE_FMASK);
+    
+    cpu->t_cycles += 4;
+}
 void RET_NZ(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -2022,7 +2122,32 @@ void SUB_d8(void *arg, uint32_t op)
     cpu->t_cycles += 8;   
 }
 //void RST_10H(void *arg, UNUSED uint32_t op)
-//void RET_C(void *arg, UNUSED uint32_t op)
+void RET_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    if(!(cpu->regF & CARRY_FMASK))
+    {
+        cpu->t_cycles += 8;
+        return;
+    }
+    
+    uint8_t data;
+    if(0 != read_memory(emu, cpu->sp, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->pc = data;
+    cpu->sp++;
+    if(0 != read_memory(emu, cpu->sp, &data))
+        destroy_emulator(emu, EXIT_FAILURE);
+    cpu->pc |= data << 8;
+    cpu->sp++;
+    
+    //take the pc incrementation in the interpret function into account
+    cpu->pc -= 1;
+    
+    cpu->t_cycles += 20;
+}
 void RETI(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -2192,6 +2317,7 @@ void POP_AF(void *arg, UNUSED uint32_t op)
     
     if(0 != read_memory(emu, cpu->sp, &cpu->regF))
         destroy_emulator(emu, EXIT_FAILURE);
+    cpu->regF &= 0xF0;
     cpu->sp++;
     if(0 != read_memory(emu, cpu->sp, &cpu->regA))
         destroy_emulator(emu, EXIT_FAILURE);

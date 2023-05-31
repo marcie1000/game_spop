@@ -799,7 +799,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          register F flags values in the console. Emulator is\n"
     "                          much slower when this option is enabled.\n"
     "   --gb-doctor          = log cpu state into a file to be used with the Gameboy\n"
-    "                          doctor tool.\n."
+    "                          doctor tool. Only at launch.\n."
     "   --step, -s           = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
