@@ -12,7 +12,7 @@ make
 
 ### How to use:
 
-In the executable path, create a folder called ```boot_rom```. Paste the Gameboy DMG boot ROM in this folder with the name ```dmg_rom.bin```.
+In the executable path, create a folder called `boot_rom`. Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`.
 
 Usage:
 ```console
@@ -20,18 +20,22 @@ Usage:
 ```
 
 Options:
-* ```--breakpoint```            = enable debugging with breakpoints. The program will
+* `--breakpoint`            = enable debugging with breakpoints. The program will
                           ask to enter a PC value breakpoint at start, and will
                           ask for a new breakpoint when the previous one is
                           reached.
-* ```--bypass-bootrom```        = launch directly the ROM (only if a rom is passed in argument).
+* `--bypass-bootrom`        = launch directly the ROM (only if a rom is passed in argument).
                                   This option can only be provided at launch.
-* ```--debug-info```            = at every new instruction, prints the mnemonic, the
+* `--debug-info`            = at every new instruction, prints the mnemonic, the
                                   3 bytes object code, and all registers, PC, SP and
                                   register F flags values in the console. Emulator is
                                   much slower when this option is enabled.
-* ```--gb-doctor```          = log cpu state into a file to be used with the Gameboy
+* `--gb-doctor`          = log cpu state into a file to be used with the Gameboy
                               doctor tool. Only at launch.
-* ```--step```, ```-s```        = enable step by step debugging. Emulator will stop
+* `--step`, `-s`        = enable step by step debugging. Emulator will stop
                           at each new instruction and ask to continue or edit options.
-* ```--help```, ```-h```        = show this help message and exit.
+* `--help`, `-h`        = show this help message and exit.
+
+Controls:
+* `P` : Pause emulation
+* `O` (during pause) : Show an option menu
