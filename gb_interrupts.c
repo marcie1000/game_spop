@@ -80,3 +80,46 @@ void interrupt_handler(s_emu *emu)
     }
 }
 
+void timer_handle(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_io *io_reg = &cpu->io_reg;
+    
+    io_reg->IF &= ~0x04;
+    
+    //if not timer enable
+    if(!(io_reg->TAC & 0x04))
+        return;
+        
+    if(io_reg->TIMA >= 0xFF)
+    {
+        io_reg->TIMA = io_reg->TMA;
+        io_reg->IF |= 0x04;
+        return;
+    }
+    
+    size_t clock_div;
+    switch(io_reg->TAC & 0x03)
+    {
+        case 0:
+            clock_div = 1024;
+            break;
+        case 1:
+            clock_div = 16;
+            break;
+        case 2:
+            clock_div = 64;
+            break;
+        case 3:
+            clock_div = 256;
+            break;
+    }
+    
+    if(cpu->timer_clock >= clock_div)
+    {
+        io_reg->TIMA++;
+        cpu->timer_clock -= clock_div;
+    }
+}
+
+

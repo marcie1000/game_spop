@@ -72,7 +72,7 @@ typedef struct s_io{
             NR50, NR51, NR52, LCDC, 
             SCY, SCX, WY, WX, LY, BGP, BANK,
             IE, IF, STAT, LYC, SB, SC, OBP0, OBP1,
-            TMA, DMA, TAC;
+            TMA, DMA, TAC, TIMA, DIV;
     uint8_t wave_RAM[16];
     bool IME;
 }s_io;
@@ -91,6 +91,7 @@ typedef struct s_cpu {
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
     size_t t_cycles; //t_cycles counter at 4,194,304 Hz
+    size_t timer_clock;
 } s_cpu;
 
 typedef struct s_screen{

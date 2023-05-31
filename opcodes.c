@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 #include <SDL.h>
 
 #include "cpu.h"
@@ -15,7 +16,7 @@ void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
 void opcode_unimplemented(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
-    fprintf(stderr, "WARNING: instruction %s (0x%06X) unimplemented!\n", 
+    fprintf(stderr, ANSI_COLOR_RED "WARNING: instruction %s (0x%06X) unimplemented!\n" ANSI_COLOR_RESET, 
             emu->mnemonic_index[(op & 0x00ff0000) >> 16], op);
     SDL_Delay(2000);
     destroy_emulator(emu, EXIT_FAILURE);
@@ -24,7 +25,7 @@ void opcode_unimplemented(void *arg, uint32_t op)
 void opcode_non_existant(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
-    fprintf(stderr, "ERROR: instuction 0x%02X doesn't exist!\n", (op & 0xFF0000) >> 16);
+    fprintf(stderr, ANSI_COLOR_RED "ERROR: instuction 0x%02X doesn't exist!\n" ANSI_COLOR_RESET, (op & 0xFF0000) >> 16);
     destroy_emulator(emu, EXIT_FAILURE);
 }
 
@@ -432,7 +433,34 @@ void LD_H_d8(void *arg, uint32_t op)
     cpu->regH = (op & 0x0000ff00) >> 8;
     cpu->t_cycles += 8;
 }
-//void DAA(void *arg, UNUSED uint32_t op)
+void DAA(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    if(!(cpu->regF & NEGATIVE_FMASK))
+    {
+        if((cpu->regF & CARRY_FMASK) || cpu->regA > 0x99)
+        {
+            cpu->regA += 0x60;
+            flag_assign(true, &cpu->regF, CARRY_FMASK);
+        }
+        if((cpu->regF & HALF_CARRY_FMASK) || (cpu->regA & 0x0F) > 0x09)
+            cpu->regA += 0x6;
+    }
+    else
+    {
+        if(cpu->regF & CARRY_FMASK)
+            cpu->regA -= 0x60;
+        if(cpu->regF & HALF_CARRY_FMASK)
+            cpu->regA -= 0x6;
+    }
+    
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, HALF_CARRY_FMASK);
+    
+    cpu->t_cycles += 4;
+}
 void JR_Z_r8(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
@@ -690,12 +718,54 @@ void LD_A_d8(void *arg, uint32_t op)
 }
 
 //void CCF(void *arg, UNUSED uint32_t op)
-//void LD_B_B(void *arg, UNUSED uint32_t op)
-//void LD_B_C(void *arg, UNUSED uint32_t op)
-//void LD_B_D(void *arg, UNUSED uint32_t op)
-//void LD_B_E(void *arg, UNUSED uint32_t op)
-//void LD_B_H(void *arg, UNUSED uint32_t op)
-//void LD_B_L(void *arg, UNUSED uint32_t op)
+void LD_B_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regB = cpu->regB;
+    cpu->t_cycles += 4;
+}
+void LD_B_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regB = cpu->regC;
+    cpu->t_cycles += 4;
+}
+void LD_B_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regB = cpu->regD;
+    cpu->t_cycles += 4;
+}
+void LD_B_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regB = cpu->regE;
+    cpu->t_cycles += 4;
+}
+void LD_B_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regB = cpu->regH;
+    cpu->t_cycles += 4;
+}
+void LD_B_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regB = cpu->regL;
+    cpu->t_cycles += 4;
+}
 void LD_B_derefHL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -780,12 +850,54 @@ void LD_C_A(void *arg, UNUSED uint32_t op)
     cpu->regC = cpu->regA;
     cpu->t_cycles += 4;
 }
-//void LD_D_B(void *arg, UNUSED uint32_t op)
-//void LD_D_C(void *arg, UNUSED uint32_t op)
-//void LD_D_D(void *arg, UNUSED uint32_t op)
-//void LD_D_E(void *arg, UNUSED uint32_t op)
-//void LD_D_H(void *arg, UNUSED uint32_t op)
-//void LD_D_L(void *arg, UNUSED uint32_t op)
+void LD_D_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regD = cpu->regB;
+    cpu->t_cycles += 4;
+}
+void LD_D_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regD = cpu->regC;
+    cpu->t_cycles += 4;
+}
+void LD_D_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regD = cpu->regD;
+    cpu->t_cycles += 4;
+}
+void LD_D_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regD = cpu->regE;
+    cpu->t_cycles += 4;
+}
+void LD_D_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regD = cpu->regH;
+    cpu->t_cycles += 4;
+}
+void LD_D_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regD = cpu->regL;
+    cpu->t_cycles += 4;
+}
 void LD_D_derefHL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -804,12 +916,54 @@ void LD_D_A(void *arg, UNUSED uint32_t op)
     cpu->regD = cpu->regA;
     cpu->t_cycles += 4;
 }
-//void LD_E_B(void *arg, UNUSED uint32_t op)
-//void LD_E_C(void *arg, UNUSED uint32_t op)
-//void LD_E_D(void *arg, UNUSED uint32_t op)
-//void LD_E_E(void *arg, UNUSED uint32_t op)
-//void LD_E_H(void *arg, UNUSED uint32_t op)
-//void LD_E_L(void *arg, UNUSED uint32_t op)
+void LD_E_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regB;
+    cpu->t_cycles += 4;
+}
+void LD_E_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regC;
+    cpu->t_cycles += 4;
+}
+void LD_E_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regD;
+    cpu->t_cycles += 4;
+}
+void LD_E_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regE;
+    cpu->t_cycles += 4;
+}
+void LD_E_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regH;
+    cpu->t_cycles += 4;
+}
+void LD_E_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regE = cpu->regL;
+    cpu->t_cycles += 4;
+}
 void LD_E_derefHL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -828,12 +982,54 @@ void LD_E_A(void *arg, UNUSED uint32_t op)
     cpu->regE = cpu->regA;
     cpu->t_cycles += 4;
 }
-//void LD_H_B(void *arg, UNUSED uint32_t op)
-//void LD_H_C(void *arg, UNUSED uint32_t op)
-//void LD_H_D(void *arg, UNUSED uint32_t op)
-//void LD_H_E(void *arg, UNUSED uint32_t op)
-//void LD_H_H(void *arg, UNUSED uint32_t op)
-//void LD_H_L(void *arg, UNUSED uint32_t op)
+void LD_H_B(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regH = cpu->regB;
+    cpu->t_cycles += 4;
+}
+void LD_H_C(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regH = cpu->regC;
+    cpu->t_cycles += 4;
+}
+void LD_H_D(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regH = cpu->regD;
+    cpu->t_cycles += 4;
+}
+void LD_H_E(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regH = cpu->regE;
+    cpu->t_cycles += 4;
+}
+void LD_H_H(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regH = cpu->regH;
+    cpu->t_cycles += 4;
+}
+void LD_H_L(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->regH = cpu->regL;
+    cpu->t_cycles += 4;
+}
 void LD_H_derefHL(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
@@ -2361,8 +2557,42 @@ void OR_d8(void *arg, uint32_t op)
 }
 
 //void RST_30H(void *arg, UNUSED uint32_t op)
-//void LD_HL_SPplusr8(void *arg, uint32_t op)
-//void LD_SP_HL(void *arg, UNUSED uint32_t op)
+void LD_HL_SPplusr8(void *arg, uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    int8_t r8 = (op & 0x0000FF00) >> 8;
+    int8_t r8_4bit = r8 & 0x0F;
+    uint8_t SP4bit = cpu->sp & 0x0f;
+    uint16_t HL;
+    
+    if(r8_4bit >= 0)
+    {
+        flag_assign(SP4bit + r8_4bit > 0x0f, &cpu->regF, HALF_CARRY_FMASK);
+        flag_assign(SP4bit > UINT16_MAX - r8_4bit, &cpu->regF, CARRY_FMASK);
+    }
+    else
+    {
+        flag_assign(r8_4bit > SP4bit, &cpu->regF, HALF_CARRY_FMASK);
+        flag_assign(abs(r8_4bit) > SP4bit, &cpu->regF, CARRY_FMASK);
+    }
+    
+    flag_assign(false, &cpu->regF, ZERO_FMASK | NEGATIVE_FMASK);
+    HL = cpu->sp + r8;
+    cpu->regH = (HL & 0xFF00) >> 8;
+    cpu->regL = HL & 0x00FF;
+    
+    cpu->t_cycles += 12;    
+}
+void LD_SP_HL(void *arg, UNUSED uint32_t op)
+{
+    s_emu *emu = arg;
+    s_cpu *cpu = &emu->cpu;
+    
+    cpu->sp = (cpu->regH << 8) + cpu->regL;
+    cpu->t_cycles += 8;
+}
 void LD_A_derefa16(void *arg, uint32_t op)
 {
     s_emu *emu = arg;

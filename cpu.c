@@ -139,7 +139,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             io_reg->SCX = data;
             break;
         case 0xFF44:
-            fprintf(stderr, "ERROR: attempt to write in I/O register LY (0xFF44), read only!\n");
+            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write in I/O register LY (0xFF44), read only!\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF45:
@@ -172,7 +172,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF7F:
             break;
         default:
-            fprintf(stderr, "WARNING: attempt to write I/O register at adress 0x%04X (unimplemented!)\n", adress);
+            fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write I/O register at adress 0x%04X (unimplemented!)\n" ANSI_COLOR_RESET, adress);
             SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
@@ -216,7 +216,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->NR12;
             break;
         case 0xFF13:
-            fprintf(stderr, "ERROR: attempt to read at adress FF13, NR13 I/O register (write only)\n");
+            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF13, NR13 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF14:
@@ -229,7 +229,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->NR22;
             break;
         case 0xFF18:
-            fprintf(stderr, "ERROR: attempt to read at adress FF18, NR23 I/O register (write only)\n");
+            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF18, NR23 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF19:
@@ -239,21 +239,21 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->NR30;
             break;
         case 0xFF1B:
-            fprintf(stderr, "ERROR: attempt to read at adress FF1B, NR31 I/O register (write only)\n");
+            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1B, NR31 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF1C:
             *data = io_reg->NR32;
             break;
         case 0xFF1D:
-            fprintf(stderr, "ERROR: attempt to read at adress FF1D, NR33 I/O register (write only)\n");
+            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1D, NR33 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF1E:
             *data = io_reg->NR34 & 0x40;
             break;
         case 0xFF20:
-            fprintf(stderr, "ERROR: attempt to read at adress FF1D, NR33 I/O register (write only)\n");
+            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1D, NR33 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF21:
@@ -333,7 +333,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->WX;
             break;
         default:
-            fprintf(stderr, "WARNING: attempt to read I/O register at adress 0x%04X (unimplemented!)\n", adress);
+            fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to read I/O register at adress 0x%04X (unimplemented!)\n" ANSI_COLOR_RESET, adress);
             SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
@@ -349,12 +349,12 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //TETRIS ROM exception
     if((adress < 0x3FFF) /* && (adress != 0x2000) && (adress != 0x1B08) && (cpu->pc != 0x0254)*/)
     {
-        fprintf(stderr, "WARNING: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n", adress);
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
         //return EXIT_FAILURE;
     }
     else if((adress >= 0x4000) && (adress <= 0x7FFF))
     {
-        fprintf(stderr, "WARNING: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n", adress);
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     //VRAM
@@ -376,7 +376,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //ECHO RAM
     else if((adress >= 0xE000) && (adress <= 0xFDFF))
     {
-        fprintf(stderr, "ERROR: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
+        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
@@ -386,7 +386,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if((adress >= 0xFEA0) && (adress <= 0xFEFF) && (data != 0))
     {
-        fprintf(stderr, "ERROR: attempt to write at adress 0x%04X (prohibited)\n", adress);
+        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
@@ -402,9 +402,9 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     else if(adress == 0xFFFF)
     {
         cpu->io_reg.IE = data;
-        if(data & (~0x0B))
+        if(data & (~0x0F))
         {
-            fprintf(stderr, "WARNING: IE value = 0x%02X (flags unimplemented!)\n");
+            fprintf(stderr, ANSI_COLOR_RED "WARNING: IE value = 0x%02X (flags unimplemented!)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
         }
     }
@@ -448,7 +448,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     //ECHO RAM
     else if((adress >= 0xE000) && (adress <= 0xFDFF))
     {
-        fprintf(stderr, "ERROR: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n", adress);
+        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
@@ -458,7 +458,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if((adress >= 0xFEA0) && (adress <= 0xFEFF))
     {
-        fprintf(stderr, "ERROR: attempt to read at adress 0x%04X (prohibited)\n", adress);
+        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
@@ -533,7 +533,7 @@ void breakpoint_handle(s_emu *emu, uint8_t action)
     s_cpu *cpu = &emu->cpu;
     
     if(cpu->pc <= emu->opt.breakpoint_value &&
-       cpu->pc + emu->length_table[action] >= emu->opt.breakpoint_value)
+       cpu->pc + emu->length_table[action] > emu->opt.breakpoint_value)
     {
         printf(ANSI_COLOR_GREEN "Breakpoint 0x%04X reached!" ANSI_COLOR_RESET "\n", emu->opt.breakpoint_value);
         ask_breakpoint(&emu->opt);
@@ -571,15 +571,18 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
     emu->opt.test_debug = true;
     gbdoctor(emu);
+    size_t t_cycles_old = cpu->t_cycles;
     (*opcode_functions[action])(emu, opcode);
+    cpu->timer_clock += (cpu->t_cycles - t_cycles_old);
     if(emu->opt.debug_info)
     {
-        printf(ANSI_COLOR_CYAN "A=0x%02X, B=0x%02X, C=0x%02X, D=0x%02X, E=0x%02X, F=0x%02X, H=0x%02X, L=0x%02X\n",
+        printf(ANSI_COLOR_CYAN "A=%02X, B=%02X, C=%02X, D=%02X, E=%02X, F=%02X, H=%02X, L=%02X\n",
                cpu->regA, cpu->regB, cpu->regC, cpu->regD, cpu->regE, cpu->regF, cpu->regH, cpu->regL);
-        printf(ANSI_COLOR_CYAN "Flags: zero = %u, neg = %u, half-carry = %u, carry = %u\n" ANSI_COLOR_RESET "\n",
+        printf(ANSI_COLOR_CYAN "Flags: z=%u, n=%u, h=%u, c=%u\n" ANSI_COLOR_RESET "\n",
                (cpu->regF & 0x80) >> 7, (cpu->regF & 0x40) >> 6, (cpu->regF & 0x20) >> 5, (cpu->regF & 0x10) >> 4);
     }
     cpu->pc += emu->length_table[action];
+    timer_handle(emu);
 }
 
 void initialize_length_table(s_emu *emu)
@@ -689,7 +692,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x24] = &INC_H;
     opcode_functions[0x25] = &DEC_H;
     opcode_functions[0x26] = &LD_H_d8;
-    //opcode_functions[0x27] = &DAA;
+    opcode_functions[0x27] = &DAA;
     opcode_functions[0x28] = &JR_Z_r8;
     opcode_functions[0x29] = &ADD_HL_HL;
     opcode_functions[0x2A] = &LD_A_derefHLplus;
@@ -714,12 +717,12 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x3D] = &DEC_A;
     opcode_functions[0x3E] = &LD_A_d8;
     //opcode_functions[0x3F] = &CCF;
-    //opcode_functions[0x40] = &LD_B_B;
-    //opcode_functions[0x41] = &LD_B_C;
-    //opcode_functions[0x42] = &LD_B_D;
-    //opcode_functions[0x43] = &LD_B_E;
-    //opcode_functions[0x44] = &LD_B_H;
-    //opcode_functions[0x45] = &LD_B_L;
+    opcode_functions[0x40] = &LD_B_B;
+    opcode_functions[0x41] = &LD_B_C;
+    opcode_functions[0x42] = &LD_B_D;
+    opcode_functions[0x43] = &LD_B_E;
+    opcode_functions[0x44] = &LD_B_H;
+    opcode_functions[0x45] = &LD_B_L;
     opcode_functions[0x46] = &LD_B_derefHL;
     opcode_functions[0x47] = &LD_B_A;
     opcode_functions[0x48] = &LD_C_B;
@@ -730,28 +733,28 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x4D] = &LD_C_L;
     opcode_functions[0x4E] = &LD_C_derefHL;
     opcode_functions[0x4F] = &LD_C_A;
-    //opcode_functions[0x50] = &LD_D_B;
-    //opcode_functions[0x51] = &LD_D_C;
-    //opcode_functions[0x52] = &LD_D_D;
-    //opcode_functions[0x53] = &LD_D_E;
-    //opcode_functions[0x54] = &LD_D_H;
-    //opcode_functions[0x55] = &LD_D_L;
+    opcode_functions[0x50] = &LD_D_B;
+    opcode_functions[0x51] = &LD_D_C;
+    opcode_functions[0x52] = &LD_D_D;
+    opcode_functions[0x53] = &LD_D_E;
+    opcode_functions[0x54] = &LD_D_H;
+    opcode_functions[0x55] = &LD_D_L;
     opcode_functions[0x56] = &LD_D_derefHL;
     opcode_functions[0x57] = &LD_D_A;
-    //opcode_functions[0x58] = &LD_E_B;
-    //opcode_functions[0x59] = &LD_E_C;
-    //opcode_functions[0x5A] = &LD_E_D;
-    //opcode_functions[0x5B] = &LD_E_E;
-    //opcode_functions[0x5C] = &LD_E_H;
-    //opcode_functions[0x5D] = &LD_E_L;
+    opcode_functions[0x58] = &LD_E_B;
+    opcode_functions[0x59] = &LD_E_C;
+    opcode_functions[0x5A] = &LD_E_D;
+    opcode_functions[0x5B] = &LD_E_E;
+    opcode_functions[0x5C] = &LD_E_H;
+    opcode_functions[0x5D] = &LD_E_L;
     opcode_functions[0x5E] = &LD_E_derefHL;
     opcode_functions[0x5F] = &LD_E_A;
-    //opcode_functions[0x60] = &LD_H_B;
-    //opcode_functions[0x61] = &LD_H_C;
-    //opcode_functions[0x62] = &LD_H_D;
-    //opcode_functions[0x63] = &LD_H_E;
-    //opcode_functions[0x64] = &LD_H_H;
-    //opcode_functions[0x65] = &LD_H_L;
+    opcode_functions[0x60] = &LD_H_B;
+    opcode_functions[0x61] = &LD_H_C;
+    opcode_functions[0x62] = &LD_H_D;
+    opcode_functions[0x63] = &LD_H_E;
+    opcode_functions[0x64] = &LD_H_H;
+    opcode_functions[0x65] = &LD_H_L;
     opcode_functions[0x66] = &LD_H_derefHL;
     opcode_functions[0x67] = &LD_H_A;
     opcode_functions[0x68] = &LD_L_B;
@@ -898,8 +901,8 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xF5] = &PUSH_AF;
     opcode_functions[0xF6] = &OR_d8;
     //opcode_functions[0xF7] = &RST_30H;
-    //opcode_functions[0xF8] = &LD_HL_SPplusr8;
-    //opcode_functions[0xF9] = &LD_SP_HL;
+    opcode_functions[0xF8] = &LD_HL_SPplusr8;
+    opcode_functions[0xF9] = &LD_SP_HL;
     opcode_functions[0xFA] = &LD_A_derefa16;
     opcode_functions[0xFB] = &EI;
     opcode_functions[0xFC] = &opcode_non_existant;
