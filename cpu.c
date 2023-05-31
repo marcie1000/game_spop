@@ -305,7 +305,11 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->SCX;
             break;
         case 0xFF44:
-            *data = io_reg->LY;
+            if(!emu->opt.gb_doctor)
+                *data = io_reg->LY;
+            //hardcode for gb_doctor
+            else
+                *data = 0x90;
             break;
         case 0xFF45:
             *data = io_reg->LYC;
@@ -566,6 +570,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     step_by_step_handle(emu);
     
     emu->opt.test_debug = true;
+    gbdoctor(emu);
     (*opcode_functions[action])(emu, opcode);
     if(emu->opt.debug_info)
     {

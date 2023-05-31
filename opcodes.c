@@ -1040,10 +1040,10 @@ void ADD_A_B(void *arg, UNUSED uint32_t op)
     
     newA += cpu->regB;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA += cpu->regB;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
 }
@@ -1061,10 +1061,10 @@ void ADD_A_C(void *arg, UNUSED uint32_t op)
     
     newA += cpu->regC;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA += cpu->regC;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
 }
@@ -1082,10 +1082,10 @@ void ADD_A_D(void *arg, UNUSED uint32_t op)
     
     newA += cpu->regD;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA += cpu->regD;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
 }
@@ -1103,10 +1103,10 @@ void ADD_A_E(void *arg, UNUSED uint32_t op)
     
     newA += cpu->regE;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA += cpu->regE;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
 }
@@ -1124,10 +1124,10 @@ void ADD_A_H(void *arg, UNUSED uint32_t op)
     
     newA += cpu->regH;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA += cpu->regH;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
 }
@@ -1145,10 +1145,11 @@ void ADD_A_L(void *arg, UNUSED uint32_t op)
     
     newA += cpu->regL;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    
+    cpu->regA += cpu->regL;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
 
-    cpu->regA += cpu->regL;
     
     cpu->t_cycles += 4;
 }
@@ -1186,10 +1187,10 @@ void ADD_A_A(void *arg, UNUSED uint32_t op)
     
     newA *= 2;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA *= 2;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
 }
@@ -1210,7 +1211,7 @@ void ADC_A_B(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regB + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1232,7 +1233,7 @@ void ADC_A_C(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regC + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1254,7 +1255,7 @@ void ADC_A_D(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regD + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1276,7 +1277,7 @@ void ADC_A_E(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regE + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1298,7 +1299,7 @@ void ADC_A_H(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regH + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1320,7 +1321,7 @@ void ADC_A_L(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regL + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1342,7 +1343,7 @@ void ADC_A_A(void *arg, UNUSED uint32_t op)
     
     cpu->regA += cpu->regA + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 4;
@@ -1823,10 +1824,10 @@ void ADD_A_d8(void *arg, uint32_t op)
     
     newA += d8;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
-    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
-
+    
     cpu->regA += d8;
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 8;
 }
@@ -1941,7 +1942,7 @@ void ADC_A_d8(void *arg, UNUSED uint32_t op)
     
     cpu->regA += d8 + carry;
     flag_assign(newA > 0xFF, &cpu->regF, CARRY_FMASK);
-    flag_assign(newA == 0, &cpu->regF, ZERO_FMASK);
+    flag_assign(cpu->regA == 0, &cpu->regF, ZERO_FMASK);
     flag_assign(false, &cpu->regF, NEGATIVE_FMASK);
     
     cpu->t_cycles += 8;

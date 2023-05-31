@@ -59,6 +59,8 @@ int initialize_SDL(void)
 
 int initialize_emulator(s_emu *emu)
 {
+    s_opt *opt = &emu->opt;
+    
     if(0 != initialize_screen(emu))
         return EXIT_FAILURE;
     if(0 != initialize_cpu(&emu->cpu))
@@ -79,6 +81,14 @@ int initialize_emulator(s_emu *emu)
     {
         if(0 != load_boot_rom(&emu->cpu))
             return EXIT_FAILURE;
+    }
+    
+    //gb doctor log file
+    opt->gbdoc_log = fopen("gbdoc.log", "w");
+    if(opt->gbdoc_log == NULL)
+    {
+        fprintf(stderr, "fopen gbdoc.log: %s\n", strerror(errno));
+        return EXIT_FAILURE;
     }
     
     return EXIT_SUCCESS;
@@ -652,6 +662,7 @@ void destroy_emulator(s_emu *emu, int status)
 {
     destroy_screen(&emu->screen);
     destroy_SDL();
+    fclose(emu->opt.gbdoc_log);
     exit(status);
 }
 
@@ -666,7 +677,7 @@ void bypass_bootrom(s_emu *emu)
     
     cpu->pc = 0x100;
     cpu->regA = 0x01;
-    cpu->regF = 0x80;
+    cpu->regF = 0xB0;
     cpu->regC = 0x13;
     cpu->regE = 0xD8;
     cpu->regH = 0x01;
@@ -776,6 +787,10 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   ./game_spop <ROM file> [option]\n"
     "\n"
     "Options\n"
+    "   --breakpoint         = enable debugging with breakpoints. The program will\n"
+    "                          ask to enter a PC value breakpoint at start, and will\n"
+    "                          ask for a new breakpoint when the previous one is\n"
+    "                          reached.\n"
     "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
     "                          in argument). This option can only be provided at\n"
     "                          launch.\n"
@@ -783,10 +798,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          3 bytes object code, and all registers, PC, SP and\n"
     "                          register F flags values in the console. Emulator is\n"
     "                          much slower when this option is enabled.\n"
-    "   --breakpoint         = enable debugging with breakpoints. The program will\n"
-    "                          ask to enter a PC value breakpoint at start, and will\n"
-    "                          ask for a new breakpoint when the previous one is\n"
-    "                          reached.\n"
+    "   --gb-doctor          = log cpu state into a file to be used with the Gameboy\n"
+    "                          doctor tool.\n."
     "   --step, -s           = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -794,14 +807,14 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     
     const char help_msg_during_exec[] = 
     "Options\n"
-    "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
-    "                          3 bytes object code, and all registers, PC, SP and\n"
-    "                          register F flags values in the console. Emulator is\n"
-    "                          much slower when this option is enabled.\n"
     "   --breakpoint         = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
+    "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
+    "                          3 bytes object code, and all registers, PC, SP and\n"
+    "                          register F flags values in the console. Emulator is\n"
+    "                          much slower when this option is enabled.\n"
     "   --step, -s           = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -824,6 +837,10 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         else if(0 == strcmp(argv[i], "--breakpoint"))
         {
             opt->breakpoints = !opt->breakpoints;
+        }
+        else if(0 == strcmp(argv[i], "--gb-doctor") && (is_program_beginning))
+        {
+            opt->gb_doctor = !opt->gb_doctor;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
@@ -917,6 +934,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->debug_info = false;
     opt->breakpoints = false;
     opt->step_by_step = false;
+    opt->gb_doctor = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     
@@ -985,3 +1003,28 @@ void ask_breakpoint(s_opt *opt)
     }
 }
 
+void gbdoctor(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_opt *opt = &emu->opt;
+    
+    if(!opt->gb_doctor)
+        return;
+    
+    uint8_t pc0, pc1, pc2, pc3;
+    read_memory(emu, cpu->pc, &pc0);
+    read_memory(emu, cpu->pc + 1, &pc1);
+    read_memory(emu, cpu->pc + 2, &pc2);
+    read_memory(emu, cpu->pc + 3, &pc3);
+    if(0 > fprintf(
+        opt->gbdoc_log, 
+        "A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X "
+        "SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X\n",
+        cpu->regA, cpu->regF, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
+        cpu->regH, cpu->regL, cpu->sp, cpu->pc, pc0, pc1, pc2, pc3
+    ))
+    {
+        perror("gbdoctor fprintf: ");
+        destroy_emulator(emu, EXIT_FAILURE);
+    }
+}
