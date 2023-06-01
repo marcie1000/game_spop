@@ -77,7 +77,7 @@ void interrupt_handler(s_emu *emu)
         
         //load adress of interrupt handler in PC
         cpu->pc = 0x40 + i * 0x8;
-        printf("INTERRUPTION: pc = 0x%02X\n", cpu->pc);
+//        printf("INTERRUPTION: pc = 0x%02X\n", cpu->pc);
         
         cpu->t_cycles += 20;
         //the loop stops at the higher priority interrupt

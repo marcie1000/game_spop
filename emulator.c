@@ -1015,7 +1015,7 @@ void gbdoctor(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_opt *opt = &emu->opt;
     
-    cpu->inst_counter++;
+//    cpu->inst_counter++;
     
     if(!opt->gb_doctor)
         return;
