@@ -724,9 +724,15 @@ void emulate(s_emu *emu)
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
         
         ppu_modes_and_scanlines(emu);
         
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -1008,6 +1014,8 @@ void gbdoctor(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_opt *opt = &emu->opt;
+    
+    //cpu->inst_counter++;
     
     if(!opt->gb_doctor)
         return;

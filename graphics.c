@@ -271,7 +271,7 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     
     if(io_reg->LY < 144)
     {
-        io_reg->IF &= ~0x01;
+        //io_reg->IF &= ~0x01;
         return;
     }
     
@@ -296,7 +296,7 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     emu->frame_timer = SDL_GetTicks64();
     cpu->io_reg.LY = 0;
     //clear VBlank flag
-    io_reg->IF &= (~0x01);
+    //io_reg->IF &= (~0x01);
 }
 
 int DMA_transfer(s_emu *emu)

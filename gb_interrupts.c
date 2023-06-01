@@ -10,7 +10,7 @@ void LCD_STAT_interrupt_flags(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
     
-    io_reg->IF &= ~0x02;
+    //io_reg->IF &= ~0x02;
     
     //if interrupt not enabled
     if(!(io_reg->IE & 0x02))
@@ -47,8 +47,7 @@ void interrupt_handler(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
-    if(!io_reg->IME)
-        return;
+    cpu->quit_halt = false;
     LCD_STAT_interrupt_flags(emu);
     for(size_t i = 0; i <= 4; i++)
     {
@@ -59,9 +58,15 @@ void interrupt_handler(s_emu *emu)
         //if no flag
         if(!(io_reg->IF & (0x01 << i)))
             continue;
-            
+        
+        cpu->quit_halt = true;
+        
+        if(!io_reg->IME)
+            return;
         //disables interrupt when entering in interrupt routine
         io_reg->IME = false;
+        //disables the IF flag
+        io_reg->IF &= ~(0x01 << i);
         //push PC into stack
         cpu->sp--;
         if(0 != write_memory(emu, cpu->sp, (cpu->pc & 0xff00) >> 8))
@@ -85,11 +90,12 @@ void timer_handle(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
     
-    io_reg->IF &= ~0x04;
-    
     //if not timer enable
     if(!(io_reg->TAC & 0x04))
+    {
+        cpu->timer_clock = 0;
         return;
+    }
         
     if(io_reg->TIMA >= 0xFF)
     {

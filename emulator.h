@@ -92,6 +92,8 @@ typedef struct s_cpu {
     uint16_t pc; //program counter
     size_t t_cycles; //t_cycles counter at 4,194,304 Hz
     size_t timer_clock;
+    bool quit_halt;
+    size_t inst_counter;
 } s_cpu;
 
 typedef struct s_screen{
