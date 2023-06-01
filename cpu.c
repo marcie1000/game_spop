@@ -382,8 +382,8 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //ECHO RAM
     else if((adress >= 0xE000) && (adress <= 0xFDFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
-        return EXIT_FAILURE;
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
+        //return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
     else if((adress >= 0xFE00) && (adress <= 0xFE9F))
@@ -454,8 +454,8 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     //ECHO RAM
     else if((adress >= 0xE000) && (adress <= 0xFDFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
-        return EXIT_FAILURE;
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
+        //return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
     else if((adress >= 0xFE00) && (adress <= 0xFE9F))
@@ -589,6 +589,14 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     }
     cpu->pc += emu->length_table[action];
     
+//    if(cpu->inst_counter >= 250000)
+//        emu->opt.debug_info  =true;
+//        
+//    if(cpu->inst_counter >= 254075)
+//    {
+//        
+//    }
+    
     timer_handle(emu);
 }
 
@@ -670,7 +678,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x06] = &LD_B_d8;
     opcode_functions[0x07] = &RLCA;
     opcode_functions[0x08] = &LD_derefa16_SP;
-    //opcode_functions[0x09] = &ADD_HL_BC;
+    opcode_functions[0x09] = &ADD_HL_BC;
     //opcode_functions[0x0A] = &LD_A_derefBC;
     opcode_functions[0x0B] = &DEC_BC;
     opcode_functions[0x0C] = &INC_C;
@@ -688,7 +696,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0x18] = &JR_r8;
     opcode_functions[0x19] = &ADD_HL_DE;
     opcode_functions[0x1A] = &LD_A_derefDE;
-    //opcode_functions[0x1B] = &DEC_DE;
+    opcode_functions[0x1B] = &DEC_DE;
     opcode_functions[0x1C] = &INC_E;
     opcode_functions[0x1D] = &DEC_E;
     opcode_functions[0x1E] = &LD_E_d8;
@@ -860,31 +868,31 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xC4] = &CALL_NZ_a16;
     opcode_functions[0xC5] = &PUSH_BC;
     opcode_functions[0xC6] = &ADD_A_d8;
-    //opcode_functions[0xC7] = &RST_00H;
+    opcode_functions[0xC7] = &RST_00H;
     opcode_functions[0xC8] = &RET_Z;
     opcode_functions[0xC9] = &RET;
     opcode_functions[0xCA] = &JP_Z_a16;
     opcode_functions[0xCB] = &PREFIX_CB;
-    //opcode_functions[0xCC] = &CALL_Z_a16;
+    opcode_functions[0xCC] = &CALL_Z_a16;
     opcode_functions[0xCD] = &CALL_a16;
     opcode_functions[0xCE] = &ADC_A_d8;
-    //opcode_functions[0xCF] = &RST_08H;
+    opcode_functions[0xCF] = &RST_08H;
     opcode_functions[0xD0] = &RET_NC;
     opcode_functions[0xD1] = &POP_DE;
-    //opcode_functions[0xD2] = &JP_NC_a16;
+    opcode_functions[0xD2] = &JP_NC_a16;
     opcode_functions[0xD3] = &opcode_non_existant;
-    //opcode_functions[0xD4] = &CALL_NC_a16;
+    opcode_functions[0xD4] = &CALL_NC_a16;
     opcode_functions[0xD5] = &PUSH_DE;
     opcode_functions[0xD6] = &SUB_d8;
-    //opcode_functions[0xD7] = &RST_10H;
+    opcode_functions[0xD7] = &RST_10H;
     opcode_functions[0xD8] = &RET_C;
     opcode_functions[0xD9] = &RETI;
-    //opcode_functions[0xDA] = &JP_C_a16;
+    opcode_functions[0xDA] = &JP_C_a16;
     opcode_functions[0xDB] = &opcode_non_existant;
-    //opcode_functions[0xDC] = &CALL_C_a16;
+    opcode_functions[0xDC] = &CALL_C_a16;
     opcode_functions[0xDD] = &opcode_non_existant;
-    //opcode_functions[0xDE] = &SBC_A_d8;
-    //opcode_functions[0xDF] = &RST_18H;
+    opcode_functions[0xDE] = &SBC_A_d8;
+    opcode_functions[0xDF] = &RST_18H;
     opcode_functions[0xE0] = &LDH_derefa8_A;
     opcode_functions[0xE1] = &POP_HL;
     opcode_functions[0xE2] = &LD_derefC_A;
@@ -908,7 +916,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xF4] = &opcode_non_existant;
     opcode_functions[0xF5] = &PUSH_AF;
     opcode_functions[0xF6] = &OR_d8;
-    //opcode_functions[0xF7] = &RST_30H;
+    opcode_functions[0xF7] = &RST_30H;
     opcode_functions[0xF8] = &LD_HL_SPplusr8;
     opcode_functions[0xF9] = &LD_SP_HL;
     opcode_functions[0xFA] = &LD_A_derefa16;
@@ -916,7 +924,7 @@ void init_opcodes_pointers(void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     opcode_functions[0xFC] = &opcode_non_existant;
     opcode_functions[0xFD] = &opcode_non_existant;
     opcode_functions[0xFE] = &CP_d8;
-    //opcode_functions[0xFF] = &RST_38H;
+    opcode_functions[0xFF] = &RST_38H;
 }
 
 void init_cb_pointers(void (*cb_functions[CB_NB]) (void*, uint8_t))
