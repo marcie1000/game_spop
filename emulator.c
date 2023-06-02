@@ -662,7 +662,8 @@ void destroy_emulator(s_emu *emu, int status)
 {
     destroy_screen(&emu->screen);
     destroy_SDL();
-    fclose(emu->opt.gbdoc_log);
+    if(NULL != emu->opt.gbdoc_log)
+        fclose(emu->opt.gbdoc_log);
     exit(status);
 }
 
@@ -1015,7 +1016,7 @@ void gbdoctor(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_opt *opt = &emu->opt;
     
-//    cpu->inst_counter++;
+    cpu->inst_counter++;
     
     if(!opt->gb_doctor)
         return;
