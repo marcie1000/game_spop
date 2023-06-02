@@ -20,6 +20,8 @@
 #define PIX_BY_H (144)
 #define LY_LIMIT (154)
 #define SPRITEPOS_X_LIMIT (168)
+#define OAM_SPRITES_MAX (40)
+#define SPRITES_PER_SCANLINE (10)
 #define UNUSED __attribute__((unused))
 
 #define ANSI_COLOR_RED     "\x1b[31m"

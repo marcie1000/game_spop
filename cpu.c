@@ -168,6 +168,8 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF4B:
             io_reg->WX = data;
             break;
+        case 0xFF4D:
+            break;
         case 0xFF50:
             io_reg->BANK = data;
             memcpy(cpu->ROM_Bank[0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
@@ -337,6 +339,9 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             break;
         case 0xFF4B:
             *data = io_reg->WX;
+            break;
+        case 0xFF4D:
+            *data = 0;
             break;
         default:
             fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to read I/O register at adress 0x%04X (unimplemented!)\n" ANSI_COLOR_RESET, adress);

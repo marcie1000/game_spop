@@ -148,14 +148,113 @@ int draw_window(s_emu *emu, UNUSED size_t i)
     return EXIT_FAILURE;
 }
 
-int draw_OBJ(s_emu *emu, UNUSED size_t i)
+int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
 {
-    s_screen *screen = &emu->screen;
-    if(!screen->obj_enable)
+    s_screen *scr = &emu->screen;
+    s_cpu *cpu = &emu->cpu;
+    s_io *io = &cpu->io_reg;
+    
+    uint8_t pix_tmp = 0;
+    
+    //8*16 sprite handle
+    //IF (sprite 8*16) AND (LY is in the second tile of the sprite)
+    bool is_second_tile = ((scr->obj_size) && (cpu->OAM[sptd] + 16 - io->LY > 8));
+    //bool bgwin_over_obj = (cpu->OAM[sptd + 3] & 0x80);
+    bool yflip = (cpu->OAM[sptd + 3] & 0x40);
+    bool xflip = (cpu->OAM[sptd + 3] & 0x20);
+    bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
+    
+    uint16_t data_adress = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
+    data_adress += 2 * (io->LY % 8);
+    if(yflip) data_adress = 8 - data_adress;
+    
+    uint8_t bitmask;
+    if(!xflip) bitmask = (0x80 >> (i % 8));
+    else bitmask = (0x01 << (i % 8));
+    
+    pix_tmp =     (cpu->VRAM[data_adress] 
+                //Selects the pixel we are currently drawing
+                & bitmask)
+                //Shifts to the lsb
+                >> (7 - i % 8);
+                
+    //does the same for the second byte of data
+    pix_tmp |=    (cpu->VRAM[data_adress + 1]
+                & bitmask)
+                >> (6 - i % 8);
+    
+    //modify pixel color through the palette
+    if(!OBPnum)
+        pix_tmp = (io->OBP0 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
+    else
+        pix_tmp = (io->OBP1 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
+    
+    //transparency
+    if(pix_tmp != 0)
+        *pixel = pix_tmp;
+    
+    return EXIT_SUCCESS;
+    
+}
+
+int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE])
+{
+    s_screen *scr = &emu->screen;
+    s_cpu *cpu = &emu->cpu;
+//    s_io *io = &cpu->io_reg;
+    if(!scr->obj_enable)
         return EXIT_SUCCESS;
         
-    fprintf(stderr, "WARNING: Attempt to draw OBJ! (unimplemented)\n");
-    return EXIT_FAILURE;
+    //fprintf(stderr, "WARNING: Attempt to draw OBJ! (unimplemented)\n");
+    
+    //checks if sprite is on the pixel currently drawn
+    for(size_t j = 0; j < SPRITES_PER_SCANLINE; j++)
+    {
+        //if (spr_x <= pixel_x + 8) AND
+        //   (spr_x + spr_w >= pixel_x + 8)
+        if((cpu->OAM[sptd[j] + 1] <= i + 8) &&
+           (cpu->OAM[sptd[j] + 1] + 8 >= i + 8))
+        {
+            draw_OBJ_tile(emu, i, pixel, j);
+            break;
+        }
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Scan OAM to select the sprites to draw.
+ * @param emu
+ * @param sprites_to_draw: an array of 10 uint8_t that contains relative
+ *        adresses (in OAM array) to the first byte of each sprite to draw.
+ */
+void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE])
+{
+    s_screen *scr = &emu->screen;
+    s_cpu *cpu = &emu->cpu;
+    s_io *io = &cpu->io_reg;
+    if(!scr->obj_enable)
+        return;
+    
+    int sprite_counter = 0;
+    for (size_t i = 0; (i < OAM_SPRITES_MAX * 4) && (sprite_counter < SPRITES_PER_SCANLINE); i += 4)
+    {
+        //ckeck if sprite is not on the scanline
+        if(! ( (cpu->OAM[i] <= io->LY + 16) && 
+               (cpu->OAM[i] + 8 + 8 * scr->obj_size >= io->LY + 16) ) )
+            continue;
+        
+        sprites_to_draw[sprite_counter] = i;
+        sprite_counter++;
+    }
+    
+//    //reorganise order
+//    uint8_t tmp[SPRITES_PER_SCANLINE];
+//    for (size_t i = SPRITES_PER_SCANLINE - 1; i >= 0; i--)
+//    {
+//        
+//    }
 }
 
 int draw_scanline(s_emu *emu)
@@ -194,6 +293,10 @@ int draw_scanline(s_emu *emu)
 //    }
     
     //for each pixel of the scanline
+    
+    uint8_t sprites_to_draw[SPRITES_PER_SCANLINE];
+    scan_OAM(emu, sprites_to_draw);
+    
     for(size_t i = 0; i < PIX_BY_W; i++)
     {
         uint8_t pixel = 0;
@@ -201,7 +304,7 @@ int draw_scanline(s_emu *emu)
             return EXIT_FAILURE;
         if(0 != draw_window(emu, i))
             return EXIT_FAILURE;
-        if(0 != draw_OBJ(emu, i))
+        if(0 != draw_OBJ(emu, i, &pixel, sprites_to_draw))
             return EXIT_FAILURE;
             
         //convert to 4 possible grayscales [0, 255] values
