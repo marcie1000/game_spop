@@ -36,6 +36,8 @@ Options:
                             doctor tool](https://github.com/robert/gameboy-doctor) (only at launch).
                             Emulator behavior might be inaccurate since LY reading always send 0x90 in
                             this mode.
+* `--log-instrs`, `-l`  = log cpu state into a file for comparison with other
+                        emulators (only at launch).
 * `--step`, `-s`        = enable step by step debugging. Emulator will stop
                           at each new instruction and ask to continue or edit options.
 * `--help`, `-h`        = show this help message and exit.

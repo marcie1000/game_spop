@@ -22,6 +22,7 @@
 #define SPRITEPOS_X_LIMIT (168)
 #define OAM_SPRITES_MAX (40)
 #define SPRITES_PER_SCANLINE (10)
+//to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
 
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -47,11 +48,12 @@ enum ppu_modes_durations {
 };
 
 typedef struct s_opt{
-    bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor;
+    bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
+         log_instrs;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
     bool test_debug;
-    FILE *gbdoc_log;
+    FILE *logfile;
 }s_opt;
 
 typedef struct s_input{
@@ -149,7 +151,7 @@ extern int parse_options_during_exec(s_opt *opt);
 extern int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning);
 extern void ask_breakpoint(s_opt *opt);
 extern void pause_menu(s_emu *emu);
-extern void gbdoctor(s_emu *emu);
+extern void log_instructions(s_emu *emu);
 
 
 #endif //EMULATOR_H

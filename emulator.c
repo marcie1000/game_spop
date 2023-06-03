@@ -84,10 +84,10 @@ int initialize_emulator(s_emu *emu)
     }
     
     //gb doctor log file
-    opt->gbdoc_log = fopen("gbdoc.log", "w");
-    if(opt->gbdoc_log == NULL)
+    opt->logfile = fopen("gb_insts.log", "w");
+    if(opt->logfile == NULL)
     {
-        fprintf(stderr, "fopen gbdoc.log: %s\n", strerror(errno));
+        fprintf(stderr, "fopen gb_insts.log: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
     
@@ -662,8 +662,8 @@ void destroy_emulator(s_emu *emu, int status)
 {
     destroy_screen(&emu->screen);
     destroy_SDL();
-    if(NULL != emu->opt.gbdoc_log)
-        fclose(emu->opt.gbdoc_log);
+    if(NULL != emu->opt.logfile)
+        fclose(emu->opt.logfile);
     exit(status);
 }
 
@@ -725,15 +725,9 @@ void emulate(s_emu *emu)
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
         
         ppu_modes_and_scanlines(emu);
         
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -794,20 +788,23 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   ./game_spop <ROM file> [option]\n"
     "\n"
     "Options\n"
-    "   --breakpoint         = enable debugging with breakpoints. The program will\n"
+    "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
-    "   --bypass-bootrom     = launch directly the ROM (only if a rom is passed\n"
+    "   --bypass-bootrom, -b = launch directly the ROM (only if a rom is passed\n"
     "                          in argument). This option can only be provided at\n"
     "                          launch.\n"
-    "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
+    "   --debug-info, -i     = at every new instruction, prints the mnemonic, the\n"
     "                          3 bytes object code, and all registers, PC, SP and\n"
     "                          register F flags values in the console. Emulator is\n"
     "                          much slower when this option is enabled.\n"
-    "   --gb-doctor          = log cpu state into a file to be used with the Gameboy\n"
-    "                          doctor tool (https://github.com/robert/gameboy-doctor).\n"
-    "                          Only at launch.\n."
+    "   --gb-doctor, -d      = log cpu state into a file to be used with the Gameboy\n"
+    "                          doctor tool (https://github.com/robert/gameboy-doctor), \n"
+    "                          (only at launch). Emulator behavior might be inaccurate\n"
+    "                          since LY reading always send 0x90 in this mode.\n"
+    "   --log-instrs, -l     = log cpu state into a file for comparison with other\n"
+    "                          emulators (only at launch).\n"
     "   --step, -s           = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -815,11 +812,11 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     
     const char help_msg_during_exec[] = 
     "Options\n"
-    "   --breakpoint         = enable debugging with breakpoints. The program will\n"
+    "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
-    "   --debug-info         = at every new instruction, prints the mnemonic, the\n"
+    "   --debug-info, -i     = at every new instruction, prints the mnemonic, the\n"
     "                          3 bytes object code, and all registers, PC, SP and\n"
     "                          register F flags values in the console. Emulator is\n"
     "                          much slower when this option is enabled.\n"
@@ -830,11 +827,11 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     
     for(size_t i = 0 + is_program_beginning; i < argc; i++)
     {
-        if((0 == strcmp(argv[i], "--bypass-bootrom")) && (is_program_beginning))
+        if(((0 == strcmp(argv[i], "--bypass-bootrom")) || (0 == strcmp(argv[i], "-b"))) && (is_program_beginning))
             opt->bootrom = false;
-        else if(0 == strcmp(argv[i], "--debug-info"))
+        else if((0 == strcmp(argv[i], "--debug-info")) || (0 == strcmp(argv[i], "-i")))
             opt->debug_info = !opt->debug_info;
-        else if(0 == strcmp(argv[i], "--help") || (0 == strcmp(argv[i], "-h")))
+        else if((0 == strcmp(argv[i], "--help")) || (0 == strcmp(argv[i], "-h")))
         {
             if(is_program_beginning)
                 printf("%s", help_msg_beginning);
@@ -842,13 +839,17 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
                 printf("%s", help_msg_during_exec);
             return EXIT_FAILURE;
         }
-        else if(0 == strcmp(argv[i], "--breakpoint"))
+        else if((0 == strcmp(argv[i], "--breakpoint")) || (0 == strcmp(argv[i], "-b")))
         {
             opt->breakpoints = !opt->breakpoints;
         }
-        else if(0 == strcmp(argv[i], "--gb-doctor") && (is_program_beginning))
+        else if(((0 == strcmp(argv[i], "--gb-doctor")) || (0 == strcmp(argv[i], "-d"))) && (is_program_beginning))
         {
             opt->gb_doctor = !opt->gb_doctor;
+        }
+        else if(((0 == strcmp(argv[i], "--log-instrs")) || (0 == strcmp(argv[i], "-l"))) && (is_program_beginning))
+        {
+            opt->log_instrs = !opt->log_instrs;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
@@ -943,6 +944,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->breakpoints = false;
     opt->step_by_step = false;
     opt->gb_doctor = false;
+    opt->log_instrs = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     
@@ -1011,30 +1013,75 @@ void ask_breakpoint(s_opt *opt)
     }
 }
 
-void gbdoctor(s_emu *emu)
+void log_instructions(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_opt *opt = &emu->opt;
     
-    cpu->inst_counter++;
-    
-    if(!opt->gb_doctor)
-        return;
-    
-    uint8_t pc0, pc1, pc2, pc3;
-    read_memory(emu, cpu->pc, &pc0);
-    read_memory(emu, cpu->pc + 1, &pc1);
-    read_memory(emu, cpu->pc + 2, &pc2);
-    read_memory(emu, cpu->pc + 3, &pc3);
-    if(0 > fprintf(
-        opt->gbdoc_log, 
-        "A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X "
-        "SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X\n",
-        cpu->regA, cpu->regF, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
-        cpu->regH, cpu->regL, cpu->sp, cpu->pc, pc0, pc1, pc2, pc3
-    ))
+    //cpu->inst_counter++;
+
+    if(opt->gb_doctor)
     {
-        perror("gbdoctor fprintf: ");
-        destroy_emulator(emu, EXIT_FAILURE);
+        uint8_t pc0, pc1, pc2, pc3;
+        read_memory(emu, cpu->pc, &pc0);
+        read_memory(emu, cpu->pc + 1, &pc1);
+        read_memory(emu, cpu->pc + 2, &pc2);
+        read_memory(emu, cpu->pc + 3, &pc3);
+        
+        //original gameboy doctor
+        if(0 > fprintf(
+            opt->logfile, 
+            "A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X "
+            "SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X\n",
+            cpu->regA, cpu->regF, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
+            cpu->regH, cpu->regL, cpu->sp, cpu->pc, pc0, pc1, pc2, pc3
+        ))
+        {
+            perror("log_instructions fprintf: ");
+            destroy_emulator(emu, EXIT_FAILURE);
+        }
+    }
+    else if(opt->log_instrs)
+    {
+        uint8_t pc0, pc1, pc2, pc3;
+        read_memory(emu, cpu->pc, &pc0);
+        read_memory(emu, cpu->pc + 1, &pc1);
+        read_memory(emu, cpu->pc + 2, &pc2);
+        read_memory(emu, cpu->pc + 3, &pc3);
+        
+        //custom log syntax
+        char z = '-';
+        char n = '-';
+        char h = '-';
+        char c = '-';
+        char pcmem[50] = "";
+        char tmp[10];
+        snprintf(pcmem, 50, " %02x", pc0);
+        if(emu->length_table[pc0] >= 2)
+        {
+            snprintf(tmp, 10, " %02x", pc1);
+            strncat(pcmem, tmp, 50);
+        }
+        if(emu->length_table[pc0] >= 3)
+        {
+            snprintf(tmp, 10, " %02x", pc2);
+            strncat(pcmem, tmp, 50);
+        }  
+        if(cpu->regF & ZERO_FMASK) z = 'Z';
+        if(cpu->regF & NEGATIVE_FMASK) n = 'N';
+        if(cpu->regF & HALF_CARRY_FMASK) h = 'H';
+        if(cpu->regF & CARRY_FMASK) c = 'C';
+
+        if(0 > fprintf(
+            opt->logfile, 
+            "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x "
+            "SP:%04x PC:%04x PCMEM:%-9s  %s\n",
+            cpu->regA, z, n, h, c, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
+            cpu->regH, cpu->regL, cpu->sp, cpu->pc, pcmem, emu->mnemonic_index[pc0]
+        ))
+        {
+            perror("log_instructions fprintf: ");
+            destroy_emulator(emu, EXIT_FAILURE);
+        }
     }
 }

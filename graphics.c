@@ -249,12 +249,7 @@ void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE])
         sprite_counter++;
     }
     
-//    //reorganise order
-//    uint8_t tmp[SPRITES_PER_SCANLINE];
-//    for (size_t i = SPRITES_PER_SCANLINE - 1; i >= 0; i--)
-//    {
-//        
-//    }
+
 }
 
 int draw_scanline(s_emu *emu)
@@ -278,19 +273,6 @@ int draw_scanline(s_emu *emu)
         }
         return EXIT_SUCCESS;
     }
-    //uint16_t win_map_start_adress = screen->win_tile_map_area ? 0x9C00 : 0x9800;
-
-//    if(io_reg->LY + io_reg->SCY > 255)
-//    {
-//        fprintf(stderr, "WARNING: LY + SCY is out of tile map area!!\n");
-//        return EXIT_FAILURE;
-//    }
-//    //95 + 160 = 255
-//    if(io_reg->SCX > 95)
-//    {
-//        fprintf(stderr, "WARNING: SCX + screen width is out of tilemap area!!\n");
-//        return EXIT_FAILURE;
-//    }
     
     //for each pixel of the scanline
     
@@ -387,15 +369,35 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
         return;
         
     Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-    if(elapsed <= 16)
-        SDL_Delay(16 - elapsed);
+    if(elapsed <= 17)
+    {
+        SDL_Delay(17 - elapsed);
+        elapsed = 17;
+    }
     SDL_UnlockTexture(screen->scr);
     SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
     SDL_RenderPresent(screen->r);
     if(0 != lockscreen(screen))
         destroy_emulator(emu, EXIT_FAILURE);
-    if(elapsed > 16)
-        printf("last frame = %lu ms\n", elapsed);
+    
+    static uint64_t elapsed_sum = 0;
+    elapsed_sum += elapsed;
+    static int sum_cnt = 0;
+    sum_cnt++;
+    
+    //calculate fps once per second
+    static double fps = 58.82;
+    if(sum_cnt >= 59)
+    {
+        fps = 1 / (((double)elapsed_sum / 60) / 1000);
+        elapsed_sum = 0;
+        sum_cnt = 0;
+    }
+    
+    static char tmp[25] = "";
+    snprintf(tmp, 25, "game_spop %.2f fps", fps);
+    SDL_SetWindowTitle(screen->w, tmp);
+    
     emu->frame_timer = SDL_GetTicks64();
     cpu->io_reg.LY = 0;
     //clear VBlank flag
@@ -450,47 +452,3 @@ int DMA_transfer(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
-
-//int load_tile(s_emu *emu, uint8_t x_pos, uint8_t y_pos, uint8_t index, UNUSED uint8_t attributes)
-//{
-//    s_screen *screen = &emu->screen;
-//    s_cpu *cpu = &emu->cpu;
-//    
-//    uint8_t shift = cpu->io_reg.LY - y_pos;
-//    if(shift >= 7)
-//    {
-//        fprintf(stderr, "ERROR load_tile: tile not in current scanline.\n");
-//        return EXIT_FAILURE;
-//    }
-//    
-//    for(size_t j = x_pos; j < SPRITEPOS_X_LIMIT; j++)
-//    {
-//        screen->current_row[j] |= cpu->VRAM[16 * index + shift * 2]     & (0x80 >> j);
-//        screen->current_row[j] |= cpu->VRAM[16 * index + shift * 2 + 1] & (0x80 >> j);
-//    }
-//    
-//    return EXIT_SUCCESS;
-//}
-//
-//int scan_OAM(s_emu *emu)
-//{
-//    s_screen *screen = &emu->screen;
-//    s_cpu *cpu = &emu->cpu;
-//    
-//    for(size_t i = 0; i < OAM_SIZE; i += 4)
-//    {
-////        printf("i=%lu, %02X, %02X, %02X, %02X\n", i, cpu->OAM[i], cpu->OAM[i+1], cpu->OAM[i+2], cpu->OAM[i+3]);
-//        //Y position
-//        if((cpu->OAM[i] <= cpu->io_reg.LY) && (cpu->OAM[i] + 8 * screen->obj_size >= cpu->io_reg.LY))
-//        {
-//            //X position
-//            if(cpu->OAM[i + 1] <= SPRITEPOS_X_LIMIT)
-//            {
-//                if(0 != load_tile(emu, cpu->OAM[i + 1], cpu->OAM[i], cpu->OAM[i + 2], cpu->OAM[i + 3]))
-//                    return EXIT_FAILURE;
-//            }
-//        }
-//    }
-//    return EXIT_SUCCESS;
-//}
-//

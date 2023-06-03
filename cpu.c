@@ -18,7 +18,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
     switch(adress)
     {
         case 0xFF00:
-            io_reg->P1_JOYP = data;
+            io_reg->P1_JOYP |= data & 0x30;
             break;
         case 0xFF01:
             io_reg->SB = data;
@@ -313,11 +313,11 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->SCX;
             break;
         case 0xFF44:
-            if(!emu->opt.gb_doctor)
+//            if(!emu->opt.gb_doctor)
                 *data = io_reg->LY;
             //hardcode for gb_doctor
-            else
-                *data = 0x90;
+//            else
+//                *data = 0x90;
             break;
         case 0xFF45:
             *data = io_reg->LYC;
@@ -505,6 +505,7 @@ int initialize_cpu(s_cpu *cpu)
 {
     memset(cpu, 0, sizeof(s_cpu));
     cpu->pc = START_ADRESS;
+    cpu->io_reg.P1_JOYP = 0xEF;
     return EXIT_SUCCESS;
 }
 
@@ -586,7 +587,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     step_by_step_handle(emu);
     
     emu->opt.test_debug = true;
-    gbdoctor(emu);
+    log_instructions(emu);
     size_t t_cycles_old = cpu->t_cycles;
     (*opcode_functions[action])(emu, opcode);
     cpu->timer_clock += (cpu->t_cycles - t_cycles_old);
@@ -599,10 +600,10 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     }
     cpu->pc += emu->length_table[action];
     
-//    if(cpu->inst_counter >= 3028000)
-//        emu->opt.debug_info  =true;
+//    if(cpu->inst_counter >= 61200)
+//        emu->opt.debug_info = true;
 //        
-//    if(cpu->inst_counter >= 3028430)
+//    if(cpu->inst_counter >= 61364)
 //    {
 //        
 //    }
