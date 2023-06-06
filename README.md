@@ -45,3 +45,4 @@ Options:
 Controls:
 * `P` : Pause emulation
 * `O` (during pause) : Show an option menu
+* `Space` : Toggle fast forward

@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include "emulator.h"
 #include "graphics.h"
+#include "opcodes.h"
 
 int initialize_screen(s_emu *emu)
 {
@@ -120,17 +121,11 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     bg_data_adress += 2 * ((Ytemp) % 8);
     
     uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
-    
-    *pixel =     (cpu->VRAM[bg_data_adress] 
-                //Selects the pixel we are currently drawing
-                & bitmask)
-                //Shifts to the lsb
-                >> (7 - i % 8);
-                
-    //does the same for the second byte of data
-    *pixel |=    (cpu->VRAM[bg_data_adress + 1]
-                & bitmask)
-                >> (6 - i % 8);
+
+    flag_assign((cpu->VRAM[bg_data_adress] & bitmask),
+                 pixel, 0x01);
+    flag_assign((cpu->VRAM[bg_data_adress + 1] & bitmask), 
+                 pixel, 0x02);
     
     //modify pixel color through the palette
     *pixel = (io_reg->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
@@ -165,23 +160,17 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
     
     uint16_t data_adress = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
-    data_adress += 2 * (io->LY % 8);
+    data_adress += 2 * (io->LY - cpu->OAM[sptd] + 16);
     if(yflip) data_adress = 8 - data_adress;
     
     uint8_t bitmask;
-    if(!xflip) bitmask = (0x80 >> (i % 8));
-    else bitmask = (0x01 << (i % 8));
+    if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));
+    else bitmask = (0x01 << (i - cpu->OAM[sptd + 1] + 8));
     
-    pix_tmp =     (cpu->VRAM[data_adress] 
-                //Selects the pixel we are currently drawing
-                & bitmask)
-                //Shifts to the lsb
-                >> (7 - i % 8);
-                
-    //does the same for the second byte of data
-    pix_tmp |=    (cpu->VRAM[data_adress + 1]
-                & bitmask)
-                >> (6 - i % 8);
+    flag_assign((cpu->VRAM[data_adress] & bitmask),
+                 &pix_tmp, 0x01);
+    flag_assign((cpu->VRAM[data_adress + 1] & bitmask), 
+                 &pix_tmp, 0x02);
     
     //modify pixel color through the palette
     if(!OBPnum)
@@ -197,25 +186,24 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     
 }
 
-int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE])
+int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
 {
     s_screen *scr = &emu->screen;
     s_cpu *cpu = &emu->cpu;
-//    s_io *io = &cpu->io_reg;
     if(!scr->obj_enable)
         return EXIT_SUCCESS;
         
-    //fprintf(stderr, "WARNING: Attempt to draw OBJ! (unimplemented)\n");
-    
     //checks if sprite is on the pixel currently drawn
-    for(size_t j = 0; j < SPRITES_PER_SCANLINE; j++)
+    for(size_t j = 0; j < SPRITES_PER_SCANLINE && j < nb_sptd; j++)
     {
         //if (spr_x <= pixel_x + 8) AND
         //   (spr_x + spr_w >= pixel_x + 8)
         if((cpu->OAM[sptd[j] + 1] <= i + 8) &&
-           (cpu->OAM[sptd[j] + 1] + 8 >= i + 8))
+           (cpu->OAM[sptd[j] + 1] + 8 > i + 8))
         {
-            draw_OBJ_tile(emu, i, pixel, j);
+            //if(cpu->io_reg.LY)
+
+            draw_OBJ_tile(emu, i, pixel, sptd[j]);
             break;
         }
     }
@@ -229,7 +217,7 @@ int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCAN
  * @param sprites_to_draw: an array of 10 uint8_t that contains relative
  *        adresses (in OAM array) to the first byte of each sprite to draw.
  */
-void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE])
+void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE], uint8_t *nb_sptd)
 {
     s_screen *scr = &emu->screen;
     s_cpu *cpu = &emu->cpu;
@@ -237,16 +225,16 @@ void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE])
     if(!scr->obj_enable)
         return;
     
-    int sprite_counter = 0;
-    for (size_t i = 0; (i < OAM_SPRITES_MAX * 4) && (sprite_counter < SPRITES_PER_SCANLINE); i += 4)
+    *nb_sptd = 0;
+    for (size_t i = 0; (i < OAM_SPRITES_MAX * 4) && (*nb_sptd < SPRITES_PER_SCANLINE); i += 4)
     {
         //ckeck if sprite is not on the scanline
         if(! ( (cpu->OAM[i] <= io->LY + 16) && 
-               (cpu->OAM[i] + 8 + 8 * scr->obj_size >= io->LY + 16) ) )
+               (cpu->OAM[i] + 8 + 8 * scr->obj_size > io->LY + 16) ) )
             continue;
         
-        sprites_to_draw[sprite_counter] = i;
-        sprite_counter++;
+        sprites_to_draw[*nb_sptd] = i;
+        *nb_sptd += 1;
     }
     
 
@@ -277,7 +265,9 @@ int draw_scanline(s_emu *emu)
     //for each pixel of the scanline
     
     uint8_t sprites_to_draw[SPRITES_PER_SCANLINE];
-    scan_OAM(emu, sprites_to_draw);
+    uint8_t nb_sptd;
+    memset(sprites_to_draw, 0, sizeof(uint8_t[SPRITES_PER_SCANLINE]));
+    scan_OAM(emu, sprites_to_draw, &nb_sptd);
     
     for(size_t i = 0; i < PIX_BY_W; i++)
     {
@@ -286,7 +276,7 @@ int draw_scanline(s_emu *emu)
             return EXIT_FAILURE;
         if(0 != draw_window(emu, i))
             return EXIT_FAILURE;
-        if(0 != draw_OBJ(emu, i, &pixel, sprites_to_draw))
+        if(0 != draw_OBJ(emu, i, &pixel, sprites_to_draw, nb_sptd))
             return EXIT_FAILURE;
             
         //convert to 4 possible grayscales [0, 255] values
@@ -310,12 +300,12 @@ void ppu_modes_and_scanlines(s_emu *emu)
     
     if(cpu->t_cycles >= 456)
     {
-        cpu->io_reg.LY++;
         cpu->t_cycles -= 456;
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
         io_reg->STAT |= (screen->LCD_PPU_enable) ? 2 : 1;    
         if(0 != draw_scanline(emu))
             destroy_emulator(emu, EXIT_FAILURE);
+        cpu->io_reg.LY++;
         return;
     }
     
@@ -369,7 +359,7 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
         return;
         
     Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-    if(elapsed <= 17)
+    if(elapsed <= 17 && !emu->opt.fast_forward)
     {
         SDL_Delay(17 - elapsed);
         elapsed = 17;

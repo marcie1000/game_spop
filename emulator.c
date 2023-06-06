@@ -7,8 +7,9 @@
 #include "cpu.h"
 #include "graphics.h"
 
-void update_event(s_input *input)
+void update_event(s_emu *emu)
 {
+    s_input *input = &emu->in;
     while(SDL_PollEvent(&input->event))
     {
         switch(input->event.type)
@@ -17,7 +18,7 @@ void update_event(s_input *input)
                 input->quit = SDL_TRUE;
                 break;
             case(SDL_KEYDOWN):
-                input->key[input->event.key.keysym.scancode] = SDL_TRUE;
+                input->key[input->event.key.keysym.scancode] = SDL_TRUE;                
                 break;
             case(SDL_KEYUP):
                 input->key[input->event.key.keysym.scancode] = SDL_FALSE;
@@ -698,6 +699,16 @@ void bypass_bootrom(s_emu *emu)
     cpu->io_reg.BGP = 0xfc;    
 }
 
+void fast_forward_toggle(s_emu *emu)
+{
+    static bool previous = false;
+    if(emu->in.key[SDL_SCANCODE_SPACE] != previous && previous == false)
+    {
+        emu->opt.fast_forward = !emu->opt.fast_forward;
+    }
+    previous = emu->in.key[SDL_SCANCODE_SPACE];
+}
+
 void emulate(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
@@ -709,7 +720,7 @@ void emulate(s_emu *emu)
     
     while(!emu->in.quit)
     {
-        update_event(&emu->in);
+        update_event(emu);
         if(emu->in.resize)
         {
             resize_screen(&emu->screen);
@@ -719,6 +730,8 @@ void emulate(s_emu *emu)
         {
             pause_menu(emu);
         }
+
+        fast_forward_toggle(emu);
         
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -745,7 +758,7 @@ void pause_menu(s_emu *emu)
     //wait for P key release
     while(!emu->in.quit && emu->in.key[SDL_SCANCODE_P])
     {
-        update_event(&emu->in);
+        update_event(emu);
         SDL_Delay(5);
     }
     
@@ -756,11 +769,11 @@ void pause_menu(s_emu *emu)
     
     while(!emu->in.quit)
     {
-        update_event(&emu->in);
+        update_event(emu);
         if(emu->in.key[SDL_SCANCODE_P])
         {
             while(emu->in.key[SDL_SCANCODE_P])
-                update_event(&emu->in);
+                update_event(emu);
             return;
         }
         if(emu->in.key[SDL_SCANCODE_O])
@@ -945,6 +958,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->step_by_step = false;
     opt->gb_doctor = false;
     opt->log_instrs = false;
+    opt->fast_forward = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     

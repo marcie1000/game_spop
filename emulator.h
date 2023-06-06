@@ -49,7 +49,7 @@ enum ppu_modes_durations {
 
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
-         log_instrs;
+         log_instrs, fast_forward;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
     bool test_debug;
@@ -136,7 +136,7 @@ typedef struct s_emu{
     s_opt opt;
 }s_emu;
 
-extern void update_event(s_input *input);
+extern void update_event(s_emu *emu);
 extern int initialize_SDL(void);
 extern int initialize_emulator(s_emu *emu);
 extern void destroy_emulator(s_emu *emu, int status);
