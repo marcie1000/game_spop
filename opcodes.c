@@ -8,11 +8,6 @@
 #include "emulator.h"
 #include "opcodes.h"
 
-void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
-{
-    *flag = cond ? mask | *flag : ~mask & *flag;
-}
-
 void opcode_unimplemented(void *arg, uint32_t op)
 {
     s_emu *emu = arg;

@@ -96,6 +96,7 @@ typedef struct s_cpu {
     uint16_t pc; //program counter
     size_t t_cycles; //t_cycles counter at 4,194,304 Hz
     size_t timer_clock;
+    size_t div_clock;
     bool quit_halt;
     size_t inst_counter;
 } s_cpu;
@@ -136,6 +137,8 @@ typedef struct s_emu{
     s_opt opt;
 }s_emu;
 
+extern void flag_assign(bool cond, uint8_t *flag, uint8_t mask);
+extern void joypad_update(s_emu *emu);
 extern void update_event(s_emu *emu);
 extern int initialize_SDL(void);
 extern int initialize_emulator(s_emu *emu);

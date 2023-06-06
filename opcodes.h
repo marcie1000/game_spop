@@ -6,7 +6,6 @@
 #include "cpu.h"
 #include "emulator.h"
 
-extern void flag_assign(bool cond, uint8_t *flag, uint8_t mask);
 extern void opcode_unimplemented(void *arg, uint32_t op);
 extern void opcode_non_existant(void *arg, uint32_t op);
 

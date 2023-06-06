@@ -18,13 +18,17 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
     switch(adress)
     {
         case 0xFF00:
-            io_reg->P1_JOYP |= data & 0x30;
+            flag_assign(data & 0x20, &io_reg->P1_JOYP, 0x20);
+            flag_assign(data & 0x10, &io_reg->P1_JOYP, 0x10);
             break;
         case 0xFF01:
             io_reg->SB = data;
             break;
         case 0xFF02:
             io_reg->SC = data;
+            break;
+        case 0xFF04:
+            io_reg->DIV = data;
             break;
         case 0xFF05:
             io_reg->TIMA = data;
@@ -201,6 +205,9 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             break;
         case 0xFF02:
             *data = io_reg->SC;
+            break;
+        case 0xFF04:
+            *data = io_reg->DIV;
             break;
         case 0xFF05:
             *data = io_reg->TIMA;
@@ -564,11 +571,21 @@ void step_by_step_handle(s_emu *emu)
     ask_breakpoint(&emu->opt);
 }
 
+void div_handle(s_cpu *cpu)
+{
+    if(cpu->div_clock >= 256)
+    {
+        cpu->div_clock -= 256;
+        cpu->io_reg.DIV++;
+    }
+}
+
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
     
     interrupt_handler(emu);
+    joypad_update(emu);
     
     emu->opt.test_debug = false;
     uint32_t opcode = get_opcode(emu);
@@ -591,6 +608,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     size_t t_cycles_old = cpu->t_cycles;
     (*opcode_functions[action])(emu, opcode);
     cpu->timer_clock += (cpu->t_cycles - t_cycles_old);
+    cpu->div_clock += (cpu->t_cycles - t_cycles_old);
     if(emu->opt.debug_info)
     {
         printf(ANSI_COLOR_CYAN "A=%02X, B=%02X, C=%02X, D=%02X, E=%02X, F=%02X, H=%02X, L=%02X\n",
@@ -600,15 +618,8 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     }
     cpu->pc += emu->length_table[action];
     
-//    if(cpu->inst_counter >= 61200)
-//        emu->opt.debug_info = true;
-//        
-//    if(cpu->inst_counter >= 61364)
-//    {
-//        
-//    }
-    
     timer_handle(emu);
+    div_handle(&emu->cpu);
 }
 
 void initialize_length_table(s_emu *emu)

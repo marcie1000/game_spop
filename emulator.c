@@ -7,6 +7,11 @@
 #include "cpu.h"
 #include "graphics.h"
 
+void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
+{
+    *flag = cond ? mask | *flag : ~mask & *flag;
+}
+
 void update_event(s_emu *emu)
 {
     s_input *input = &emu->in;
@@ -750,6 +755,51 @@ void emulate(s_emu *emu)
         ppu_modes_and_scanlines(emu);
         render_frame_and_vblank_if_needed(emu);        
         
+    }
+}
+
+void joypad_update(s_emu *emu)
+{
+    s_io *io = &emu->cpu.io_reg;
+    s_input *in = &emu->in;
+    //action buttons
+    if(!(io->P1_JOYP & 0x20))
+    {
+        //start
+        flag_assign(!in->key[SDL_SCANCODE_RETURN],
+                    &io->P1_JOYP,
+                    0x08);
+        //select
+        flag_assign(!in->key[SDL_SCANCODE_BACKSPACE],
+                    &io->P1_JOYP,
+                    0x04);
+        //B
+        flag_assign(!in->key[SDL_SCANCODE_L],
+                    &io->P1_JOYP,
+                    0x02);
+        //A
+        flag_assign(!in->key[SDL_SCANCODE_M],
+                    &io->P1_JOYP,
+                    0x01);
+    }
+    else if (!(io->P1_JOYP & 0x10))
+    {
+        //down
+        flag_assign(!in->key[SDL_SCANCODE_S],
+                    &io->P1_JOYP,
+                    0x08);
+        //up
+        flag_assign(!in->key[SDL_SCANCODE_W],
+                    &io->P1_JOYP,
+                    0x04);
+        //left
+        flag_assign(!in->key[SDL_SCANCODE_A],
+                    &io->P1_JOYP,
+                    0x02);
+        //right
+        flag_assign(!in->key[SDL_SCANCODE_D],
+                    &io->P1_JOYP,
+                    0x01);
     }
 }
 
