@@ -320,11 +320,11 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io_reg->SCX;
             break;
         case 0xFF44:
-//            if(!emu->opt.gb_doctor)
+            if(!emu->opt.gb_doctor)
                 *data = io_reg->LY;
             //hardcode for gb_doctor
-//            else
-//                *data = 0x90;
+            else
+                *data = 0x90;
             break;
         case 0xFF45:
             *data = io_reg->LYC;
@@ -425,11 +425,11 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     else if(adress == 0xFFFF)
     {
         cpu->io_reg.IE = data;
-        if(data & (~0x0F))
-        {
-            fprintf(stderr, ANSI_COLOR_RED "WARNING: IE value = 0x%02X (flags unimplemented!)\n" ANSI_COLOR_RESET);
-            return EXIT_FAILURE;
-        }
+//        if(data & (~0x0F))
+//        {
+//            fprintf(stderr, ANSI_COLOR_RED "WARNING: IE value = 0x%02X (flags unimplemented!)\n" ANSI_COLOR_RESET);
+//            return EXIT_FAILURE;
+//        }
     }
     
     if(emu->opt.debug_info && emu->opt.test_debug)
@@ -584,8 +584,8 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
 {
     s_cpu *cpu = &emu->cpu;
     
-    interrupt_handler(emu);
     joypad_update(emu);
+    interrupt_handler(emu);
     
     emu->opt.test_debug = false;
     uint32_t opcode = get_opcode(emu);
@@ -620,6 +620,13 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
     timer_handle(emu);
     div_handle(&emu->cpu);
+    
+//    if(cpu->inst_counter > 150000)
+//        emu->opt.debug_info = true;
+//    if(cpu->inst_counter == 152035)
+//    {
+//        
+//    }
 }
 
 void initialize_length_table(s_emu *emu)

@@ -47,6 +47,10 @@ void interrupt_handler(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
+    
+    if(!io_reg->IME && !cpu->in_halt)
+        return;
+    
     cpu->quit_halt = false;
     LCD_STAT_interrupt_flags(emu);
     for(size_t i = 0; i <= 4; i++)
@@ -59,7 +63,8 @@ void interrupt_handler(s_emu *emu)
         if(!(io_reg->IF & (0x01 << i)))
             continue;
         
-        cpu->quit_halt = true;
+        if(cpu->in_halt)
+            cpu->quit_halt = true;
         
         if(!io_reg->IME)
             return;

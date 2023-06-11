@@ -97,7 +97,7 @@ typedef struct s_cpu {
     size_t t_cycles; //t_cycles counter at 4,194,304 Hz
     size_t timer_clock;
     size_t div_clock;
-    bool quit_halt;
+    bool quit_halt, in_halt;
     size_t inst_counter;
 } s_cpu;
 
@@ -143,7 +143,6 @@ extern void update_event(s_emu *emu);
 extern int initialize_SDL(void);
 extern int initialize_emulator(s_emu *emu);
 extern void destroy_emulator(s_emu *emu, int status);
-extern void destroy_SDL(void);
 extern void emulate(s_emu *emu);
 extern int load_boot_rom(s_cpu *cpu);
 extern int load_rom(s_emu *emu);

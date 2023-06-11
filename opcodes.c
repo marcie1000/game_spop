@@ -1300,10 +1300,14 @@ void HALT(void *arg, UNUSED uint32_t op)
 {
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
+    
+    cpu->in_halt = true;
+    
     if(cpu->quit_halt)
     {
         cpu->quit_halt = false;
         cpu->pc++;
+        cpu->in_halt = false;
     }
     cpu->t_cycles += 4;
 }

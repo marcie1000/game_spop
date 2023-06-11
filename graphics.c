@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL.h>
+#include <assert.h>
 #include "emulator.h"
 #include "graphics.h"
 #include "opcodes.h"
@@ -30,8 +31,8 @@ int initialize_screen(s_emu *emu)
         fprintf(stderr, "Error SDL_CreateRenderer: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
-    
-    SDL_SetRenderTarget(screen->r, NULL);
+
+    //SDL_SetRenderTarget(screen->r, NULL);
     
     screen->scr = SDL_CreateTexture(screen->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, PIX_BY_W, PIX_BY_H);
     if(NULL == screen->scr)
@@ -51,6 +52,14 @@ int initialize_screen(s_emu *emu)
     }
     
     emu->cpu.io_reg.STAT = 2;
+    screen->LCD_PPU_enable = false;
+    screen->win_tile_map_area = false;
+    screen->window_enable = false;
+    screen->BG_win_tile_data_area = false;
+    screen->BG_tile_map_area = false;
+    screen->obj_size = false;
+    screen->obj_enable = false;
+    screen->bg_win_enable_priority = false;
     
     return EXIT_SUCCESS;
 }
@@ -71,14 +80,14 @@ int lockscreen(s_screen *screen)
 
 void destroy_screen(s_screen *screen)
 {
+    if(NULL != screen->format)
+        SDL_FreeFormat(screen->format);
+    if(NULL != screen->scr)
+        SDL_DestroyTexture(screen->scr);
     if(NULL != screen->r)
         SDL_DestroyRenderer(screen->r);
     if(NULL != screen->w)
         SDL_DestroyWindow(screen->w);
-    if(NULL != screen->scr)
-        SDL_DestroyTexture(screen->scr);
-    if(NULL != screen->format)
-        SDL_FreeFormat(screen->format);
 }
 
 void resize_screen(s_screen *screen)
@@ -102,7 +111,7 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
         return EXIT_SUCCESS;
         
     uint16_t bg_map_start_adress = screen->BG_tile_map_area ? 0x1C00 : 0x1800;
-    uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x800;
+    uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x1000;
     
     //relative adress of the tile in the tile map
     uint16_t rel_bg_tilemap_adress = (Ytemp) / 8;
@@ -114,13 +123,28 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
         return EXIT_FAILURE;
     }
     //number of the tile by its place in tile data
-    uint8_t tilenum = cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress]; 
+    int16_t tilenum = 0;
+    
+    assert((bg_map_start_adress + rel_bg_tilemap_adress) < VRAM_SIZE);
+    
+    if(screen->BG_win_tile_data_area)
+    {
+        tilenum = (uint8_t)cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress];
+    }
+    else
+    {
+        tilenum = (int8_t) cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress]; 
+    }
+
+    
     // adress of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
     uint16_t bg_data_adress = bg_win_data_start_adr + 16 * tilenum;
     bg_data_adress += 2 * ((Ytemp) % 8);
     
     uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
+
+    assert((bg_data_adress + 1) < VRAM_SIZE);
 
     flag_assign((cpu->VRAM[bg_data_adress] & bitmask),
                  pixel, 0x01);
@@ -145,6 +169,8 @@ int draw_window(s_emu *emu, UNUSED size_t i)
 
 int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
 {
+    assert((sptd + 3) < OAM_SIZE);
+    
     s_screen *scr = &emu->screen;
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io_reg;
@@ -166,6 +192,8 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     uint8_t bitmask;
     if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));
     else bitmask = (0x01 << (i - cpu->OAM[sptd + 1] + 8));
+    
+    assert((data_adress + 1) < VRAM_SIZE);
     
     flag_assign((cpu->VRAM[data_adress] & bitmask),
                  &pix_tmp, 0x01);

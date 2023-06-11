@@ -66,15 +66,17 @@ int initialize_SDL(void)
 int initialize_emulator(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
+    opt->logfile = NULL;
+    
+    memset(&emu->in, 0, sizeof(s_input));
+    if(0 != initialize_SDL())
+        return EXIT_FAILURE;
     
     if(0 != initialize_screen(emu))
         return EXIT_FAILURE;
     if(0 != initialize_cpu(&emu->cpu))
         return EXIT_FAILURE;
     initialize_length_table(emu);
-    memset(&emu->in, 0, sizeof(s_input));
-    if(0 != initialize_SDL())
-        return EXIT_FAILURE;
     init_opcodes_pointers(emu->opcode_functions);
     init_cb_pointers(emu->cb_functions);
     init_mnemonic_index(emu);
@@ -90,6 +92,9 @@ int initialize_emulator(s_emu *emu)
     }
     
     //gb doctor log file
+    if(!opt->gb_doctor && !opt->log_instrs)
+        return EXIT_SUCCESS;
+        
     opt->logfile = fopen("gb_insts.log", "w");
     if(opt->logfile == NULL)
     {
@@ -667,15 +672,10 @@ int load_rom(s_emu *emu)
 void destroy_emulator(s_emu *emu, int status)
 {
     destroy_screen(&emu->screen);
-    destroy_SDL();
-    if(NULL != emu->opt.logfile)
+    SDL_Quit();
+    if((NULL != emu->opt.logfile) && (emu->opt.gb_doctor || emu->opt.log_instrs))
         fclose(emu->opt.logfile);
     exit(status);
-}
-
-void destroy_SDL(void)
-{
-    SDL_Quit();
 }
 
 void bypass_bootrom(s_emu *emu)
@@ -801,6 +801,10 @@ void joypad_update(s_emu *emu)
                     &io->P1_JOYP,
                     0x01);
     }
+    
+    //joypad interrupt
+    if((~io->P1_JOYP) & 0x0F)
+        io->IF |= 0x10;
 }
 
 void pause_menu(s_emu *emu)
@@ -1072,7 +1076,7 @@ void ask_breakpoint(s_opt *opt)
             continue;
         }
         opt->breakpoint_value = val;
-        printf("Breakpoint value set to 0x%04X.\n");
+        printf("Breakpoint value set to 0x%04X.\n", opt->breakpoint_value);
         quit = true;            
     }
 }
@@ -1082,7 +1086,7 @@ void log_instructions(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_opt *opt = &emu->opt;
     
-    //cpu->inst_counter++;
+    cpu->inst_counter++;
 
     if(opt->gb_doctor)
     {
