@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "emulator.h"
 #include "graphics.h"
-#include "opcodes.h"
+
 
 int initialize_screen(s_emu *emu)
 {

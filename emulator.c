@@ -6,6 +6,7 @@
 #include "emulator.h"
 #include "cpu.h"
 #include "graphics.h"
+#include "audio.h"
 
 void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
 {
@@ -76,6 +77,8 @@ int initialize_emulator(s_emu *emu)
         return EXIT_FAILURE;
     if(0 != initialize_cpu(&emu->cpu))
         return EXIT_FAILURE;
+    if(0 != init_audio(emu))
+        return EXIT_FAILURE;
     initialize_length_table(emu);
     init_opcodes_pointers(emu->opcode_functions);
     init_cb_pointers(emu->cb_functions);
@@ -92,8 +95,8 @@ int initialize_emulator(s_emu *emu)
     }
     
     //gb doctor log file
-    if(!opt->gb_doctor && !opt->log_instrs)
-        return EXIT_SUCCESS;
+//    if(!opt->gb_doctor && !opt->log_instrs)
+//        return EXIT_SUCCESS;
         
     opt->logfile = fopen("gb_insts.log", "w");
     if(opt->logfile == NULL)
@@ -101,6 +104,8 @@ int initialize_emulator(s_emu *emu)
         fprintf(stderr, "fopen gb_insts.log: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
+    fprintf(opt->logfile, "fstream;volume;duty_change;duty_reset;"
+    "period_counter;npsp;duty;samples_played\n");
     
     return EXIT_SUCCESS;
 }
@@ -672,8 +677,9 @@ int load_rom(s_emu *emu)
 void destroy_emulator(s_emu *emu, int status)
 {
     destroy_screen(&emu->screen);
+    destroy_audio(emu);
     SDL_Quit();
-    if((NULL != emu->opt.logfile) && (emu->opt.gb_doctor || emu->opt.log_instrs))
+    if((NULL != emu->opt.logfile) /*&& (emu->opt.gb_doctor || emu->opt.log_instrs)*/)
         fclose(emu->opt.logfile);
     exit(status);
 }
@@ -723,6 +729,9 @@ void emulate(s_emu *emu)
     if(!emu->opt.bootrom)
         bypass_bootrom(emu);
     
+    if(emu->opt.audio)
+        SDL_PauseAudioDevice(emu->audio.dev, 0);
+    
     while(!emu->in.quit)
     {
         update_event(emu);
@@ -737,6 +746,7 @@ void emulate(s_emu *emu)
         }
 
         fast_forward_toggle(emu);
+        audio_update(emu);
         
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -855,6 +865,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   ./game_spop <ROM file> [option]\n"
     "\n"
     "Options\n"
+    "   --audio, -a          = enable audio (expermimental).\n"
     "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
@@ -894,7 +905,9 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     
     for(size_t i = 0 + is_program_beginning; i < argc; i++)
     {
-        if(((0 == strcmp(argv[i], "--bypass-bootrom")) || (0 == strcmp(argv[i], "-b"))) && (is_program_beginning))
+        if(((0 == strcmp(argv[i], "--audio")) || (0 == strcmp(argv[i], "-a"))) && (is_program_beginning))
+            opt->audio = true;
+        else if(((0 == strcmp(argv[i], "--bypass-bootrom")) || (0 == strcmp(argv[i], "-b"))) && (is_program_beginning))
             opt->bootrom = false;
         else if((0 == strcmp(argv[i], "--debug-info")) || (0 == strcmp(argv[i], "-i")))
             opt->debug_info = !opt->debug_info;
@@ -1013,6 +1026,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->gb_doctor = false;
     opt->log_instrs = false;
     opt->fast_forward = false;
+    opt->audio = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     

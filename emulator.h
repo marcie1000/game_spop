@@ -22,6 +22,10 @@
 #define SPRITEPOS_X_LIMIT (168)
 #define OAM_SPRITES_MAX (40)
 #define SPRITES_PER_SCANLINE (10)
+
+#define AUDIO_SAMPLES (512)
+#define AUDIO_SAMPLE_RATE (48000)
+
 //to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
 
@@ -49,7 +53,7 @@ enum ppu_modes_durations {
 
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
-         log_instrs, fast_forward;
+         log_instrs, fast_forward, audio;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
     bool test_debug;
@@ -124,6 +128,41 @@ typedef struct s_screen{
     uint8_t PPU_mode;
 }s_screen;
 
+typedef struct s_audio{
+    SDL_AudioSpec spec_want;
+    SDL_AudioSpec spec_have;
+    SDL_AudioDeviceID dev;
+    uint64_t samples_played;
+    uint8_t DIV_APU;
+    
+    float fstream[AUDIO_SAMPLES];
+    
+    bool VIN_l, VIN_r;
+    uint8_t l_output_vol, r_output_vol;
+    
+    uint8_t ch1_len_timer;
+    uint8_t ch1_init_len_timer;
+    uint8_t ch1_vol_sweep_timer;
+    uint8_t ch1_duty_ratio;
+    uint8_t ch1_init_volume;
+    bool    ch1_envl_dir;
+    uint8_t ch1_sweep_pace;
+//    uint8_t ch1_envl_counter;
+    bool    ch1_l, ch1_r;
+    bool ch1_sound_len_enable;
+    uint16_t ch1_freq;
+    bool ch1_trigger;
+    bool ch1_enable;
+
+    double samples_timer;
+
+//    size_t vol_sweep_clock_cpu_cycles;
+//    size_t vol_sweep_ticks;
+//    size_t length_timer_cpu_cycles;
+//    size_t length_timer_ticks;
+    float duty_ratios[4];
+}s_audio;
+
 typedef struct s_emu{
     Uint64 frame_timer;
     s_screen screen;
@@ -135,6 +174,7 @@ typedef struct s_emu{
     s_cpu cpu;
     s_input in;
     s_opt opt;
+    s_audio audio;
 }s_emu;
 
 extern void flag_assign(bool cond, uint8_t *flag, uint8_t mask);

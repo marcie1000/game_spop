@@ -13,6 +13,7 @@ set (HEADERS
     prefixed_opcodes.h
     graphics.h
     interrupts.h
+    audio.h
 )
 
 set (SOURCES
@@ -23,6 +24,7 @@ set (SOURCES
     prefixed_opcodes.c
     graphics.c
     interrupts.c
+    audio.c
 )
 
 find_package (SDL2 REQUIRED)

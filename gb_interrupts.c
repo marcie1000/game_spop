@@ -95,6 +95,8 @@ void timer_handle(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_io *io_reg = &cpu->io_reg;
     
+    static Uint64 init_time = 0;
+    
     //if not timer enable
     if(!(io_reg->TAC & 0x04))
     {
@@ -106,6 +108,11 @@ void timer_handle(s_emu *emu)
     {
         io_reg->TIMA = io_reg->TMA;
         io_reg->IF |= 0x04;
+        Uint64 tmp = SDL_GetTicks64();
+        printf(ANSI_COLOR_GREEN "elapsed: %llu ms\n" ANSI_COLOR_RESET, tmp - init_time);
+        
+        
+        init_time = SDL_GetTicks64();
         return;
     }
     

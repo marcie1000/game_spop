@@ -8,6 +8,7 @@
 #include "prefixed_opcodes.h"
 #include "gb_interrupts.h"
 #include "graphics.h"
+#include "audio.h"
 
 int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
@@ -32,12 +33,15 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF05:
             io_reg->TIMA = data;
+            printf("TIMA write %02X\n", data);
             break;
         case 0xFF06:
             io_reg->TMA = data;
+            printf("TMA write %02X\n", data);
             break;
         case 0xFF07:
             io_reg->TAC = data & 0x07;
+            printf("TAC write %02X\n", data);
             break;
         case 0xFF0F:
             io_reg->IF = data;
@@ -571,19 +575,24 @@ void step_by_step_handle(s_emu *emu)
     ask_breakpoint(&emu->opt);
 }
 
-void div_handle(s_cpu *cpu)
+void div_handle(s_emu *emu)
 {
+    s_cpu *cpu = &emu->cpu;
+    uint8_t old_DIV = cpu->io_reg.DIV;
     if(cpu->div_clock >= 256)
     {
         cpu->div_clock -= 256;
         cpu->io_reg.DIV++;
+    }
+    if((old_DIV & 0x10) && !(cpu->io_reg.DIV & 0x10))
+    {
+        emu->audio.DIV_APU++;
     }
 }
 
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
-    
     joypad_update(emu);
     interrupt_handler(emu);
     
@@ -606,9 +615,13 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     emu->opt.test_debug = true;
     log_instructions(emu);
     size_t t_cycles_old = cpu->t_cycles;
+    
+
     (*opcode_functions[action])(emu, opcode);
+    
     cpu->timer_clock += (cpu->t_cycles - t_cycles_old);
     cpu->div_clock += (cpu->t_cycles - t_cycles_old);
+    emu->audio.samples_timer += (cpu->t_cycles - t_cycles_old);
     if(emu->opt.debug_info)
     {
         printf(ANSI_COLOR_CYAN "A=%02X, B=%02X, C=%02X, D=%02X, E=%02X, F=%02X, H=%02X, L=%02X\n",
@@ -619,7 +632,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     cpu->pc += emu->length_table[action];
     
     timer_handle(emu);
-    div_handle(&emu->cpu);
+    div_handle(emu);
     
 //    if(cpu->inst_counter > 150000)
 //        emu->opt.debug_info = true;
