@@ -125,6 +125,9 @@ typedef struct s_screen{
     bool obj_enable;
     bool bg_win_enable_priority;
     
+    bool window_maximized;
+    SDL_Rect render_dst;
+    SDL_Rect *render_dst_ptr;
     //2: searching OAM, 3: reading OAM and VRAM,
     //0: HBlank, 1: VBlank
     uint8_t PPU_mode;

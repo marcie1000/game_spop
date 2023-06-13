@@ -16,6 +16,8 @@ int initialize_screen(s_emu *emu)
     screen->pixel_w = 2;
     screen->pixel_h = 2;
     
+    screen->window_maximized = false;
+    
     screen->w = SDL_CreateWindow("Game_spop", SDL_WINDOWPOS_CENTERED,
                                  SDL_WINDOWPOS_CENTERED, PIX_BY_W * screen->pixel_w, PIX_BY_H * screen->pixel_h,
                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
@@ -32,7 +34,8 @@ int initialize_screen(s_emu *emu)
         return EXIT_FAILURE;
     }
 
-    //SDL_SetRenderTarget(screen->r, NULL);
+    SDL_SetRenderTarget(screen->r, NULL);
+    SDL_SetRenderDrawColor(screen->r, 0, 0, 0, 255);
     
     screen->scr = SDL_CreateTexture(screen->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, PIX_BY_W, PIX_BY_H);
     if(NULL == screen->scr)
@@ -90,12 +93,46 @@ void destroy_screen(s_screen *screen)
         SDL_DestroyWindow(screen->w);
 }
 
-void resize_screen(s_screen *screen)
+void resize_screen(s_screen *s)
 {
     int w, h;
-    SDL_GetWindowSize(screen->w, &w, &h);
-    screen->pixel_w = w / PIX_BY_W;
-    screen->pixel_h = h / PIX_BY_H;
+    SDL_GetWindowSize(s->w, &w, &h);
+    s->pixel_w = w / PIX_BY_W;
+    s->pixel_h = h / PIX_BY_H;
+    
+    if(s->pixel_w > s->pixel_h)
+        s->pixel_h = s->pixel_w;
+    if(s->pixel_h > s->pixel_w)
+        s->pixel_w = s->pixel_h;
+        
+    int flags = SDL_GetWindowFlags(s->w);
+    s->window_maximized = (flags & SDL_WINDOW_MAXIMIZED);
+    
+    if(!s->window_maximized)
+    {
+        SDL_SetWindowSize(s->w, s->pixel_w * PIX_BY_W, s->pixel_h * PIX_BY_H);
+        s->render_dst_ptr = NULL;
+    }
+    else
+    {
+        if(w > h)
+        {
+            uint32_t ratio = h / PIX_BY_H;
+            s->render_dst.w = ratio * PIX_BY_W;
+            s->render_dst.h = h;
+            s->render_dst.x = (w - s->render_dst.w)/2;
+            s->render_dst.y = 0;
+        }
+        else
+        {
+            uint32_t ratio = w / PIX_BY_W;
+            s->render_dst.h = ratio * PIX_BY_H;
+            s->render_dst.w = w;
+            s->render_dst.y = (h - s->render_dst.h)/2;
+            s->render_dst.x = 0;
+        }
+        s->render_dst_ptr = &s->render_dst;
+    }
 }
 
 int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
@@ -392,8 +429,10 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
 //        SDL_Delay(17 - elapsed);
 //        elapsed = 17;
 //    }
+
     SDL_UnlockTexture(screen->scr);
-    SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
+    SDL_RenderClear(screen->r);
+    SDL_RenderCopy(screen->r, screen->scr, NULL, screen->render_dst_ptr);
     SDL_RenderPresent(screen->r);
     if(0 != lockscreen(screen))
         destroy_emulator(emu, EXIT_FAILURE);
