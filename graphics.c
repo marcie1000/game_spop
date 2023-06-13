@@ -25,7 +25,7 @@ int initialize_screen(s_emu *emu)
         return EXIT_FAILURE;
     }
     
-    screen->r = SDL_CreateRenderer(screen->w, -1, SDL_RENDERER_ACCELERATED /*| SDL_RENDERER_PRESENTVSYNC*/);
+    screen->r = SDL_CreateRenderer(screen->w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if(screen->r == NULL)
     {
         fprintf(stderr, "Error SDL_CreateRenderer: %s\n", SDL_GetError());
@@ -386,18 +386,19 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     if(cpu->io_reg.LY < 154)
         return;
         
-    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-    if(elapsed <= 17 && !emu->opt.fast_forward)
-    {
-        SDL_Delay(17 - elapsed);
-        elapsed = 17;
-    }
+//    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
+//    if(elapsed <= 17 && !emu->opt.fast_forward)
+//    {
+//        SDL_Delay(17 - elapsed);
+//        elapsed = 17;
+//    }
     SDL_UnlockTexture(screen->scr);
     SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
     SDL_RenderPresent(screen->r);
     if(0 != lockscreen(screen))
         destroy_emulator(emu, EXIT_FAILURE);
-    
+
+    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
     static uint64_t elapsed_sum = 0;
     elapsed_sum += elapsed;
     static int sum_cnt = 0;

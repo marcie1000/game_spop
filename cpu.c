@@ -13,101 +13,113 @@
 int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io_reg;
     s_screen *screen = &emu->screen;
+    s_audio *au = &emu->audio;
     
     switch(adress)
     {
         case 0xFF00:
-            flag_assign(data & 0x20, &io_reg->P1_JOYP, 0x20);
-            flag_assign(data & 0x10, &io_reg->P1_JOYP, 0x10);
+            flag_assign(data & 0x20, &io->P1_JOYP, 0x20);
+            flag_assign(data & 0x10, &io->P1_JOYP, 0x10);
             break;
         case 0xFF01:
-            io_reg->SB = data;
+            io->SB = data;
             break;
         case 0xFF02:
-            io_reg->SC = data;
+            io->SC = data;
             break;
         case 0xFF04:
-            io_reg->DIV = data;
+            io->DIV = data;
             break;
         case 0xFF05:
-            io_reg->TIMA = data;
+            io->TIMA = data;
             printf("TIMA write %02X\n", data);
             break;
         case 0xFF06:
-            io_reg->TMA = data;
+            io->TMA = data;
             printf("TMA write %02X\n", data);
             break;
         case 0xFF07:
-            io_reg->TAC = data & 0x07;
+            io->TAC = data & 0x07;
             printf("TAC write %02X\n", data);
             break;
         case 0xFF0F:
-            io_reg->IF = data;
+            io->IF = data;
             break;
         case 0xFF10:
-            io_reg->NR10 = data;
+            io->NR10 = data;
             break;
         case 0xFF11:
-            io_reg->NR11 = data;
+            io->NR11 = data;
+            au->ch1_duty_ratio      = (io->NR11 & 0xC0) >> 6;
+            au->ch1_init_len_timer  = (io->NR11 & 0x3F);
             break;
         case 0xFF12:
-            io_reg->NR12 = data;
+            io->NR12 = data;
+            au->ch1_init_volume     = (io->NR12 & 0xF0) >> 4;
+            au->ch1_envl_dir        = (io->NR12 & 0x08);
+            au->ch1_sweep_pace      = (io->NR12 & 0x07);
             break;
         case 0xFF13:
-            io_reg->NR13 = data;
+            io->NR13 = data;
             break;
         case 0xFF14:
-            io_reg->NR14 = data & 0xC7;
+            io->NR14 = data & 0xC7;
             break;
         case 0xFF16:
-            io_reg->NR21 = data;
+            io->NR21 = data;
             break;
         case 0xFF17:
-            io_reg->NR22 = data;
+            io->NR22 = data;
             break;
         case 0xFF18:
-            io_reg->NR23 = data;
+            io->NR23 = data;
             break;
         case 0xFF19:
-            io_reg->NR24 = data & 0xC7;
+            io->NR24 = data & 0xC7;
             break;
         case 0xFF1A:
-            io_reg->NR30 = data;
+            io->NR30 = data;
             break;
         case 0xFF1B:
-            io_reg->NR31 = data;
+            io->NR31 = data;
             break;
         case 0xFF1C:
-            io_reg->NR32 = data;
+            io->NR32 = data;
             break;
         case 0xFF1D:
-            io_reg->NR33 = data;
+            io->NR33 = data;
             break;
         case 0xFF1E:
-            io_reg->NR34 = data;
+            io->NR34 = data;
             break;
         case 0xFF20:
-            io_reg->NR41 = data;
+            io->NR41 = data;
             break;
         case 0xFF21:
-            io_reg->NR42 = data;
+            io->NR42 = data;
             break;
         case 0xFF22:
-            io_reg->NR43 = data;
+            io->NR43 = data;
             break;
         case 0xFF23:
-            io_reg->NR44 = data;
+            io->NR44 = data;
             break;
         case 0xFF24:
-            io_reg->NR50 = data;
+            io->NR50 = data;
+            au->VIN_l = (io->NR50 & 0x80);
+            au->VIN_r = (io->NR50 & 0x08);
+            au->l_output_vol = (io->NR50 & 0x70) >> 4;
+            au->r_output_vol = (io->NR50 & 0x07);
             break;
         case 0xFF25:
-            io_reg->NR51 = data;
+            io->NR51 = data;
+            au->ch1_l = (io->NR51 & 0x10);
+            au->ch1_r = (io->NR51 & 0x01);
             break;
         case 0xFF26:
-            flag_assign(data, &io_reg->NR52, 0x80);
+            flag_assign(data, &io->NR52, 0x80);
             break;
         case 0xFF30:
         case 0xFF31:
@@ -125,61 +137,61 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF3D:
         case 0xFF3E:
         case 0xFF3F:
-            io_reg->wave_RAM[adress - 0xFF30] = data;
+            io->wave_RAM[adress - 0xFF30] = data;
             break;
         case 0xFF40:
-            io_reg->LCDC = data;
+            io->LCDC = data;
                 
-            screen->LCD_PPU_enable          = io_reg->LCDC & 0x80;
-            screen->win_tile_map_area       = io_reg->LCDC & 0x40;
-            screen->window_enable           = io_reg->LCDC & 0x20;
-            screen->BG_win_tile_data_area   = io_reg->LCDC & 0x10;
-            screen->BG_tile_map_area        = io_reg->LCDC & 0x08;
-            screen->obj_size                = io_reg->LCDC & 0x04;
-            screen->obj_enable              = io_reg->LCDC & 0x02;
-            screen->bg_win_enable_priority  = io_reg->LCDC & 0x01;
+            screen->LCD_PPU_enable          = io->LCDC & 0x80;
+            screen->win_tile_map_area       = io->LCDC & 0x40;
+            screen->window_enable           = io->LCDC & 0x20;
+            screen->BG_win_tile_data_area   = io->LCDC & 0x10;
+            screen->BG_tile_map_area        = io->LCDC & 0x08;
+            screen->obj_size                = io->LCDC & 0x04;
+            screen->obj_enable              = io->LCDC & 0x02;
+            screen->bg_win_enable_priority  = io->LCDC & 0x01;
             
             break;
         case 0xFF41:
-            io_reg->STAT = data & 0x78;
+            io->STAT = data & 0x78;
             break;
         case 0xFF42:
-            io_reg->SCY = data;
+            io->SCY = data;
             break;
         case 0xFF43:
-            io_reg->SCX = data;
+            io->SCX = data;
             break;
         case 0xFF44:
             fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write in I/O register LY (0xFF44), read only!\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF45:
-            io_reg->LYC = data;
+            io->LYC = data;
             break;
         case 0xFF46:
-            io_reg->DMA = data;
+            io->DMA = data;
             if(0 != DMA_transfer(emu))
                 return EXIT_FAILURE;
             break;
         case 0xFF47:
-            io_reg->BGP = data;
+            io->BGP = data;
             break;
         case 0xFF48:
-            io_reg->OBP0 = data;
+            io->OBP0 = data;
             break;
         case 0xFF49:
-            io_reg->OBP1 = data;
+            io->OBP1 = data;
             break;
         case 0xFF4A:
-            io_reg->WY = data;
+            io->WY = data;
             break;
         case 0xFF4B:
-            io_reg->WX = data;
+            io->WX = data;
             break;
         case 0xFF4D:
             break;
         case 0xFF50:
-            io_reg->BANK = data;
+            io->BANK = data;
             memcpy(cpu->ROM_Bank[0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
             break;
         case 0xFF7F:
@@ -197,101 +209,101 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io_reg;
     
     switch(adress)
     {
         case 0xFF00:
-            *data = io_reg->P1_JOYP;
+            *data = io->P1_JOYP;
             break;
         case 0xFF01:
-            *data = io_reg->SB;
+            *data = io->SB;
             break;
         case 0xFF02:
-            *data = io_reg->SC;
+            *data = io->SC;
             break;
         case 0xFF04:
-            *data = io_reg->DIV;
+            *data = io->DIV;
             break;
         case 0xFF05:
-            *data = io_reg->TIMA;
+            *data = io->TIMA;
             break;
         case 0xFF06:
-            *data = io_reg->TMA;
+            *data = io->TMA;
             break;
         case 0xFF07:
-            *data = io_reg->TAC & 0x07;
+            *data = io->TAC & 0x07;
             break;
         case 0xFF0F:
-            *data = io_reg->IF;
+            *data = io->IF;
             break;
         case 0xFF10:
-            *data = io_reg->NR10;
+            *data = io->NR10;
             break;
         case 0xFF11:
-            *data = io_reg->NR11 & 0xC0;
+            *data = io->NR11 & 0xC0;
             break;
         case 0xFF12:
-            *data = io_reg->NR12;
+            *data = io->NR12;
             break;
         case 0xFF13:
             fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF13, NR13 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF14:
-            *data = 0x40 & io_reg->NR14;
+            *data = 0x40 & io->NR14;
             break;
         case 0xFF16:
-            *data = io_reg->NR21 & 0xC0;
+            *data = io->NR21 & 0xC0;
             break;
         case 0xFF17:
-            *data = io_reg->NR22;
+            *data = io->NR22;
             break;
         case 0xFF18:
             fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF18, NR23 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF19:
-            *data = 0x40 & io_reg->NR24;
+            *data = 0x40 & io->NR24;
             break;
         case 0xFF1A:
-            *data = io_reg->NR30;
+            *data = io->NR30;
             break;
         case 0xFF1B:
             fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1B, NR31 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF1C:
-            *data = io_reg->NR32;
+            *data = io->NR32;
             break;
         case 0xFF1D:
             fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1D, NR33 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF1E:
-            *data = io_reg->NR34 & 0x40;
+            *data = io->NR34 & 0x40;
             break;
         case 0xFF20:
             fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1D, NR33 I/O register (write only)\n" ANSI_COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF21:
-            *data = io_reg->NR42;
+            *data = io->NR42;
             break;
         case 0xFF22:
-            *data = io_reg->NR43;
+            *data = io->NR43;
             break;
         case 0xFF23:
-            *data = io_reg->NR44 & 0x40;
+            *data = io->NR44 & 0x40;
             break;
         case 0xFF24:
-            *data = io_reg->NR50;
+            *data = io->NR50;
             break;
         case 0xFF25:
-            *data = io_reg->NR51;
+            *data = io->NR51;
             break;
         case 0xFF26:
-            *data = io_reg->NR52;
+            *data = io->NR52;
             break;
         case 0xFF30:
         case 0xFF31:
@@ -309,47 +321,47 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
         case 0xFF3D:
         case 0xFF3E:
         case 0xFF3F:
-            *data = io_reg->wave_RAM[adress - 0xFF30];
+            *data = io->wave_RAM[adress - 0xFF30];
             break;
         case 0xFF40:
-            *data = io_reg->LCDC;
+            *data = io->LCDC;
             break;
         case 0xFF41:
-            *data = io_reg->STAT;
+            *data = io->STAT;
             break;
         case 0xFF42:
-            *data = io_reg->SCY;
+            *data = io->SCY;
             break;
         case 0xFF43:
-            *data = io_reg->SCX;
+            *data = io->SCX;
             break;
         case 0xFF44:
             if(!emu->opt.gb_doctor)
-                *data = io_reg->LY;
+                *data = io->LY;
             //hardcode for gb_doctor
             else
                 *data = 0x90;
             break;
         case 0xFF45:
-            *data = io_reg->LYC;
+            *data = io->LYC;
             break;
         case 0xFF46:
-            *data = io_reg->DMA;
+            *data = io->DMA;
             break;
         case 0xFF47:
-            *data = io_reg->BGP;
+            *data = io->BGP;
             break;
         case 0xFF48:
-            *data = io_reg->OBP0;
+            *data = io->OBP0;
             break;
         case 0xFF49:
-            *data = io_reg->OBP1;
+            *data = io->OBP1;
             break;
         case 0xFF4A:
-            *data = io_reg->WY;
+            *data = io->WY;
             break;
         case 0xFF4B:
-            *data = io_reg->WX;
+            *data = io->WX;
             break;
         case 0xFF4D:
             *data = 0;

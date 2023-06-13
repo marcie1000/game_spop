@@ -98,13 +98,13 @@ int initialize_emulator(s_emu *emu)
 //    if(!opt->gb_doctor && !opt->log_instrs)
 //        return EXIT_SUCCESS;
         
-    opt->logfile = fopen("gb_insts.log", "w");
+    opt->logfile = fopen("gb_insts.csv", "w");
     if(opt->logfile == NULL)
     {
-        fprintf(stderr, "fopen gb_insts.log: %s\n", strerror(errno));
+        fprintf(stderr, "fopen gb_insts.csv: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    fprintf(opt->logfile, "fstream;volume;duty_change;duty_reset;"
+    fprintf(opt->logfile, "fstream;volume;ch1_vol_sweep_counter;ch1_vol_sweep_timer;"
     "period_counter;npsp;duty;samples_played\n");
     
     return EXIT_SUCCESS;
@@ -746,23 +746,19 @@ void emulate(s_emu *emu)
         }
 
         fast_forward_toggle(emu);
-        audio_update(emu);
-        
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
+
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
         
         ppu_modes_and_scanlines(emu);
         
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
-        interpret(emu, emu->opcode_functions);
+        interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
 
         ppu_modes_and_scanlines(emu);
+        audio_update(emu);
         render_frame_and_vblank_if_needed(emu);        
         
     }

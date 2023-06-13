@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <SDL.h>
 
+#define CPU_FREQ (4194304.0)
+
 #define MEM_SIZE (0xFFFF)
 #define START_ADRESS (0x0000)
 #define OPCODE_NB (256)
@@ -23,7 +25,7 @@
 #define OAM_SPRITES_MAX (40)
 #define SPRITES_PER_SCANLINE (10)
 
-#define AUDIO_SAMPLES (512)
+#define AUDIO_SAMPLES (800)
 #define AUDIO_SAMPLE_RATE (48000)
 
 //to avoid compiler warning when a function parameter isn't used
@@ -143,6 +145,7 @@ typedef struct s_audio{
     uint8_t ch1_len_timer;
     uint8_t ch1_init_len_timer;
     uint8_t ch1_vol_sweep_timer;
+    uint8_t ch1_vol_sweep_counter;
     uint8_t ch1_duty_ratio;
     uint8_t ch1_init_volume;
     bool    ch1_envl_dir;
