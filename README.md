@@ -24,17 +24,17 @@ Usage:
 Options:
 * `--audio`, `-a`           = enable audio (expermimental). Currently, only the channel 1
                               is implemented.
-* `--breakpoint`            = enable debugging with breakpoints. The program will
+* `--breakpoint`, `-p`      = enable debugging with breakpoints. The program will
                               ask to enter a PC value breakpoint at start, and will
                               ask for a new breakpoint when the previous one is
                               reached.
-* `--bypass-bootrom`        = launch directly the ROM (only if a rom is passed in argument).
+* `--bypass-bootrom`, `-b`  = launch directly the ROM (only if a rom is passed in argument).
                               This option can only be provided at launch.
-* `--debug-info`            = at every new instruction, prints the mnemonic, the
+* `--debug-info`, `-i`    = at every new instruction, prints the mnemonic, the
                             3 bytes object code, and all registers, PC, SP and
                             register F flags values in the console. Emulator is
                             much slower when this option is enabled.
-* `--gb-doctor`          =  log cpu state into a file to be used with the [Gameboy
+* `--gb-doctor`, `-d`    =  log cpu state into a file to be used with the [Gameboy
                             doctor tool](https://github.com/robert/gameboy-doctor) (only at launch).
                             Emulator behavior might be inaccurate since LY reading always send 0x90 in
                             this mode.
