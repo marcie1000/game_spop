@@ -52,34 +52,41 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF11:
             io->NR11 = data;
-            au->ch1_duty_ratio      = (io->NR11 & 0xC0) >> 6;
-            au->ch1_init_len_timer  = (io->NR11 & 0x3F);
+            au->ch_duty_ratio[0]      = (io->NR11 & 0xC0) >> 6;
+            au->ch_init_len_timer[0]  = (io->NR11 & 0x3F);
             break;
         case 0xFF12:
             io->NR12 = data;
-            au->ch1_init_volume     = (io->NR12 & 0xF0) >> 4;
-            au->ch1_envl_dir        = (io->NR12 & 0x08);
-            au->ch1_vol_sweep_pace  = (io->NR12 & 0x07);
+            au->ch_init_volume[0]     = (io->NR12 & 0xF0) >> 4;
+            au->ch_envl_dir[0]        = (io->NR12 & 0x08);
+            au->ch_vol_sweep_pace[0]  = (io->NR12 & 0x07);
             break;
         case 0xFF13:
             io->NR13 = data;
             break;
         case 0xFF14:
             io->NR14 = data & 0xC7;
-            au->ch1_trigger = (io->NR14 & 0x80);
-            au->ch1_sound_len_enable = (io->NR14 & 0x40);
+            au->ch_trigger[0] = (io->NR14 & 0x80);
+            au->ch_sound_len_enable[0] = (io->NR14 & 0x40);
             break;
         case 0xFF16:
             io->NR21 = data;
+            au->ch_duty_ratio[1]      = (io->NR21 & 0xC0) >> 6;
+            au->ch_init_len_timer[1]  = (io->NR21 & 0x3F);
             break;
         case 0xFF17:
             io->NR22 = data;
+            au->ch_init_volume[1]     = (io->NR22 & 0xF0) >> 4;
+            au->ch_envl_dir[1]        = (io->NR22 & 0x08);
+            au->ch_vol_sweep_pace[1]  = (io->NR22 & 0x07);
             break;
         case 0xFF18:
             io->NR23 = data;
             break;
         case 0xFF19:
             io->NR24 = data & 0xC7;
+            au->ch_trigger[1] = (io->NR24 & 0x80);
+            au->ch_sound_len_enable[1] = (io->NR24 & 0x40);
             break;
         case 0xFF1A:
             io->NR30 = data;
@@ -117,8 +124,10 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF25:
             io->NR51 = data;
-            au->ch1_l = (io->NR51 & 0x10);
-            au->ch1_r = (io->NR51 & 0x01);
+            au->ch_l[0] = (io->NR51 & 0x10);
+            au->ch_r[0] = (io->NR51 & 0x01);
+            au->ch_l[1] = (io->NR51 & 0x20);
+            au->ch_r[1] = (io->NR51 & 0x02);
             break;
         case 0xFF26:
             flag_assign(data & 0x80, &io->NR52, 0x80);

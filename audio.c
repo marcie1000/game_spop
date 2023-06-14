@@ -13,8 +13,10 @@ void div_apu_update(s_audio *au)
         
     if(au->DIV_APU % 2 == 1)
     {
-        if(au->ch1_len_timer < 64)
-            au->ch1_len_timer++;
+        if(au->ch_len_timer[0] < 64)
+            au->ch_len_timer[0]++;
+        if(au->ch_len_timer[1] < 64)
+            au->ch_len_timer[1]++;
     }
     if(au->DIV_APU % 4 == 3)
     {
@@ -22,7 +24,8 @@ void div_apu_update(s_audio *au)
     }
     if(au->DIV_APU >= 7)
     {
-        au->ch1_vol_sweep_timer++;
+        au->ch_vol_sweep_timer[0]++;
+        au->ch_vol_sweep_timer[1]++;
         au->DIV_APU = 0;
     }
 }
@@ -39,49 +42,49 @@ void wavelength_sweep(s_audio *au, s_io *io)
     
     if(!au->ch1_wl_sweep_dir)
     {
-        au->ch1_wavelen += au->ch1_wavelen / (pow(2, au->ch1_wl_sweep_slope_ctr));
-        if(au->ch1_wavelen > 0x07FF)
-            au->ch1_enable = false;
+        au->ch_wavelen[0] += au->ch_wavelen[0] / (pow(2, au->ch1_wl_sweep_slope_ctr));
+        if(au->ch_wavelen[0] > 0x07FF)
+            au->ch_enable[0] = false;
     }
     else
     {
-        au->ch1_wavelen -= au->ch1_wavelen / (pow(2, au->ch1_wl_sweep_slope_ctr));
-        if(au->ch1_wavelen > 0x07FF)
-            au->ch1_wavelen = 0;
+        au->ch_wavelen[0] -= au->ch_wavelen[0] / (pow(2, au->ch1_wl_sweep_slope_ctr));
+        if(au->ch_wavelen[0] > 0x07FF)
+            au->ch_wavelen[0] = 0;
     }
     
-    io->NR13 = au->ch1_wavelen & 0x00FF;
+    io->NR13 = au->ch_wavelen[0] & 0x00FF;
     io->NR14 &= ~0x07;
-    io->NR14 |= (au->ch1_wavelen & 0x0700) >> 8;
+    io->NR14 |= (au->ch_wavelen[0] & 0x0700) >> 8;
     
-    au->ch1_freq = 131072 / (2048 - au->ch1_wavelen);
+    au->ch_freq[0] = 131072 / (2048 - au->ch_wavelen[0]);
 }
 
-void volume_sweep(s_audio *au, int *volume)
+void volume_sweep(s_audio *au, int *volume, int ch)
 {
-    if(au->ch1_vol_sweep_pace == 0)
+    if(au->ch_vol_sweep_pace[ch] == 0)
     {
-        *volume = au->ch1_init_volume;
+        *volume = au->ch_init_volume[ch];
         return;
     }
     //volume sweep
-    if(au->ch1_vol_sweep_timer % au->ch1_vol_sweep_pace == 0)
+    if(au->ch_vol_sweep_timer[ch] % au->ch_vol_sweep_pace[ch] == 0)
     {
-        au->ch1_vol_sweep_timer = 1;
-        if(au->ch1_vol_sweep_counter < 15)
-            au->ch1_vol_sweep_counter++;
+        au->ch_vol_sweep_timer[ch] = 1;
+        if(au->ch_vol_sweep_counter[ch] < 15)
+            au->ch_vol_sweep_counter[ch]++;
     }
-    *volume = au->ch1_init_volume;
-    if(!au->ch1_envl_dir)
-        *volume -= au->ch1_vol_sweep_counter;
+    *volume = au->ch_init_volume[ch];
+    if(!au->ch_envl_dir[ch])
+        *volume -= au->ch_vol_sweep_counter[ch];
     else
-        *volume += au->ch1_vol_sweep_counter;
+        *volume += au->ch_vol_sweep_counter[ch];
         
     if(*volume < 0) *volume = 0;
     if(*volume > 15) *volume = 15;
 }
 
-void fill_stream(s_emu *emu)
+void fill_stream(s_emu *emu, int ch)
 {
     s_audio *au = &emu->audio;
 //    static uint8_t old_volume = 0;
@@ -89,37 +92,35 @@ void fill_stream(s_emu *emu)
     wavelength_sweep(au, &emu->cpu.io_reg);
     
     //if no sound to be played (because length timer is ended or channel not enabled)
-    if((au->ch1_sound_len_enable && (au->ch1_len_timer == 64)) || !au->ch1_enable)
+    if((au->ch_sound_len_enable[ch] && (au->ch_len_timer[ch] == 64)) || !au->ch_enable[ch])
     {
-        au->fstream[au->samples_played] = 0;
-        au->fstream[au->samples_played + 1] = 0;
         //disable channel
-        emu->cpu.io_reg.NR52 &= ~0x01;
+        emu->cpu.io_reg.NR52 &= ~(0x01 << ch);
         return;
     }
     
     //Variables used to seemlessly continue the sound when samples_played is reset to 0
     //after a SDL_QueueAudio
     bool new_buffer = (au->samples_played == 0);
-    static bool period_ended = true;
+    static bool period_ended[2] = {true,  true};
     //if the last period of the previous buffer is unfinished.
-    static bool must_finish_period = false;
+    static bool must_finish_period[2] = {false, false};
     //the samples_played value considered as the beginning of the first period of the
     //current buffer, after the last period of the previous buffer is ended.
-    static uint16_t start_shift = 0;
-    if(new_buffer && !period_ended)
-        must_finish_period = true;
+    static uint16_t start_shift[2] = {0, 0};
+    if(new_buffer && !period_ended[ch])
+        must_finish_period[ch] = true;
     
-    assert(au->ch1_duty_ratio < 4);
+    assert(au->ch_duty_ratio[ch] < 4);
     
     int volume;
-    volume_sweep(au, &volume);
+    volume_sweep(au, &volume, ch);
     
     uint64_t duty_change, duty_reset;
     //after how many samples a complete period is elapsed
-    duty_reset = ((float)AUDIO_SAMPLE_RATE / au->ch1_freq);
+    duty_reset = ((float)AUDIO_SAMPLE_RATE / au->ch_freq[ch]) * 2;
     //after how many samples the signal should turn from low to high, depending on duty ratio
-    duty_change = au->duty_ratios[au->ch1_duty_ratio] * duty_reset;
+    duty_change = au->duty_ratios[au->ch_duty_ratio[ch]] * duty_reset;
     
     
 //    static uint16_t old_period_counter = 0;
@@ -127,12 +128,12 @@ void fill_stream(s_emu *emu)
     //how many periods elapsed since the last samples_played reset, 
     //with period_counter value reset to 0 when the last period of
     //the previous buffer is done.
-    uint16_t period_counter = (au->samples_played + AUDIO_SAMPLES * must_finish_period - start_shift) / duty_reset;
+    uint16_t period_counter = (au->samples_played + AUDIO_SAMPLES * must_finish_period[ch] - start_shift[ch]) / duty_reset;
 //    if(period_counter == old_period_counter && au->DIV_APU != 0)
 //        volume = old_volume;
     
     //a samples counter that is reset at the beginning of each new period
-    uint64_t new_period_samples_played = au->samples_played + AUDIO_SAMPLES * must_finish_period - start_shift - period_counter * duty_reset;
+    uint64_t new_period_samples_played = au->samples_played + AUDIO_SAMPLES * must_finish_period[ch] - start_shift[ch] - period_counter * duty_reset;
     //the actual state of the signal (low or high)
     bool duty = new_period_samples_played >= duty_change;
     
@@ -140,37 +141,71 @@ void fill_stream(s_emu *emu)
     if(duty)
     {
         //fills the data (left and right)
-        au->fstream[au->samples_played] = (float)volume * 1/15 * au->ch1_l * 1/8 * (au->l_output_vol + 1);
-        au->fstream[au->samples_played + 1] = (float)volume * 1/15 * au->ch1_r * 1/8 * (au->r_output_vol + 1);
+        au->fstream[au->samples_played] += (float)volume * 1/15 * au->ch_l[ch] * 1/8 * (au->l_output_vol + 1);
+        au->fstream[au->samples_played + 1] += (float)volume * 1/15 * au->ch_r[ch] * 1/8 * (au->r_output_vol + 1);
     }
     else
     {
-        au->fstream[au->samples_played] = -(float)volume * 1/15 * au->ch1_l * 1/8 * (au->l_output_vol + 1);
-        au->fstream[au->samples_played + 1] = -(float)volume * 1/15 * au->ch1_r * 1/8 * (au->r_output_vol + 1);
+        au->fstream[au->samples_played] -= (float)volume * 1/15 * au->ch_l[ch] * 1/8 * (au->l_output_vol + 1);
+        au->fstream[au->samples_played + 1] -= (float)volume * 1/15 * au->ch_r[ch] * 1/8 * (au->r_output_vol + 1);
     }
     
     
 //    au->fstream[au->samples_played] = 
 //    if(au->fstream[au->samples_played] != 0)
 //    {
-        fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%lu;%u;%lu\n",
-        au->fstream[au->samples_played], volume, au->ch1_vol_sweep_counter, au->ch1_vol_sweep_timer, period_counter,
-        new_period_samples_played, duty, au->samples_played);
+//        fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%lu;%u;%lu\n",
+//        au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], period_counter,
+//        new_period_samples_played, duty, au->samples_played);
     //}
 //    old_volume = volume;
 //    old_period_counter = period_counter;
 
 
-    if(!must_finish_period)
-        period_ended = (au->samples_played % duty_reset == 0);
+    if(!must_finish_period[ch])
+        period_ended[ch] = (au->samples_played % duty_reset == 0);
     else
-        period_ended = ((AUDIO_SAMPLES + au->samples_played - start_shift) % duty_reset == 0);
+        period_ended[ch] = ((AUDIO_SAMPLES + au->samples_played - start_shift[ch]) % duty_reset == 0);
         
-    if(must_finish_period && period_ended)
+    if(must_finish_period[ch] && period_ended[ch])
     {
-        must_finish_period = false;
-        start_shift = au->samples_played;
+        must_finish_period[ch] = false;
+        start_shift[ch] = au->samples_played;
     }
+}
+
+void update_channel_state(s_audio *au, s_io *io, int ch)
+{
+    if(ch == 0)
+        au->ch_wavelen[ch] = io->NR13 + ((io->NR14 & 0x07) << 8);
+    else if(ch == 1)
+        au->ch_wavelen[ch] = io->NR23 + ((io->NR24 & 0x07) << 8);
+    au->ch_freq[ch] = 131072 / (2048 - au->ch_wavelen[ch]);
+    
+    //if channel 1 triggered
+    if(au->ch_trigger[ch])
+    {
+        io->NR52 |= 0x01 << ch;
+        au->ch_vol_sweep_timer[ch] = 1;
+        au->ch_len_timer[ch] = au->ch_init_len_timer[ch];
+//        au->DIV_APU               = 0;
+        au->samples_timer         = 0;
+        au->samples_played        = 0;
+        au->DIV_APU               = 0;
+        au->ch_vol_sweep_counter[ch] = 0;
+        
+        if(ch == 0)
+        {
+            au->ch1_wl_sweep_timer    = 0;
+            au->ch1_wl_sweep_counter  = 0;
+            au->ch1_wl_sweep_pace      = (io->NR10 & 0x70) >> 4;
+            au->ch1_wl_sweep_dir       = (io->NR10 & 0x08);
+            au->ch1_wl_sweep_slope_ctr = (io->NR10 & 0x07);
+        }
+        au->ch_trigger[ch] = false;
+    }
+
+    au->ch_enable[ch] = io->NR52 & (0x01 << ch);
 }
 
 void audio_update(s_emu *emu)
@@ -189,38 +224,16 @@ void audio_update(s_emu *emu)
     if(au->queues_since_last_frame >= 1)
         return;
         
-    au->ch1_wavelen = io->NR13 + ((io->NR14 & 0x07) << 8);
-    au->ch1_freq = 131072 / (2048 - au->ch1_wavelen);
-    
-    //if channel 1 triggered
-    if(au->ch1_trigger)
-    {
-        io->NR52 |= 0x01;
-        au->ch1_trigger = true;
-        au->ch1_vol_sweep_timer = 1;
-        au->ch1_len_timer = au->ch1_init_len_timer;
-        au->DIV_APU               = 0;
-        au->samples_timer         = 0;
-        au->samples_played        = 0;
-        au->DIV_APU               = 0;
-        au->ch1_vol_sweep_counter = 0;
-        au->ch1_wl_sweep_timer    = 0;
-        au->ch1_wl_sweep_counter  = 0;
-        
-        au->ch1_wl_sweep_pace      = (io->NR10 & 0x70) >> 4;
-        au->ch1_wl_sweep_dir       = (io->NR10 & 0x08);
-        au->ch1_wl_sweep_slope_ctr = (io->NR10 & 0x07);
-        au->ch1_trigger = false;
-    }
-
-    au->ch1_enable = io->NR52 & 0x01;
+    update_channel_state(au, io, 0);
+    update_channel_state(au, io, 1);
     
     div_apu_update(au);
     
     if(au->samples_timer >= CPU_FREQ / AUDIO_SAMPLE_RATE)
     {
         au->samples_timer -= CPU_FREQ / AUDIO_SAMPLE_RATE;
-        fill_stream(emu);
+        fill_stream(emu, 0);
+        fill_stream(emu, 1);
         au->samples_played += 2;
     }
     
@@ -236,6 +249,7 @@ void audio_update(s_emu *emu)
             destroy_emulator(emu, EXIT_FAILURE);
         }
         au->queues_since_last_frame++;
+        memset(au->fstream, 0, sizeof(au->fstream));
         return;
     }
     
@@ -249,6 +263,7 @@ void audio_update(s_emu *emu)
             destroy_emulator(emu, EXIT_FAILURE);
         }
         au->queues_since_last_frame++;
+        memset(au->fstream, 0, sizeof(au->fstream));
     }
 }
 

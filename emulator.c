@@ -105,7 +105,7 @@ int initialize_emulator(s_emu *emu)
         fprintf(stderr, "fopen gb_insts.csv: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    fprintf(opt->logfile, "fstream;volume;ch1_vol_sweep_counter;ch1_vol_sweep_timer;"
+    fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
     "period_counter;npsp;duty;samples_played\n");
     
     return EXIT_SUCCESS;
