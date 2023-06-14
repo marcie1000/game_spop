@@ -22,7 +22,7 @@ Usage:
 ```
 
 Options:
-* `--audio`, `-a`           = enable audio (expermimental). Currently, only the channel 1
+* `--audio`, `-a`           = enable audio (experimental). Currently, only the channel 1
                               is implemented.
 * `--breakpoint`, `-p`      = enable debugging with breakpoints. The program will
                               ask to enter a PC value breakpoint at start, and will
