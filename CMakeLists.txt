@@ -14,6 +14,7 @@ set (HEADERS
     graphics.h
     interrupts.h
     audio.h
+    instr_lists.h
 )
 
 set (SOURCES
@@ -25,6 +26,7 @@ set (SOURCES
     graphics.c
     interrupts.c
     audio.c
+    instr_lists.c
 )
 
 find_package (SDL2 REQUIRED)

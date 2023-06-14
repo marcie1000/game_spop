@@ -25,7 +25,7 @@
 #define OAM_SPRITES_MAX (40)
 #define SPRITES_PER_SCANLINE (10)
 
-#define AUDIO_SAMPLES (800)
+#define AUDIO_SAMPLES (1600) //800
 #define AUDIO_SAMPLE_RATE (48000)
 
 //to avoid compiler warning when a function parameter isn't used
@@ -145,6 +145,7 @@ typedef struct s_audio{
     bool VIN_l, VIN_r;
     uint8_t l_output_vol, r_output_vol;
     
+    uint16_t ch1_wavelen;
     uint8_t ch1_len_timer;
     uint8_t ch1_init_len_timer;
     uint8_t ch1_vol_sweep_timer;
@@ -152,7 +153,12 @@ typedef struct s_audio{
     uint8_t ch1_duty_ratio;
     uint8_t ch1_init_volume;
     bool    ch1_envl_dir;
-    uint8_t ch1_sweep_pace;
+    uint8_t ch1_vol_sweep_pace;
+    uint8_t ch1_wl_sweep_timer;
+    uint8_t ch1_wl_sweep_counter;
+    uint8_t ch1_wl_sweep_pace;
+    bool    ch1_wl_sweep_dir;
+    uint8_t ch1_wl_sweep_slope_ctr;
 //    uint8_t ch1_envl_counter;
     bool    ch1_l, ch1_r;
     bool ch1_sound_len_enable;
@@ -167,6 +173,8 @@ typedef struct s_audio{
 //    size_t length_timer_cpu_cycles;
 //    size_t length_timer_ticks;
     float duty_ratios[4];
+    
+    uint8_t queues_since_last_frame;
 }s_audio;
 
 typedef struct s_emu{
@@ -192,8 +200,6 @@ extern void destroy_emulator(s_emu *emu, int status);
 extern void emulate(s_emu *emu);
 extern int load_boot_rom(s_cpu *cpu);
 extern int load_rom(s_emu *emu);
-extern void init_mnemonic_index(s_emu *emu);
-extern void init_prefix_mnemonic_index(s_emu *emu);
 extern int parse_start_options(s_opt *opt, int argc, char *argv[]);
 extern int parse_options_during_exec(s_opt *opt);
 extern int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning);

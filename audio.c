@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <SDL.h>
 #include <assert.h>
+#include <math.h>
 #include "emulator.h"
 #include "audio.h"
 
@@ -15,22 +16,56 @@ void div_apu_update(s_audio *au)
         if(au->ch1_len_timer < 64)
             au->ch1_len_timer++;
     }
-    if(au->DIV_APU == 7)
+    if(au->DIV_APU % 4 == 3)
+    {
+        au->ch1_wl_sweep_timer++;
+    }
+    if(au->DIV_APU >= 7)
     {
         au->ch1_vol_sweep_timer++;
         au->DIV_APU = 0;
     }
 }
 
+void wavelength_sweep(s_audio *au, s_io *io)
+{
+    if(au->ch1_wl_sweep_pace == 0)
+        return;
+    
+    if(au->ch1_wl_sweep_timer != au->ch1_wl_sweep_pace)
+        return;
+        
+    au->ch1_wl_sweep_timer = 0;
+    
+    if(!au->ch1_wl_sweep_dir)
+    {
+        au->ch1_wavelen += au->ch1_wavelen / (pow(2, au->ch1_wl_sweep_slope_ctr));
+        if(au->ch1_wavelen > 0x07FF)
+            au->ch1_enable = false;
+    }
+    else
+    {
+        au->ch1_wavelen -= au->ch1_wavelen / (pow(2, au->ch1_wl_sweep_slope_ctr));
+        if(au->ch1_wavelen > 0x07FF)
+            au->ch1_wavelen = 0;
+    }
+    
+    io->NR13 = au->ch1_wavelen & 0x00FF;
+    io->NR14 &= ~0x07;
+    io->NR14 |= (au->ch1_wavelen & 0x0700) >> 8;
+    
+    au->ch1_freq = 131072 / (2048 - au->ch1_wavelen);
+}
+
 void volume_sweep(s_audio *au, int *volume)
 {
-    if(au->ch1_sweep_pace == 0)
+    if(au->ch1_vol_sweep_pace == 0)
     {
-        *volume = 15;
+        *volume = au->ch1_init_volume;
         return;
     }
     //volume sweep
-    if(au->ch1_vol_sweep_timer % au->ch1_sweep_pace == 0)
+    if(au->ch1_vol_sweep_timer % au->ch1_vol_sweep_pace == 0)
     {
         au->ch1_vol_sweep_timer = 1;
         if(au->ch1_vol_sweep_counter < 15)
@@ -50,6 +85,8 @@ void fill_stream(s_emu *emu)
 {
     s_audio *au = &emu->audio;
 //    static uint8_t old_volume = 0;
+    
+    wavelength_sweep(au, &emu->cpu.io_reg);
     
     //if no sound to be played (because length timer is ended or channel not enabled)
     if((au->ch1_sound_len_enable && (au->ch1_len_timer == 64)) || !au->ch1_enable)
@@ -103,14 +140,16 @@ void fill_stream(s_emu *emu)
     if(duty)
     {
         //fills the data (left and right)
-        au->fstream[au->samples_played] = (float)volume * 1/15;
-        au->fstream[au->samples_played + 1] = (float)volume * 1/15;
+        au->fstream[au->samples_played] = (float)volume * 1/15 * au->ch1_l * 1/8 * (au->l_output_vol + 1);
+        au->fstream[au->samples_played + 1] = (float)volume * 1/15 * au->ch1_r * 1/8 * (au->r_output_vol + 1);
     }
     else
     {
-        au->fstream[au->samples_played] = -(float)volume * 1/15;
-        au->fstream[au->samples_played + 1] = -(float)volume * 1/15;
+        au->fstream[au->samples_played] = -(float)volume * 1/15 * au->ch1_l * 1/8 * (au->l_output_vol + 1);
+        au->fstream[au->samples_played + 1] = -(float)volume * 1/15 * au->ch1_r * 1/8 * (au->r_output_vol + 1);
     }
+    
+    
 //    au->fstream[au->samples_played] = 
 //    if(au->fstream[au->samples_played] != 0)
 //    {
@@ -147,40 +186,32 @@ void audio_update(s_emu *emu)
     if(!(io->NR52 & 0x80))
         return;
         
-//    au->VIN_l = (io->NR50 & 0x80);
-//    au->VIN_r = (io->NR50 & 0x08);
-//    au->l_output_vol = (io->NR50 & 0x70) >> 4;
-//    au->r_output_vol = (io->NR50 & 0x07);
-
-//    au->ch1_duty_ratio      = (io->NR11 & 0xC0) >> 6;
-//    au->ch1_init_len_timer  = (io->NR11 & 0x3F);
+    if(au->queues_since_last_frame >= 1)
+        return;
+        
+    au->ch1_wavelen = io->NR13 + ((io->NR14 & 0x07) << 8);
+    au->ch1_freq = 131072 / (2048 - au->ch1_wavelen);
     
-//    au->ch1_init_volume     = (io->NR12 & 0xF0) >> 4;
-//    au->ch1_envl_dir        = (io->NR12 & 0x08);
-//    au->ch1_sweep_pace      = (io->NR12 & 0x07);
-    
-//    au->ch1_l = (io->NR51 & 0x10);
-//    au->ch1_r = (io->NR51 & 0x01);
-    
-    au->ch1_sound_len_enable = (io->NR14 & 0x40);
-    uint16_t wavelen = io->NR13 + ((io->NR14 & 0x07) << 8);
-    au->ch1_freq = 131072 / (2048 - wavelen);
-    
-    if(io->NR14 & 0x80)
+    //if channel 1 triggered
+    if(au->ch1_trigger)
     {
         io->NR52 |= 0x01;
-        io->NR14 &= ~0x80;
         au->ch1_trigger = true;
         au->ch1_vol_sweep_timer = 1;
         au->ch1_len_timer = au->ch1_init_len_timer;
-        au->DIV_APU = 0;
-        au->samples_timer = 0;
-        au->samples_played = 0;
-        au->DIV_APU = 0;
+        au->DIV_APU               = 0;
+        au->samples_timer         = 0;
+        au->samples_played        = 0;
+        au->DIV_APU               = 0;
         au->ch1_vol_sweep_counter = 0;
-    }
-    else
+        au->ch1_wl_sweep_timer    = 0;
+        au->ch1_wl_sweep_counter  = 0;
+        
+        au->ch1_wl_sweep_pace      = (io->NR10 & 0x70) >> 4;
+        au->ch1_wl_sweep_dir       = (io->NR10 & 0x08);
+        au->ch1_wl_sweep_slope_ctr = (io->NR10 & 0x07);
         au->ch1_trigger = false;
+    }
 
     au->ch1_enable = io->NR52 & 0x01;
     
@@ -191,9 +222,24 @@ void audio_update(s_emu *emu)
         au->samples_timer -= CPU_FREQ / AUDIO_SAMPLE_RATE;
         fill_stream(emu);
         au->samples_played += 2;
-        
     }
     
+    //does not fill a complete buffer in the queue when fast forward is toggled
+    if(emu->opt.fast_forward)
+    {
+        float tmp[au->samples_played];
+        memcpy(tmp, au->fstream, sizeof(float[au->samples_played]));
+        au->samples_played = 0;
+        if(0 != SDL_QueueAudio(au->dev, tmp, (int)(sizeof(tmp))))
+        {
+            fprintf(stderr, "Error SDL_QueueAudio: %s\n", SDL_GetError());
+            destroy_emulator(emu, EXIT_FAILURE);
+        }
+        au->queues_since_last_frame++;
+        return;
+    }
+    
+    //otherwise, when a buffer is complet, send it to the queue
     if(au->samples_played >= AUDIO_SAMPLES)
     {
         au->samples_played = 0;
@@ -202,8 +248,8 @@ void audio_update(s_emu *emu)
             fprintf(stderr, "Error SDL_QueueAudio: %s\n", SDL_GetError());
             destroy_emulator(emu, EXIT_FAILURE);
         }
+        au->queues_since_last_frame++;
     }
-
 }
 
 int init_audio(s_emu *emu)
@@ -213,17 +259,15 @@ int init_audio(s_emu *emu)
         
     s_audio *au = &emu->audio;
  
-    au->samples_played = 0;
-    SDL_memset(&au->spec_want, 0, sizeof(au->spec_want));
+    memset(au, 0, sizeof(s_audio));
     
     au->spec_want.freq     = AUDIO_SAMPLE_RATE;
     au->spec_want.format   = AUDIO_F32;
     au->spec_want.channels = 2;
-    au->spec_want.samples  = 512;
+    au->spec_want.samples  = 400;
     au->spec_want.callback = NULL;
     au->spec_want.userdata = (void*)&au->samples_played;
     
-    au->dev = 0;
     au->dev = SDL_OpenAudioDevice(
         NULL, 0, 
         &au->spec_want, &au->spec_have,
@@ -242,8 +286,6 @@ int init_audio(s_emu *emu)
         return EXIT_FAILURE;
     }
     
-    memset(au->fstream, 0, sizeof(au->fstream));
-    
 //    au->duty_ratios[0] = 0x01;
 //    au->duty_ratios[1] = 0x81;
 //    au->duty_ratios[2] = 0x87;
@@ -253,9 +295,6 @@ int init_audio(s_emu *emu)
     au->duty_ratios[1] = 0.25;
     au->duty_ratios[2] = 0.50;
     au->duty_ratios[3] = 0.75;
-    
-    au->DIV_APU = 0;
-    au->samples_timer = 0;
     
     return EXIT_SUCCESS;
 }

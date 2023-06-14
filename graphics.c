@@ -429,6 +429,10 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
 //        SDL_Delay(17 - elapsed);
 //        elapsed = 17;
 //    }
+    if((emu->audio.queues_since_last_frame < 1) && (!emu->opt.fast_forward))
+        return;
+        
+    emu->audio.queues_since_last_frame = 0;
 
     SDL_UnlockTexture(screen->scr);
     SDL_RenderClear(screen->r);

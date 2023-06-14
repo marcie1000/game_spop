@@ -22,9 +22,8 @@ Usage:
 ```
 
 Options:
-* `--audio`, `-a`           = enable audio (expermimental). Currently, only the bootrom
-                              is working properly (only some features of the square channel 1
-                              are implemented).
+* `--audio`, `-a`           = enable audio (expermimental). Currently, only the channel 1
+                              is implemented.
 * `--breakpoint`            = enable debugging with breakpoints. The program will
                               ask to enter a PC value breakpoint at start, and will
                               ask for a new breakpoint when the previous one is
@@ -48,4 +47,4 @@ Options:
 Controls:
 * `P` : Pause emulation
 * `O` (during pause) : Show an option menu
-* `Space` : Toggle fast forward (currently not working)
+* `Space` : Toggle fast forward
