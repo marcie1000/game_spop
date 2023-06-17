@@ -96,17 +96,17 @@ int initialize_emulator(s_emu *emu)
     }
     
     //gb doctor log file
-//    if(!opt->gb_doctor && !opt->log_instrs)
-//        return EXIT_SUCCESS;
+    if(!opt->gb_doctor && !opt->log_instrs)
+        return EXIT_SUCCESS;
         
-    opt->logfile = fopen("gb_insts.csv", "w");
+    opt->logfile = fopen("gb_insts.log", "w");
     if(opt->logfile == NULL)
     {
-        fprintf(stderr, "fopen gb_insts.csv: %s\n", strerror(errno));
+        fprintf(stderr, "fopen gb_insts.log: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
-    "period_counter;npsp;duty;samples_played\n");
+//    fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
+//    "period_counter;npsp;duty;samples_played\n");
     
     return EXIT_SUCCESS;
 }
@@ -179,6 +179,10 @@ void bypass_bootrom(s_emu *emu)
     cpu->regL = 0x4D;
     cpu->sp = 0xFFFE;
     
+    io->DIV = 0xAB;
+    io->TAC = 0xF8;
+    io->IF = 0xE1;
+    
     io->SCX = 0;
     io->SCY = 0;
     io->LCDC = 0x91;
@@ -187,9 +191,23 @@ void bypass_bootrom(s_emu *emu)
     io->NR12 = 0xf3;
     io->NR13 = 0xff;
     io->NR14 = 0xbf;
+    io->NR21 = 0x3f;
+    io->NR23 = 0xff;
+    io->NR24 = 0xbf;
+    io->NR30 = 0x7f;
+    io->NR31 = 0xff;
+    io->NR32 = 0x9f;
+    io->NR33 = 0xff;
+    io->NR34 = 0xbf;
+    io->NR41 = 0xff;
+    io->NR44 = 0xbf;
     io->NR50 = 0x77;
     io->NR51 = 0xf3;
     io->NR52 = 0xf1;
+    io->LCDC = 0x91;
+    io->STAT = 0x85;
+    io->LY = 0;
+    io->DMA = 0xff;
     io->BGP = 0xfc;    
 }
 

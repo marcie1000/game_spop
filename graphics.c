@@ -363,9 +363,9 @@ void ppu_modes_and_scanlines(s_emu *emu)
     
     io_reg->STAT &= ~0x03;
     
-    if(cpu->t_cycles >= 456)
+    if(cpu->t_cycles >= (4194304.0/59.735/154))
     {
-        cpu->t_cycles -= 456;
+        cpu->t_cycles -= (4194304.0/59.735/154);
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
         io_reg->STAT |= (screen->LCD_PPU_enable) ? 2 : 1;    
         if(0 != draw_scanline(emu))
@@ -429,7 +429,8 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
 //        SDL_Delay(17 - elapsed);
 //        elapsed = 17;
 //    }
-    if((emu->audio.queues_since_last_frame < 1) && (!emu->opt.fast_forward))
+    if((emu->audio.queues_since_last_frame < QUEUES_PER_FRAME) && 
+      (!emu->opt.fast_forward) && emu->opt.audio)
         return;
         
     emu->audio.queues_since_last_frame = 0;

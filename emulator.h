@@ -6,27 +6,29 @@
 #include <stdbool.h>
 #include <SDL.h>
 
-#define CPU_FREQ (4194304.0)
+#define CPU_FREQ                    (4194304.0)
 
-#define MEM_SIZE (0xFFFF)
-#define START_ADRESS (0x0000)
-#define OPCODE_NB (256)
-#define CB_NB (256)
-#define ROM_BANK_SIZE (0x4000)
-#define VRAM_SIZE (0x2000)
-#define WRAM_SIZE (0x2000)
-#define HRAM_SIZE (0x80)
-#define OAM_SIZE (0xA0)
-#define EXTERNAL_RAM_SIZE (0x2000)
-#define PIX_BY_W (160)
-#define PIX_BY_H (144)
-#define LY_LIMIT (154)
-#define SPRITEPOS_X_LIMIT (168)
-#define OAM_SPRITES_MAX (40)
-#define SPRITES_PER_SCANLINE (10)
+#define MEM_SIZE                    (0xFFFF)
+#define START_ADRESS                (0x0000)
+#define OPCODE_NB                   (256)
+#define CB_NB                       (256)
+#define ROM_BANK_SIZE               (0x4000)
+#define VRAM_SIZE                   (0x2000)
+#define WRAM_SIZE                   (0x2000)
+#define HRAM_SIZE                   (0x80)
+#define OAM_SIZE                    (0xA0)
+#define EXTERNAL_RAM_SIZE           (0x2000)
+#define PIX_BY_W                    (160)
+#define PIX_BY_H                    (144)
+#define LY_LIMIT                    (154)
+#define SPRITEPOS_X_LIMIT           (168)
+#define OAM_SPRITES_MAX             (40)
+#define SPRITES_PER_SCANLINE        (10)
 
-#define AUDIO_SAMPLES (1600) //800
-#define AUDIO_SAMPLE_RATE (48000)
+#define AUDIO_SAMPLES_PER_QUEUES    (1600) //800
+#define AUDIO_SAMPLES_DRIVER        (400)
+#define AUDIO_SAMPLE_RATE           (48000)
+#define QUEUES_PER_FRAME            (1)
 
 //to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
@@ -90,7 +92,7 @@ typedef struct s_io{
 typedef struct s_cpu {
     //uint8_t mem[MEM_SIZE];
     uint8_t ROM_Bank_0_tmp[ROM_BANK_SIZE]; //to replace ROM_Bank[0] content after disabling boot rom
-    uint8_t ROM_Bank[2][ROM_BANK_SIZE];
+    uint8_t ROM_Bank[128][ROM_BANK_SIZE];
     uint8_t VRAM[VRAM_SIZE];
     uint8_t WRAM[WRAM_SIZE];
     uint8_t HRAM[HRAM_SIZE];
@@ -100,7 +102,7 @@ typedef struct s_cpu {
     uint8_t regA, regB, regC, regD, regE, regH, regL, regF; //registers
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
-    size_t t_cycles; //t_cycles counter at 4,194,304 Hz
+    double t_cycles; //t_cycles counter at 4,194,304 Hz
     size_t timer_clock;
     size_t div_clock;
     bool quit_halt, in_halt;
@@ -140,32 +142,10 @@ typedef struct s_audio{
     uint64_t samples_played;
     uint8_t DIV_APU;
     
-    float fstream[AUDIO_SAMPLES];
+    float fstream[AUDIO_SAMPLES_PER_QUEUES];
     
     bool VIN_l, VIN_r;
     uint8_t l_output_vol, r_output_vol;
-    
-//    uint16_t ch_wavelen[0];
-//    uint8_t ch_len_timer[0];
-//    uint8_t ch_init_len_timer[0];
-//    uint8_t ch_vol_sweep_timer[0];
-//    uint8_t ch_vol_sweep_counter[0];
-//    uint8_t ch_duty_ratio[0];
-//    uint8_t ch_init_volume[0];
-//    bool    ch_envl_dir[0];
-//    uint8_t ch_vol_sweep_pace[0];
-//    uint8_t ch1_wl_sweep_timer;
-//    uint8_t ch1_wl_sweep_counter;
-//    uint8_t ch1_wl_sweep_pace;
-//    bool    ch1_wl_sweep_dir;
-//    uint8_t ch1_wl_sweep_slope_ctr;
-////    uint8_t ch1_envl_counter;
-//    bool    ch_l[0], ch_r[0];
-//    bool ch_sound_len_enable[0];
-//    uint16_t ch_freq[0];
-//    bool ch_trigger[0];
-//    bool ch_enable[0];
-    
     
     uint16_t ch_wavelen[2];
     uint8_t ch_len_timer[2];
@@ -189,11 +169,6 @@ typedef struct s_audio{
     bool ch_enable[2];
 
     double samples_timer;
-
-//    size_t vol_sweep_clock_cpu_cycles;
-//    size_t vol_sweep_ticks;
-//    size_t length_timer_cpu_cycles;
-//    size_t length_timer_ticks;
     float duty_ratios[4];
     
     uint8_t queues_since_last_frame;
