@@ -236,10 +236,7 @@ int load_rom(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_cart *cr = &emu->cart;
     if(!emu->opt.rom_argument)
-    {
-        memset(cpu->ROM_Bank, 0xFF, sizeof(cpu->ROM_Bank));
         return EXIT_SUCCESS;
-    }
     
     FILE *rom = fopen(emu->opt.rom_filename, "rb");
     if(NULL == rom)
@@ -251,7 +248,7 @@ int load_rom(s_emu *emu)
     size_t size = sizeof(cpu->ROM_Bank[0][0]);
     fread(&cpu->ROM_Bank[0][0], size, ROM_BANK_SIZE, rom);
     //keeps the rom bytes separatly during bootrom execution
-    memcpy(cpu->ROM_Bank_0_tmp, cpu->ROM_Bank[0], sizeof(cpu->ROM_Bank[0]));
+    memcpy(cpu->ROM_Bank_0_tmp, &cpu->ROM_Bank[0], sizeof(cpu->ROM_Bank[0]));
     
     if(0 != read_cartridge_header(emu))
     {
@@ -278,8 +275,19 @@ int load_rom(s_emu *emu)
 
 void destroy_emulator(s_emu *emu, int status)
 {
+    s_cpu *cpu = &emu->cpu;
     destroy_screen(&emu->screen);
     destroy_audio(emu);
+    
+    for(size_t i = 0; i < ROM_BANKS_MAX; i++)
+    {
+        if(NULL != cpu->ROM_Bank[i])
+            free(cpu->ROM_Bank[i]);
+    }
+    
+    if((NULL != cpu->ROM_Bank))
+        free(cpu->ROM_Bank);
+    
     SDL_Quit();
     if((NULL != emu->opt.logfile) /*&& (emu->opt.gb_doctor || emu->opt.log_instrs)*/)
         fclose(emu->opt.logfile);

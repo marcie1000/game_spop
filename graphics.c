@@ -442,26 +442,27 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     if(0 != lockscreen(screen))
         destroy_emulator(emu, EXIT_FAILURE);
 
-    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-    static uint64_t elapsed_sum = 0;
-    elapsed_sum += elapsed;
+//    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
+//    static uint64_t elapsed_sum = 0;
+//    elapsed_sum += elapsed;
     static int sum_cnt = 0;
     sum_cnt++;
     
     //calculate fps once per second
-    static double fps = 58.82;
     if(sum_cnt >= 59)
     {
-        fps = 1 / (((double)elapsed_sum / 60) / 1000);
+        double fps;
+        double elapsed_sum = (SDL_GetTicks64() - emu->frame_timer);
+        fps = 1 / ((elapsed_sum / 60) / 1000);
         elapsed_sum = 0;
         sum_cnt = 0;
+        emu->frame_timer = SDL_GetTicks64();
+        
+        char tmp[25] = "";
+        snprintf(tmp, 25, "game_spop %.2f fps", fps);
+        SDL_SetWindowTitle(screen->w, tmp);
     }
     
-    static char tmp[25] = "";
-    snprintf(tmp, 25, "game_spop %.2f fps", fps);
-    SDL_SetWindowTitle(screen->w, tmp);
-    
-    emu->frame_timer = SDL_GetTicks64();
     cpu->io_reg.LY = 0;
     //clear VBlank flag
     //io_reg->IF &= (~0x01);

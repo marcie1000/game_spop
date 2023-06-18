@@ -203,7 +203,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF50:
             io->BANK = data;
-            memcpy(cpu->ROM_Bank[0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
+            memcpy(&cpu->ROM_Bank[0][0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
             break;
         case 0xFF7F:
             break;
@@ -545,6 +545,28 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
 int initialize_cpu(s_cpu *cpu)
 {
     memset(cpu, 0, sizeof(s_cpu));
+    cpu->ROM_Bank = NULL;
+    
+    cpu->ROM_Bank = malloc(sizeof(uint8_t*[ROM_BANKS_MAX]));
+    if(NULL == cpu->ROM_Bank)
+    {
+        perror("malloc (in fct initialize_cpu): ");
+        return EXIT_FAILURE;
+    }
+    
+    for(size_t i = 0; i < ROM_BANKS_MAX; i++)
+        cpu->ROM_Bank[i] = NULL;
+    
+    for(size_t i = 0; i < ROM_BANKS_MAX; i++)
+    {
+        cpu->ROM_Bank[i] = calloc(1, sizeof(uint8_t[ROM_BANK_SIZE]));
+        if(NULL == cpu->ROM_Bank[i])
+        {
+            perror("calloc (in fct initialize_cpu): ");
+            return EXIT_FAILURE;
+        }
+    }
+    
     cpu->pc = START_ADRESS;
     cpu->io_reg.P1_JOYP = 0xEF;
     cpu->cur_hi_rom_bk = 1;
