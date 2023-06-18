@@ -132,7 +132,7 @@ typedef struct s_io{
 typedef struct s_cpu {
     //uint8_t mem[MEM_SIZE];
     uint8_t ROM_Bank_0_tmp[ROM_BANK_SIZE]; //to replace ROM_Bank[0] content after disabling boot rom
-    uint8_t ROM_Bank[ROM_BANKS_MAX][ROM_BANK_SIZE];
+    uint8_t ROM_Bank[128][ROM_BANK_SIZE];
     uint8_t VRAM[VRAM_SIZE];
     uint8_t WRAM[WRAM_SIZE];
     uint8_t HRAM[HRAM_SIZE];
