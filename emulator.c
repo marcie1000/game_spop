@@ -54,6 +54,109 @@ void update_event(s_emu *emu)
     }
 }
 
+int read_cartridge_header(s_emu *emu)
+{
+    s_cart *cr = &emu->cart;
+    s_cpu *cpu = &emu->cpu;
+    memset(cr, 0, sizeof(s_cart));
+    
+    if(!emu->opt.rom_argument)
+        return EXIT_SUCCESS;
+        
+    for(int i = 0; i < 12; i++)
+        cr->title[i] = cpu->ROM_Bank_0_tmp[i + 0x0134];
+    cr->title[12] = '\n';
+    
+    switch(cpu->ROM_Bank_0_tmp[0x0143])
+    {
+        case 0x80:
+            cr->cgb_flag = CGB_BACKWARDS_COMPATIBLE;
+            break;
+        case 0xC0:
+            cr->cgb_flag = CGB_ONLY;
+            fprintf(stderr, "ERROR: This game is GameBoy Color only "
+                    "(not supported!)\n");
+            return EXIT_FAILURE;
+            break;
+        default:
+            cr->cgb_flag = CLASSIC_GB;
+            break;
+    }
+    
+    cr->type = cpu->ROM_Bank_0_tmp[0x0147];
+    
+    switch(cpu->ROM_Bank_0_tmp[0x0148])
+    {
+        case 0x00:
+            cr->rom_banks = 2;
+            break;
+        case 0x01:
+            cr->rom_banks = 4;
+            break;
+        case 0x02:
+            cr->rom_banks = 8;
+            break;
+        case 0x03:
+            cr->rom_banks = 16;
+            break;
+        case 0x04: 
+            cr->rom_banks = 32;
+            break;
+        case 0x05:
+            cr->rom_banks = 64;
+            break;
+        case 0x06:
+            cr->rom_banks = 128;
+            break;
+        case 0x07:
+            cr->rom_banks = 256;
+            break;
+        case 0x08:
+            cr->rom_banks = 512;
+            break;
+        case 0x52:
+            cr->rom_banks = 72;
+            break;
+        case 0x53:
+            cr->rom_banks = 80;
+            break;
+        case 0x54:
+            cr->rom_banks = 96;
+            break;
+        default:
+            fprintf(stderr, "ERROR: ROM size value indicated in cartridge "
+                    "header is undefined.\n");
+            return EXIT_FAILURE;
+            break;
+    }
+    
+    switch(cpu->ROM_Bank_0_tmp[0x0149])
+    {
+        case 0x00:
+            cr->sram_banks = 0;
+            break;
+        case 0x02:
+            cr->sram_banks = 1;
+            break;
+        case 0x03:
+            cr->sram_banks = 4;
+            break;
+        case 0x04:
+            cr->sram_banks = 16;
+            break;
+        case 0x05:
+            cr->sram_banks = 8;
+            break;
+        default:
+            fprintf(stderr, "ERROR: SRAM size value indicated in cartridge "
+                    "header is undefined.\n");
+            return EXIT_FAILURE;
+            break;
+    }
+    
+    return EXIT_SUCCESS;
+}
+
 int initialize_SDL(void)
 {
     if(0 != SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
@@ -131,6 +234,7 @@ int load_boot_rom(s_cpu *cpu)
 int load_rom(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
+    s_cart *cr = &emu->cart;
     if(!emu->opt.rom_argument)
     {
         memset(cpu->ROM_Bank, 0xFF, sizeof(cpu->ROM_Bank));
@@ -144,10 +248,27 @@ int load_rom(s_emu *emu)
         return EXIT_FAILURE;
     }
     
-    fread(&cpu->ROM_Bank[0][0], sizeof(cpu->ROM_Bank[0][0]), ROM_BANK_SIZE, rom);
+    size_t size = sizeof(cpu->ROM_Bank[0][0]);
+    fread(&cpu->ROM_Bank[0][0], size, ROM_BANK_SIZE, rom);
     //keeps the rom bytes separatly during bootrom execution
     memcpy(cpu->ROM_Bank_0_tmp, cpu->ROM_Bank[0], sizeof(cpu->ROM_Bank[0]));
-    fread(&cpu->ROM_Bank[1][0], sizeof(cpu->ROM_Bank[1][0]), ROM_BANK_SIZE, rom);
+    
+    if(0 != read_cartridge_header(emu))
+    {
+        fclose(rom);
+        return EXIT_FAILURE;
+    }
+    
+    for(int i = 1; i < cr->rom_banks; i++)
+    {
+        if(ROM_BANK_SIZE != fread(&cpu->ROM_Bank[i][0], size, ROM_BANK_SIZE, rom))
+        {
+            fprintf(stderr, "ERROR: ROM file size doesn't match the ROM size value"
+                    "indicated in its header.\n");
+            fclose(rom);
+            return EXIT_FAILURE;
+        }
+    }
     fclose(rom);
     
     printf("Rom loaded.\n");

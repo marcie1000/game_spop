@@ -25,6 +25,9 @@
 #define OAM_SPRITES_MAX             (40)
 #define SPRITES_PER_SCANLINE        (10)
 
+#define ROM_BANKS_MAX               (512)
+#define SRAM_BANKS_MAX              (16)
+
 #define AUDIO_SAMPLES_PER_QUEUES    (1600) //800
 #define AUDIO_SAMPLES_DRIVER        (400)
 #define AUDIO_SAMPLE_RATE           (48000)
@@ -53,6 +56,43 @@ enum ppu_modes_durations {
     PPU_MODE3 = 200,
     PPU_MODE0 = 176,
     PPU_MODE1 = 4560
+};
+
+enum cgb_flags {
+    CLASSIC_GB,
+    CGB_BACKWARDS_COMPATIBLE,
+    CGB_ONLY
+};
+
+enum cartridge_types {
+    ROM_ONLY                            = 0x00,
+    MBC1                                = 0x01,
+    MBC1_P_RAM                          = 0x02,
+    MBC1_P_RAM_P_BATT                   = 0x03,
+    MBC2                                = 0x05,
+    MBC2_P_BATT                         = 0x06,
+    ROM_P_RAM                           = 0x08,
+    ROM_P_RAM_P_BATT                    = 0x09,
+    MMM01                               = 0x0B,
+    MMM01_P_RAM                         = 0x0C,
+    MMM01_P_RAM_P_BATT                  = 0x0D,
+    MBC3_P_TIMER_P_BATT                 = 0x0F,
+    MBC3_P_TIMER_P_RAM_P_BATT           = 0x10,
+    MBC3                                = 0x11,
+    MBC3_P_RAM                          = 0x12,
+    MBC3_P_RAM_P_BATT                   = 0x13,
+    MBC5                                = 0x19,
+    MBC5_P_RAM                          = 0x1A,
+    MBC5_P_RAM_P_BATT                   = 0x1B,
+    MBC5_P_RUMBLE                       = 0x1C,
+    MBC5_P_RUMBLE_P_RAM                 = 0x1D,
+    MBC5_P_RUMBLE_P_RAM_P_BATT          = 0x1E,
+    MBC6                                = 0x20,
+    MBC7_P_SENSOR_P_RUMBLE_P_RAM_P_BATT = 0x22,
+    POCKET_CAMERA                       = 0xFC,
+    BANDAI_TAMA5                        = 0xFD,
+    HuC3                                = 0xFE,
+    HuC1_P_RAM_P_BATT                   = 0xFF,
 };
 
 typedef struct s_opt{
@@ -92,13 +132,13 @@ typedef struct s_io{
 typedef struct s_cpu {
     //uint8_t mem[MEM_SIZE];
     uint8_t ROM_Bank_0_tmp[ROM_BANK_SIZE]; //to replace ROM_Bank[0] content after disabling boot rom
-    uint8_t ROM_Bank[128][ROM_BANK_SIZE];
+    uint8_t ROM_Bank[ROM_BANKS_MAX][ROM_BANK_SIZE];
     uint8_t VRAM[VRAM_SIZE];
     uint8_t WRAM[WRAM_SIZE];
     uint8_t HRAM[HRAM_SIZE];
     uint8_t OAM[OAM_SIZE];
     s_io io_reg;
-    uint8_t external_RAM[EXTERNAL_RAM_SIZE];
+    uint8_t SRAM[SRAM_BANKS_MAX][EXTERNAL_RAM_SIZE];
     uint8_t regA, regB, regC, regD, regE, regH, regL, regF; //registers
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
@@ -107,6 +147,9 @@ typedef struct s_cpu {
     size_t div_clock;
     bool quit_halt, in_halt;
     size_t inst_counter;
+    int current_sram_bk;
+    int cur_low_rom_bk;
+    int cur_hi_rom_bk;
 } s_cpu;
 
 typedef struct s_screen{
@@ -174,6 +217,14 @@ typedef struct s_audio{
     uint8_t queues_since_last_frame;
 }s_audio;
 
+typedef struct s_cart{
+    char title[20];
+    int cgb_flag;
+    int type;
+    int rom_banks;
+    int sram_banks;
+}s_cart;
+
 typedef struct s_emu{
     Uint64 frame_timer;
     s_screen screen;
@@ -186,6 +237,7 @@ typedef struct s_emu{
     s_input in;
     s_opt opt;
     s_audio audio;
+    s_cart cart;
 }s_emu;
 
 extern void flag_assign(bool cond, uint8_t *flag, uint8_t mask);
@@ -203,6 +255,7 @@ extern int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_
 extern void ask_breakpoint(s_opt *opt);
 extern void pause_menu(s_emu *emu);
 extern void log_instructions(s_emu *emu);
+extern int read_cartridge_header(s_emu *emu);
 
 
 #endif //EMULATOR_H

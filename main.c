@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-    s_emu emu;    
+    s_emu emu;  
     if(0 != parse_start_options(&emu.opt, argc, argv))
         exit(EXIT_FAILURE);
     

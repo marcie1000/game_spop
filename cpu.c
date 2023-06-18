@@ -397,15 +397,16 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
     
-    //TETRIS ROM exception
     if((adress < 0x3FFF) /* && (adress != 0x2000) && (adress != 0x1B08) && (cpu->pc != 0x0254)*/)
     {
-        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB ROM bank 00 at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB ROM "
+                "bank %02X at adress 0x%04X\n" ANSI_COLOR_RESET, cpu->cur_low_rom_bk, adress);
         //return EXIT_FAILURE;
     }
     else if((adress >= 0x4000) && (adress <= 0x7FFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB switchable ROM bank at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB "
+                "switchable ROM bank at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     //VRAM
@@ -417,7 +418,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     else if((adress >= 0xA000) && (adress <= 0xBFFF))
     {
         if(emu->opt.rom_argument)
-            cpu->external_RAM[adress - 0xA000] = data;
+            cpu->SRAM[cpu->current_sram_bk][adress - 0xA000] = data;
     }
     //WRAM
     else if((adress >= 0xC000) && (adress <= 0xDFFF))
@@ -480,11 +481,11 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     
     if(adress <= 0x3FFF)
     {
-        *data = cpu->ROM_Bank[0][adress];
+        *data = cpu->ROM_Bank[cpu->cur_low_rom_bk][adress];
     }
     else if((adress >= 0x4000) && (adress <= 0x7FFF))
     {
-        *data = cpu->ROM_Bank[1][adress - 0x4000];
+        *data = cpu->ROM_Bank[cpu->cur_hi_rom_bk][adress - 0x4000];
     }
     //VRAM
     else if((adress >= 0x8000) && (adress <= 0x9FFF))
@@ -494,7 +495,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     //8 KiB External RAM 
     else if((adress >= 0xA000) && (adress <= 0xBFFF))
     {
-        *data = cpu->external_RAM[adress - 0xA000];
+        *data = cpu->SRAM[cpu->current_sram_bk][adress - 0xA000];
     }
     //WRAM
     else if((adress >= 0xC000) && (adress <= 0xDFFF))
@@ -546,6 +547,7 @@ int initialize_cpu(s_cpu *cpu)
     memset(cpu, 0, sizeof(s_cpu));
     cpu->pc = START_ADRESS;
     cpu->io_reg.P1_JOYP = 0xEF;
+    cpu->cur_hi_rom_bk = 1;
     return EXIT_SUCCESS;
 }
 

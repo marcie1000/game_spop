@@ -481,14 +481,14 @@ int DMA_transfer(s_emu *emu)
     //ROM bank 00
     if(io_reg->DMA <= 0x3F)
     {
-        memcpy(cpu->OAM, &cpu->ROM_Bank[0][io_reg->DMA << 8], OAM_SIZE);
+        memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_low_rom_bk][io_reg->DMA << 8], OAM_SIZE);
     }
     
     //ROM bank 01
     else if(io_reg->DMA <= 0x7F)
     {
         uint16_t start_adress = (io_reg->DMA << 8) - 0x4000;
-        memcpy(cpu->OAM, &cpu->ROM_Bank[1][start_adress], OAM_SIZE);
+        memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_hi_rom_bk][start_adress], OAM_SIZE);
     }
     
     //VRAM
@@ -502,7 +502,7 @@ int DMA_transfer(s_emu *emu)
     else if(io_reg->DMA <= 0xBF)
     {
         uint16_t start_adress = (io_reg->DMA << 8) - 0xA000;
-        memcpy(cpu->OAM, &cpu->external_RAM[start_adress], OAM_SIZE);
+        memcpy(cpu->OAM, &cpu->SRAM[cpu->current_sram_bk][start_adress], OAM_SIZE);
     }
     
     //external WRAM
