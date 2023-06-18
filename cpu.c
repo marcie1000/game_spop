@@ -9,6 +9,7 @@
 #include "gb_interrupts.h"
 #include "graphics.h"
 #include "audio.h"
+#include "mbc.h"
 
 int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
@@ -203,7 +204,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF50:
             io->BANK = data;
-            memcpy(&cpu->ROM_Bank[0][0], cpu->ROM_Bank_0_tmp, sizeof(cpu->ROM_Bank[0]));
+            memcpy(&cpu->ROM_Bank[0][0], cpu->ROM_Bank_0_tmp, sizeof(uint8_t[ROM_BANK_SIZE]));
             break;
         case 0xFF7F:
             break;
@@ -399,15 +400,19 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     
     if((adress < 0x3FFF) /* && (adress != 0x2000) && (adress != 0x1B08) && (cpu->pc != 0x0254)*/)
     {
-        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB ROM "
-                "bank %02X at adress 0x%04X\n" ANSI_COLOR_RESET, cpu->cur_low_rom_bk, adress);
+//        printf(ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB ROM "
+//               "bank %02X at adress 0x%04X\n" ANSI_COLOR_RESET, cpu->cur_low_rom_bk, adress);
+        if(0 != write_mbc_registers(emu, adress, data))
+            return EXIT_FAILURE;
         //return EXIT_FAILURE;
     }
     else if((adress >= 0x4000) && (adress <= 0x7FFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB "
-                "switchable ROM bank at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
-        return EXIT_FAILURE;
+//        printf(ANSI_COLOR_RED "WARNING: attempt to write in 16 KiB "
+//               "switchable ROM bank at adress 0x%04X\n" ANSI_COLOR_RESET, adress);
+        if(0 != write_mbc_registers(emu, adress, data))
+            return EXIT_FAILURE;
+//        return EXIT_FAILURE;
     }
     //VRAM
     else if((adress >= 0x8000) && (adress <= 0x9FFF))

@@ -217,12 +217,20 @@ typedef struct s_audio{
     uint8_t queues_since_last_frame;
 }s_audio;
 
+typedef struct s_mbc{
+    bool RAM_enable;
+    unsigned ROM_bank_number;
+    unsigned RAM_bank_number;
+    bool banking_mode_select;
+}s_mbc;
+
 typedef struct s_cart{
     char title[20];
     int cgb_flag;
     int type;
     int rom_banks;
     int sram_banks;
+    s_mbc mbc;
 }s_cart;
 
 typedef struct s_emu{

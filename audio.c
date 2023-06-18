@@ -57,7 +57,10 @@ void wavelength_sweep(s_audio *au, s_io *io)
     io->NR14 &= ~0x07;
     io->NR14 |= (au->ch_wavelen[0] & 0x0700) >> 8;
     
-    au->ch_freq[0] = 131072 / (2048 - au->ch_wavelen[0]);
+    if(au->ch_wavelen[0] <= 2042)
+        au->ch_freq[0] = 131072 / (2048 - au->ch_wavelen[0]);
+    else
+        au->ch_freq[0] = 21845;
 }
 
 void volume_sweep(s_audio *au, int *volume, int ch)
@@ -191,7 +194,11 @@ void update_channel_state(s_audio *au, s_io *io, int ch)
         au->ch_wavelen[ch] = io->NR13 + ((io->NR14 & 0x07) << 8);
     else if(ch == 1)
         au->ch_wavelen[ch] = io->NR23 + ((io->NR24 & 0x07) << 8);
-    au->ch_freq[ch] = 131072 / (2048 - au->ch_wavelen[ch]);
+        
+    if(au->ch_wavelen[ch] <= 2042)
+        au->ch_freq[ch] = 131072 / (2048 - au->ch_wavelen[ch]);
+    else
+        au->ch_freq[ch] = 21845;
     
     //if channel 1 triggered
     if(au->ch_trigger[ch])

@@ -60,6 +60,8 @@ int read_cartridge_header(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     memset(cr, 0, sizeof(s_cart));
     
+    cr->mbc.ROM_bank_number = 1;
+    
     if(!emu->opt.rom_argument)
         return EXIT_SUCCESS;
         
@@ -150,6 +152,19 @@ int read_cartridge_header(s_emu *emu)
         default:
             fprintf(stderr, "ERROR: SRAM size value indicated in cartridge "
                     "header is undefined.\n");
+            return EXIT_FAILURE;
+            break;
+    }
+    
+    switch(cr->type)
+    {
+        case ROM_ONLY:
+        case MBC1:
+        case MBC1_P_RAM:
+        case MBC1_P_RAM_P_BATT:
+            break;
+        default:
+            fprintf(stderr, "WARNING: MBC code %02X (unimplemented)!\n", cr->type);
             return EXIT_FAILURE;
             break;
     }
@@ -248,7 +263,7 @@ int load_rom(s_emu *emu)
     size_t size = sizeof(cpu->ROM_Bank[0][0]);
     fread(&cpu->ROM_Bank[0][0], size, ROM_BANK_SIZE, rom);
     //keeps the rom bytes separatly during bootrom execution
-    memcpy(cpu->ROM_Bank_0_tmp, &cpu->ROM_Bank[0], sizeof(cpu->ROM_Bank[0]));
+    memcpy(cpu->ROM_Bank_0_tmp, &cpu->ROM_Bank[0][0], sizeof(uint8_t[ROM_BANK_SIZE]));
     
     if(0 != read_cartridge_header(emu))
     {
