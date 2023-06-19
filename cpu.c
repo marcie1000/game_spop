@@ -675,6 +675,9 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
     emu->opt.test_debug = true;
     log_instructions(emu);
+    
+    //fprintf()
+    
     size_t t_cycles_old = cpu->t_cycles;
     
 

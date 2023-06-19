@@ -203,6 +203,8 @@ int initialize_emulator(s_emu *emu)
     init_cb_pointers(emu->cb_functions);
     init_mnemonic_index(emu);
     init_prefix_mnemonic_index(emu);
+    init_timing_table(emu);
+    init_prefix_timing_table(emu);
     
     if(0 != load_rom(emu))
         return EXIT_FAILURE;
