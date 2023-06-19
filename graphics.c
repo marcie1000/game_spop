@@ -449,7 +449,7 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     sum_cnt++;
     
     //calculate fps once per second
-    if(sum_cnt >= 59)
+    if(sum_cnt >= 60)
     {
         double fps;
         double elapsed_sum = (SDL_GetTicks64() - emu->frame_timer);

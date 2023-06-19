@@ -31,7 +31,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             io->SC = data;
             break;
         case 0xFF04:
-            io->DIV = data;
+            io->DIV = 0;
             break;
         case 0xFF05:
             io->TIMA = data;
