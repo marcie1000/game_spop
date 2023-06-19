@@ -96,11 +96,12 @@ void timer_handle(s_emu *emu)
     s_io *io_reg = &cpu->io_reg;
     
 //    static Uint64 init_time = 0;
-    
+    static uint16_t old_timer = 0;
     //if not timer enable
     if(!(io_reg->TAC & 0x04))
     {
         //cpu->timer_clock = 0;
+        old_timer = cpu->timer_clock;
         return;
     }
         
@@ -121,17 +122,21 @@ void timer_handle(s_emu *emu)
             break;
     }
     
-    if((cpu->timer_clock % clock_div == 0) && (cpu->timer_clock != 0))
+    //if((cpu->timer_clock % clock_div == 0) && (cpu->timer_clock != 0))
+    
+    if((old_timer & (clock_div >> 1)) && !(cpu->timer_clock & (clock_div >> 1)))
     {
         if(io_reg->TIMA == 0xFF)
         {
             io_reg->TIMA = io_reg->TMA;
             io_reg->IF |= 0x04;
-            return;
         }
-        io_reg->TIMA++;
+        else
+            io_reg->TIMA++;
 //        cpu->timer_clock -= clock_div;
     }
+    
+    old_timer = cpu->timer_clock;
 }
 
 
