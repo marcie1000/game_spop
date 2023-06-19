@@ -97,6 +97,7 @@ void timer_handle(s_emu *emu)
     
 //    static Uint64 init_time = 0;
     static uint16_t old_timer = 0;
+    static bool overflow = false;
     //if not timer enable
     if(!(io_reg->TAC & 0x04))
     {
@@ -124,12 +125,22 @@ void timer_handle(s_emu *emu)
     
     //if((cpu->timer_clock % clock_div == 0) && (cpu->timer_clock != 0))
     
+    //when TIMA overflows, it becames equal to 0 for 4 cycles before taking
+    //the TMA value. (according to mooneye tests)
+    if(overflow && (old_timer + 4 == cpu->timer_clock))
+    {
+        overflow = false;
+        io_reg->TIMA = io_reg->TMA;
+    }
+    
+    
     if((old_timer & (clock_div >> 1)) && !(cpu->timer_clock & (clock_div >> 1)))
     {
         if(io_reg->TIMA == 0xFF)
         {
-            io_reg->TIMA = io_reg->TMA;
+            io_reg->TIMA = 0;
             io_reg->IF |= 0x04;
+            overflow = true;
         }
         else
             io_reg->TIMA++;
