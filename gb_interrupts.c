@@ -104,8 +104,6 @@ void timer_handle(s_emu *emu)
         return;
     }
         
-
-    
     unsigned clock_div;
     switch(io_reg->TAC & 0x03)
     {

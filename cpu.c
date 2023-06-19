@@ -565,13 +565,17 @@ int initialize_cpu(s_cpu *cpu)
     
     for(size_t i = 0; i < ROM_BANKS_MAX; i++)
     {
-        cpu->ROM_Bank[i] = calloc(1, sizeof(uint8_t[ROM_BANK_SIZE]));
+        cpu->ROM_Bank[i] = malloc(sizeof(uint8_t[ROM_BANK_SIZE]));
         if(NULL == cpu->ROM_Bank[i])
         {
             perror("calloc (in fct initialize_cpu): ");
             return EXIT_FAILURE;
         }
+        memset(cpu->ROM_Bank[i], 0xFF, sizeof(uint8_t[ROM_BANK_SIZE]));
     }
+    
+//    uint8_t **ptr = cpu->ROM_Bank;
+//    memset(&ptr[0][0], 0xFF, sizeof(uint8_t*[ROM_BANKS_MAX][ROM_BANK_SIZE]));
     
     cpu->pc = START_ADRESS;
     cpu->io_reg.P1_JOYP = 0xEF;
