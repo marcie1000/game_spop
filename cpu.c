@@ -697,10 +697,9 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
 //    if(cpu->inst_counter > 150000)
 //        emu->opt.debug_info = true;
-//    if(cpu->inst_counter == 104240)
+//    if(cpu->inst_counter == 152007)
 //    {
-//        cpu->t_cycles = 368.95;
-//        cpu->io_reg.LY = 1;
+//
 //    }
 }
 
