@@ -143,7 +143,7 @@ typedef struct s_cpu {
     uint16_t sp; //stack pointer
     uint16_t pc; //program counter
     double t_cycles; //t_cycles counter at 4,194,304 Hz
-    size_t timer_clock;
+    uint16_t timer_clock;
     size_t div_clock;
     bool quit_halt, in_halt;
     size_t inst_counter;

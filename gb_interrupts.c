@@ -100,23 +100,13 @@ void timer_handle(s_emu *emu)
     //if not timer enable
     if(!(io_reg->TAC & 0x04))
     {
-        cpu->timer_clock = 0;
+        //cpu->timer_clock = 0;
         return;
     }
         
-    if(io_reg->TIMA >= 0xFF)
-    {
-        io_reg->TIMA = io_reg->TMA;
-        io_reg->IF |= 0x04;
-//        Uint64 tmp = SDL_GetTicks64();
-//        printf(ANSI_COLOR_GREEN "elapsed: %llu ms\n" ANSI_COLOR_RESET, tmp - init_time);
-//        
-//        
-//        init_time = SDL_GetTicks64();
-        return;
-    }
+
     
-    size_t clock_div;
+    unsigned clock_div;
     switch(io_reg->TAC & 0x03)
     {
         case 0:
@@ -133,10 +123,16 @@ void timer_handle(s_emu *emu)
             break;
     }
     
-    if(cpu->timer_clock >= clock_div)
+    if((cpu->timer_clock % clock_div == 0) && (cpu->timer_clock != 0))
     {
+        if(io_reg->TIMA == 0xFF)
+        {
+            io_reg->TIMA = io_reg->TMA;
+            io_reg->IF |= 0x04;
+            return;
+        }
         io_reg->TIMA++;
-        cpu->timer_clock -= clock_div;
+//        cpu->timer_clock -= clock_div;
     }
 }
 

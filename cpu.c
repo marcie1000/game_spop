@@ -32,6 +32,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF04:
             io->DIV = 0;
+            cpu->timer_clock = 0;
             break;
         case 0xFF05:
             io->TIMA = data;
@@ -637,11 +638,9 @@ void div_handle(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     uint8_t old_DIV = cpu->io_reg.DIV;
-    if(cpu->div_clock >= 256)
-    {
-        cpu->div_clock -= 256;
-        cpu->io_reg.DIV++;
-    }
+
+    cpu->io_reg.DIV = (cpu->timer_clock & 0xFF00) >> 8;
+
     if((old_DIV & 0x10) && !(cpu->io_reg.DIV & 0x10))
     {
         emu->audio.DIV_APU++;
