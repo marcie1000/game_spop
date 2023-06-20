@@ -128,24 +128,49 @@ void timer_handle(s_emu *emu)
     
     //when TIMA overflows, it becames equal to 0 for 4 cycles before taking
     //the TMA value.
-    if(overflow)
-    {
-        overflow = false;
-        io_reg->TIMA = io_reg->TMA;
-        io_reg->IF |= 0x04;
-    }
+//    if(overflow)
+//    {
+//        overflow = false;
+//        io_reg->TIMA = io_reg->TMA;
+//        io_reg->IF |= 0x04;
+//    }
     
     
-    if((old_timer & (clock_div >> 1)) && !(cpu->timer_clock & (clock_div >> 1)))
+//    if((old_timer & (clock_div >> 1)) && !(cpu->timer_clock & (clock_div >> 1)))
+//    {
+//        if(io_reg->TIMA == 0xFF)
+//        {
+//            io_reg->TIMA = 0;
+//            overflow = true;
+//        }
+//        else
+//            io_reg->TIMA++;
+////        cpu->timer_clock -= clock_div;
+//    }
+    
+    uint16_t prev = old_timer;
+    uint16_t timer_when_overflow = 0;
+    for(uint16_t i = old_timer + 1; i <= cpu->timer_clock; i++)
     {
-        if(io_reg->TIMA == 0xFF)
+        if(overflow && (i == timer_when_overflow + 4))
         {
-            io_reg->TIMA = 0;
-            overflow = true;
+            overflow = false;
+            io_reg->TIMA = io_reg->TMA;
+            io_reg->IF |= 0x04;
         }
-        else
-            io_reg->TIMA++;
-//        cpu->timer_clock -= clock_div;
+        
+        if((prev & (clock_div >> 1)) && !(i & (clock_div >> 1)))
+        {
+            if(io_reg->TIMA == 0xFF)
+            {
+                io_reg->TIMA = 0;
+                overflow = true;
+                timer_when_overflow = i;
+            }
+            else
+                io_reg->TIMA++;
+        }
+        prev = i;
     }
     
     old_timer = cpu->timer_clock;

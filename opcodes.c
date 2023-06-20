@@ -2489,7 +2489,7 @@ void RET_Z(void *arg, uint32_t op)
     
     if(!(cpu->regF & ZERO_FMASK))
     {
-        cpu->t_cycles += emu->timing_table[1][(op & 0x00FF0000) >> 16]; //8;
+        cpu->t_cycles += emu->timing_table[0][(op & 0x00FF0000) >> 16]; //8;
         return;
     }
     
@@ -2506,7 +2506,7 @@ void RET_Z(void *arg, uint32_t op)
     //take the pc incrementation in the interpret function into account
     cpu->pc -= 1;
     
-    cpu->t_cycles += emu->timing_table[0][(op & 0x00FF0000) >> 16]; //20;
+    cpu->t_cycles += emu->timing_table[1][(op & 0x00FF0000) >> 16]; //20;
 }
 
 void RET(void *arg, uint32_t op)

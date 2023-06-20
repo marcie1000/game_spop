@@ -237,7 +237,11 @@ typedef struct s_emu{
     Uint64 frame_timer;
     s_screen screen;
     uint8_t length_table[OPCODE_NB];
+    
+    //timing_table[0] => timing without branch
+    //timing_table[1] => timing with branch
     uint8_t timing_table[2][OPCODE_NB];
+    
     uint8_t prefix_timing_table[CB_NB];
     char mnemonic_index[OPCODE_NB][15];
     char prefixed_mnemonic_index[CB_NB][15];

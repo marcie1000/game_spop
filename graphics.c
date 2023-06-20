@@ -362,9 +362,9 @@ void ppu_modes_and_scanlines(s_emu *emu)
     
     io_reg->STAT &= ~0x03;
     
-    if(cpu->t_cycles >= (CPU_FREQ/59.735/154))
+    if(cpu->t_cycles >= (CPU_FREQ/57.7/154))
     {
-        cpu->t_cycles -= (CPU_FREQ/59.735/154);
+        cpu->t_cycles -= (CPU_FREQ/57.7/154);
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
         io_reg->STAT |= (screen->LCD_PPU_enable) ? 2 : 1;    
         if(0 != draw_scanline(emu))

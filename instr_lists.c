@@ -280,7 +280,7 @@ void init_timing_table(s_emu *emu)
     emu->timing_table[0][0xC9] = 16;
     emu->timing_table[0][0xCA] = 16;
     emu->timing_table[1][0xCA] = 12;
-    emu->timing_table[0][0xCB] = 4;
+    //emu->timing_table[0][0xCB] = 4;
     emu->timing_table[0][0xCC] = 24;
     emu->timing_table[1][0xCC] = 12;
     emu->timing_table[0][0xCD] = 24;
