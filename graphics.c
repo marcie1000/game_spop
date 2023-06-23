@@ -236,15 +236,17 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     flag_assign((cpu->VRAM[data_adress + 1] & bitmask), 
                  &pix_tmp, 0x02);
     
+    if(pix_tmp == 0)
+        return EXIT_SUCCESS;
+    
     //modify pixel color through the palette
     if(!OBPnum)
         pix_tmp = (io->OBP0 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
     else
         pix_tmp = (io->OBP1 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
     
-    //transparency
-    if(pix_tmp != 0)
-        *pixel = pix_tmp;
+//    //transparency
+    *pixel = pix_tmp;
     
     return EXIT_SUCCESS;
     

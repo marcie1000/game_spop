@@ -216,8 +216,8 @@ int initialize_emulator(s_emu *emu)
     }
     
     //gb doctor log file
-    if(!opt->gb_doctor && !opt->log_instrs)
-        return EXIT_SUCCESS;
+//    if(!opt->gb_doctor && !opt->log_instrs)
+//        return EXIT_SUCCESS;
         
     opt->logfile = fopen("gb_insts.log", "w");
     if(opt->logfile == NULL)
@@ -225,8 +225,8 @@ int initialize_emulator(s_emu *emu)
         fprintf(stderr, "fopen gb_insts.log: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-//    fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
-//    "period_counter;npsp;duty;samples_played\n");
+    fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
+    "period_counter;npsp;duty;samples_played\n");
     
     return EXIT_SUCCESS;
 }

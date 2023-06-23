@@ -8,17 +8,22 @@
 
 void div_apu_update(s_audio *au)
 {
+    static uint8_t old_DIV_APU = 0;
+    
     if(au->DIV_APU == 0)
+    {
+        old_DIV_APU = 0;
         return;
+    }
         
-    if(au->DIV_APU % 2 == 1)
+    if((au->DIV_APU & 0x01) && !(old_DIV_APU & 0x01))
     {
         if(au->ch_len_timer[0] < 64)
             au->ch_len_timer[0]++;
         if(au->ch_len_timer[1] < 64)
             au->ch_len_timer[1]++;
     }
-    if(au->DIV_APU % 4 == 3)
+    if((au->DIV_APU % 4 == 3) && (old_DIV_APU % 4 == 2))
     {
         au->ch1_wl_sweep_timer++;
     }
@@ -28,6 +33,7 @@ void div_apu_update(s_audio *au)
         au->ch_vol_sweep_timer[1]++;
         au->DIV_APU = 0;
     }
+    old_DIV_APU = au->DIV_APU;
 }
 
 void wavelength_sweep(s_audio *au, s_io *io)
@@ -99,6 +105,11 @@ void fill_stream(s_emu *emu, int ch)
     {
         //disable channel
         emu->cpu.io_reg.NR52 &= ~(0x01 << ch);
+        
+        fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%u;%u;%lu\n",
+        au->fstream[au->samples_played], 0, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], 0U,
+        0U, 0U, au->samples_played);
+        
         return;
     }
     
@@ -110,6 +121,14 @@ void fill_stream(s_emu *emu, int ch)
     //the samples_played value considered as the beginning of the first period of the
     //current buffer, after the last period of the previous buffer is ended.
     static uint16_t start_shift[2] = {0, 0};
+    
+    if(au->ch_reset[ch])
+    {
+        au->ch_reset[ch] = false;
+        period_ended[ch] = true;
+        start_shift[ch] = 0;
+    }
+    
     if((au->samples_played == 0) && !period_ended[ch])
         must_finish_period[ch] = true;
     
@@ -164,16 +183,19 @@ void fill_stream(s_emu *emu, int ch)
     }
     
     
-//    au->fstream[au->samples_played] = 
-//    if(au->fstream[au->samples_played] != 0)
-//    {
-//        fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%lu;%u;%lu\n",
-//        au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], period_counter,
-//        new_period_samples_played, duty, au->samples_played);
-    //}
+    if(au->fstream[au->samples_played])
+    {
+        fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%lu;%u;%lu\n",
+        au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], period_counter,
+        new_period_samples_played, duty, au->samples_played);
+    }
 //    old_volume = volume;
 //    old_period_counter = period_counter;
 
+    if(au->fstream[au->samples_played] || au->fstream[au->samples_played + 1])
+    {
+        
+    }
 
     if(!must_finish_period[ch])
         period_ended[ch] = (au->samples_played % duty_reset == 0);
@@ -203,13 +225,14 @@ void update_channel_state(s_audio *au, s_io *io, int ch)
     //if channel 1 triggered
     if(au->ch_trigger[ch])
     {
+        au->ch_reset[ch] = true;
         io->NR52 |= 0x01 << ch;
         au->ch_vol_sweep_timer[ch] = 1;
         au->ch_len_timer[ch] = au->ch_init_len_timer[ch];
 //        au->DIV_APU               = 0;
         au->samples_timer         = 0;
         au->samples_played        = 0;
-        au->DIV_APU               = 0;
+//        au->DIV_APU               = 0;
         au->ch_vol_sweep_counter[ch] = 0;
         
         if(ch == 0)

@@ -461,10 +461,10 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
         cpu->io_reg.IE = data;
     }
     
-    if(emu->opt.debug_info)
-    {
-        printf(ANSI_COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" ANSI_COLOR_RESET "\n", data, adress);
-    }
+//    if(emu->opt.debug_info)
+//    {
+//        printf(ANSI_COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" ANSI_COLOR_RESET "\n", data, adress);
+//    }
     
     return EXIT_SUCCESS;
 }
@@ -526,10 +526,10 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
         *data = cpu->io_reg.IE;
     }
     
-    if(emu->opt.debug_info)
-    {
-        printf(ANSI_COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" ANSI_COLOR_RESET "\n", *data, adress);
-    }
+//    if(emu->opt.debug_info)
+//    {
+//        printf(ANSI_COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" ANSI_COLOR_RESET "\n", *data, adress);
+//    }
     
     return EXIT_SUCCESS;
 }

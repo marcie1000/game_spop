@@ -209,6 +209,7 @@ typedef struct s_audio{
     bool ch_sound_len_enable[2];
     uint16_t ch_freq[2];
     bool ch_trigger[2];
+    bool ch_reset[2];
     bool ch_enable[2];
 
     double samples_timer;
