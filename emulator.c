@@ -306,7 +306,7 @@ void destroy_emulator(s_emu *emu, int status)
         free(cpu->ROM_Bank);
     
     SDL_Quit();
-    if((NULL != emu->opt.logfile) /*&& (emu->opt.gb_doctor || emu->opt.log_instrs)*/)
+    if((NULL != emu->opt.logfile))
         fclose(emu->opt.logfile);
     exit(status);
 }
@@ -315,6 +315,9 @@ void bypass_bootrom(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io_reg;
+    s_screen *screen = &emu->screen;
+    
+    cpu->t_cycles = 14;
     
     cpu->pc = 0x100;
     cpu->regA = 0x01;
@@ -355,6 +358,15 @@ void bypass_bootrom(s_emu *emu)
     io->LY = 0;
     io->DMA = 0xff;
     io->BGP = 0xfc;    
+    
+    screen->LCD_PPU_enable          = io->LCDC & 0x80;
+    screen->win_tile_map_area       = io->LCDC & 0x40;
+    screen->window_enable           = io->LCDC & 0x20;
+    screen->BG_win_tile_data_area   = io->LCDC & 0x10;
+    screen->BG_tile_map_area        = io->LCDC & 0x08;
+    screen->obj_size                = io->LCDC & 0x04;
+    screen->obj_enable              = io->LCDC & 0x02;
+    screen->bg_win_enable_priority  = io->LCDC & 0x01;
 }
 
 void fast_forward_toggle(s_emu *emu)
@@ -448,7 +460,7 @@ void emulate(s_emu *emu)
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
         render_frame_and_vblank_if_needed(emu);   
-        
+//        
     }
 }
 
@@ -735,8 +747,7 @@ void ask_breakpoint(s_opt *opt)
     char bp[10] = "";
     while(!quit)
     {
-        printf("Enter a breakpoint value OR press ENTER to start/continue program normally OR\n"
-               "enter 'O' to see options menu:\n");
+        printf("Breakpoint value / ENTER (continue) / O (options)\n");
         if(NULL == fgets(bp, 10, stdin))
             continue;
         if(bp[0] == 'O' || bp[0] == 'o')
@@ -747,7 +758,7 @@ void ask_breakpoint(s_opt *opt)
         if(bp[0] == '\n')
         {
             opt->breakpoints = false;
-            printf("Starting/continuing execution with no breakpoint.\n");
+            //printf("Starting/continuing execution with no breakpoint.\n");
             break;
         }
         errno = 0;
@@ -782,6 +793,7 @@ void ask_breakpoint(s_opt *opt)
 void log_instructions(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
+    s_io *io = &cpu->io_reg;
     s_opt *opt = &emu->opt;
     
     cpu->inst_counter++;
@@ -807,7 +819,7 @@ void log_instructions(s_emu *emu)
             destroy_emulator(emu, EXIT_FAILURE);
         }
     }
-    else if(opt->log_instrs)
+    else if(opt->log_instrs || opt->debug_info)
     {
         uint8_t pc0, pc1, pc2, pc3;
         read_memory(emu, cpu->pc, &pc0);
@@ -838,16 +850,28 @@ void log_instructions(s_emu *emu)
         if(cpu->regF & HALF_CARRY_FMASK) h = 'H';
         if(cpu->regF & CARRY_FMASK) c = 'C';
 
-        if(0 > fprintf(
-            opt->logfile, 
-            "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x "
-            "SP:%04x PC:%04x PCMEM:%-9s  %s\n",
-            cpu->regA, z, n, h, c, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
-            cpu->regH, cpu->regL, cpu->sp, cpu->pc, pcmem, emu->mnemonic_index[pc0]
-        ))
+        if(opt->debug_info)
         {
-            perror("log_instructions fprintf: ");
-            destroy_emulator(emu, EXIT_FAILURE);
+            fprintf(
+                stdout, 
+                ANSI_COLOR_CYAN
+                "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x " ANSI_COLOR_MAGENTA
+                "SP:%04x PC:%04x" ANSI_COLOR_GREEN " (cy: %lu) ppu:+%u PCMEM:%-9s  " ANSI_COLOR_YELLOW "%s\n" ANSI_COLOR_RESET,
+                cpu->regA, z, n, h, c, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
+                cpu->regH, cpu->regL, cpu->sp, cpu->pc, cpu->debug_clock, io->STAT & 0x03,
+                pcmem, emu->mnemonic_index[pc0]
+            );
+        }
+        if(opt->log_instrs)
+        {
+            fprintf(
+                opt->logfile, 
+                "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x "
+                "SP:%04x PC:%04x (cy: %lu) ppu:+%u PCMEM:%-9s  %s\n",
+                cpu->regA, z, n, h, c, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
+                cpu->regH, cpu->regL, cpu->sp, cpu->pc, cpu->debug_clock, io->STAT & 0x03,
+                pcmem, emu->mnemonic_index[pc0]
+            );
         }
     }
 }

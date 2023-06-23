@@ -51,7 +51,7 @@ void interrupt_handler(s_emu *emu)
     if(!io_reg->IME && !cpu->in_halt)
         return;
     
-    cpu->quit_halt = false;
+//    cpu->quit_halt = false;
     LCD_STAT_interrupt_flags(emu);
     for(size_t i = 0; i <= 4; i++)
     {
@@ -149,8 +149,8 @@ void timer_handle(s_emu *emu)
 //    }
     
     uint16_t prev = old_timer;
-    uint16_t timer_when_overflow = 0;
-    for(uint16_t i = old_timer + 1; i <= cpu->timer_clock; i++)
+    static uint16_t timer_when_overflow = 0;
+    for(size_t i = old_timer + 1; i <= cpu->timer_clock; i++)
     {
         if(overflow && (i == timer_when_overflow + 4))
         {

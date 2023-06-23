@@ -7,6 +7,7 @@
 #include <SDL.h>
 
 #define CPU_FREQ                    (4194304.0)
+#define GB_VSNC                     (59.73)
 
 #define MEM_SIZE                    (0xFFFF)
 #define START_ADRESS                (0x0000)
@@ -100,7 +101,6 @@ typedef struct s_opt{
          log_instrs, fast_forward, audio;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
-    bool test_debug;
     FILE *logfile;
 }s_opt;
 
@@ -144,7 +144,7 @@ typedef struct s_cpu {
     uint16_t pc; //program counter
     double t_cycles; //t_cycles counter at 4,194,304 Hz
     uint16_t timer_clock;
-    size_t div_clock;
+    size_t debug_clock;
     bool quit_halt, in_halt;
     size_t inst_counter;
     int current_sram_bk;

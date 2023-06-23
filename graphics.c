@@ -362,21 +362,31 @@ void ppu_modes_and_scanlines(s_emu *emu)
     
     io_reg->STAT &= ~0x03;
     
-    if(cpu->t_cycles >= (CPU_FREQ/57.7/154))
+//    //HARDCODE
+//    if(cpu->debug_clock == 476)
+//    {
+//        cpu->t_cycles = 0;
+//        cpu->io_reg.LY = 0;
+//    }
+        
+    
+    if(cpu->t_cycles >= (CPU_FREQ / GB_VSNC / 154))
     {
-        cpu->t_cycles -= (CPU_FREQ/57.7/154);
+        cpu->t_cycles -= (CPU_FREQ / GB_VSNC / 154);
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
         io_reg->STAT |= (screen->LCD_PPU_enable) ? 2 : 1;    
         if(0 != draw_scanline(emu))
             destroy_emulator(emu, EXIT_FAILURE);
-        cpu->io_reg.LY++;
+        if(screen->LCD_PPU_enable)
+            cpu->io_reg.LY++;
         return;
     }
     
     if(!screen->LCD_PPU_enable)
     {
-        //vblank
-        io_reg->STAT |= 1;
+//        //vblank
+//        io_reg->STAT |= 1;
+        cpu->io_reg.LY = 0;
         return;
     }
     
