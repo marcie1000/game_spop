@@ -190,27 +190,35 @@ typedef struct s_audio{
     bool VIN_l, VIN_r;
     uint8_t l_output_vol, r_output_vol;
     
+    
     uint16_t ch_wavelen[2];
-    uint8_t ch_len_timer[2];
-    uint8_t ch_init_len_timer[2];
+    uint8_t ch_len_timer[3];
+    uint8_t ch_init_len_timer[3];
     uint8_t ch_vol_sweep_timer[2];
     uint8_t ch_vol_sweep_counter[2];
     uint8_t ch_duty_ratio[2];
     uint8_t ch_init_volume[2];
     bool    ch_envl_dir[2];
     uint8_t ch_vol_sweep_pace[2];
+    bool    ch_l[3], ch_r[3];
+    bool ch_sound_len_enable[3];
+    uint16_t ch_freq[3];
+    bool ch_trigger[3];
+    bool ch_reset[3];
+    bool ch_enable[3];
+    
     uint8_t ch1_wl_sweep_timer;
     uint8_t ch1_wl_sweep_counter;
     uint8_t ch1_wl_sweep_pace;
     bool    ch1_wl_sweep_dir;
     uint8_t ch1_wl_sweep_slope_ctr;
-//    uint8_t ch1_envl_counter;
-    bool    ch_l[2], ch_r[2];
-    bool ch_sound_len_enable[2];
-    uint16_t ch_freq[2];
-    bool ch_trigger[2];
-    bool ch_reset[2];
-    bool ch_enable[2];
+    
+    bool     ch3_dac_enable;
+    uint8_t  ch3_output_level;
+    uint16_t ch3_period;
+    uint32_t ch3_sample_rate;
+    uint8_t  ch3_samples_counter;
+
 
     double samples_timer;
     float duty_ratios[4];

@@ -93,18 +93,23 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF1A:
             io->NR30 = data;
+            au->ch3_dac_enable = data & 0x80;
             break;
         case 0xFF1B:
             io->NR31 = data;
+            au->ch_init_len_timer[2] = data;
             break;
         case 0xFF1C:
             io->NR32 = data;
+            au->ch3_output_level = (data & 0x60) >> 5;
             break;
         case 0xFF1D:
             io->NR33 = data;
             break;
         case 0xFF1E:
             io->NR34 = data;
+            au->ch_trigger[2] = data & 0x80;
+            au->ch_sound_len_enable[2] = data & 0x40;
             break;
         case 0xFF20:
             io->NR41 = data;
@@ -131,6 +136,8 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             au->ch_r[0] = (io->NR51 & 0x01);
             au->ch_l[1] = (io->NR51 & 0x20);
             au->ch_r[1] = (io->NR51 & 0x02);
+            au->ch_l[2] = (io->NR51 & 0x40);
+            au->ch_r[2] = (io->NR51 & 0x04);
             break;
         case 0xFF26:
             flag_assign(data & 0x80, &io->NR52, 0x80);
