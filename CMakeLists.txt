@@ -45,7 +45,7 @@ endif (NOT SDL2_FOUND)
 
 set (CMAKE_C_STANDARD 11)
 add_executable (game_spop ${SOURCES} ${HEADERS})
-target_link_libraries (game_spop ${SDL2_LIBRARIES})
+target_link_libraries (game_spop ${SDL2_LIBRARIES} m)
 
 
 
