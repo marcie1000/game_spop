@@ -1,7 +1,9 @@
 # game_spop
 A Gameboy emulator
 
-### Build project:
+## Build project:
+
+### Linux:
 
 You need to have [SDL2](https://wiki.libsdl.org/SDL2/Installation) and [CMake](https://cmake.org/) installed.
 
@@ -11,8 +13,22 @@ cd build
 cmake .. -G "Unix Makefiles"
 make
 ```
+### Windows:
 
-### How to use:
+In MinGW [MSYS2](https://www.msys2.org/) terminal, install the following packages (if needed):
+```console
+pacman -S --needed  mingw-w64-x86_64-SDL2 \
+                    mingw-w64-clang-x86_64-toolchain  
+```
+Build:
+```console
+mkdir build
+cd build
+cmake .. -G "MinGW Makefiles"
+mingw32-make
+```
+
+## How to use:
 
 In the executable path, create a folder called `boot_rom`. Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`.
 
