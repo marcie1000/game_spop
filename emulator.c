@@ -216,17 +216,19 @@ int initialize_emulator(s_emu *emu)
     }
     
     //gb doctor log file
-//    if(!opt->gb_doctor && !opt->log_instrs)
-//        return EXIT_SUCCESS;
+    if(!opt->gb_doctor && !opt->log_instrs && !opt->audio_log)
+        return EXIT_SUCCESS;
         
-    opt->logfile = fopen("gb_insts.log", "w");
+    opt->logfile = fopen("gb_logs.log", "w");
     if(opt->logfile == NULL)
     {
-        fprintf(stderr, "fopen gb_insts.log: %s\n", strerror(errno));
+        fprintf(stderr, "fopen gb_logs.log: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
-    "period_counter;npsp;duty;samples_played\n");
+    
+    if(opt->audio_log)
+        fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
+        "period_counter;npsp;duty;samples_played\n");
     
     return EXIT_SUCCESS;
 }
@@ -562,6 +564,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "\n"
     "Options\n"
     "   --audio, -a          = enable audio (expermimental).\n"
+    "   --audio-log          = print various audio variables in a file at each \n"
+    "                          sample.\n"
     "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
@@ -603,6 +607,12 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     {
         if(((0 == strcmp(argv[i], "--audio")) || (0 == strcmp(argv[i], "-a"))) && (is_program_beginning))
             opt->audio = true;
+        else if((0 == strcmp(argv[i], "--audio-log")) && is_program_beginning)
+        {
+            opt->audio_log = true;
+            opt->gb_doctor = false;
+            opt->log_instrs = false;
+        }
         else if(((0 == strcmp(argv[i], "--bypass-bootrom")) || (0 == strcmp(argv[i], "-b"))) && (is_program_beginning))
             opt->bootrom = false;
         else if((0 == strcmp(argv[i], "--debug-info")) || (0 == strcmp(argv[i], "-i")))
@@ -621,11 +631,15 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         }
         else if(((0 == strcmp(argv[i], "--gb-doctor")) || (0 == strcmp(argv[i], "-d"))) && (is_program_beginning))
         {
-            opt->gb_doctor = !opt->gb_doctor;
+            opt->gb_doctor = true;
+            opt->log_instrs = false;
+            opt->audio_log = false;
         }
         else if(((0 == strcmp(argv[i], "--log-instrs")) || (0 == strcmp(argv[i], "-l"))) && (is_program_beginning))
         {
-            opt->log_instrs = !opt->log_instrs;
+            opt->log_instrs = true;
+            opt->audio_log = false;
+            opt->gb_doctor = false;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
@@ -723,6 +737,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->log_instrs = false;
     opt->fast_forward = false;
     opt->audio = false;
+    opt->audio_log = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     

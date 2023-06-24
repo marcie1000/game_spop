@@ -71,13 +71,17 @@ void wavelength_sweep(s_audio *au, s_io *io)
 
 void volume_sweep(s_audio *au, int *volume, int ch)
 {
+    static uint8_t old_vol_sweep_timer[2] = {1, 1};
+    
     if(au->ch_vol_sweep_pace[ch] == 0)
     {
         *volume = au->ch_init_volume[ch];
+        old_vol_sweep_timer[ch] = au->ch_vol_sweep_timer[ch];
         return;
     }
     //volume sweep
-    if(au->ch_vol_sweep_timer[ch] % au->ch_vol_sweep_pace[ch] == 0)
+    bool diff = (old_vol_sweep_timer[ch] != au->ch_vol_sweep_timer[ch]);
+    if(diff && (au->ch_vol_sweep_timer[ch] % au->ch_vol_sweep_pace[ch] == 0))
     {
         au->ch_vol_sweep_timer[ch] = 1;
         if(au->ch_vol_sweep_counter[ch] < 15)
@@ -91,13 +95,13 @@ void volume_sweep(s_audio *au, int *volume, int ch)
         
     if(*volume < 0) *volume = 0;
     if(*volume > 15) *volume = 15;
+    
+    old_vol_sweep_timer[ch] = au->ch_vol_sweep_timer[ch];
 }
 
 void fill_stream(s_emu *emu, int ch)
 {
     s_audio *au = &emu->audio;
-//    static uint8_t old_volume = 0;
-    
     wavelength_sweep(au, &emu->cpu.io_reg);
     
     //if no sound to be played (because length timer is ended or channel not enabled)
@@ -106,9 +110,10 @@ void fill_stream(s_emu *emu, int ch)
         //disable channel
         emu->cpu.io_reg.NR52 &= ~(0x01 << ch);
         
-        fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%u;%u;%lu\n",
-        au->fstream[au->samples_played], 0, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], 0U,
-        0U, 0U, au->samples_played);
+        if(emu->opt.audio_log)
+            fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%u;%u;%lu\n",
+            au->fstream[au->samples_played], 0, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], 0U,
+            0U, 0U, au->samples_played);
         
         return;
     }
@@ -143,17 +148,12 @@ void fill_stream(s_emu *emu, int ch)
     //after how many samples the signal should turn from low to high, depending on duty ratio
     duty_change = au->duty_ratios[au->ch_duty_ratio[ch]] * duty_reset;
     
-    
-//    static uint16_t old_period_counter = 0;
-    
     //how many periods elapsed since the last samples_played reset, 
     //with period_counter value reset to 0 when the last period of
     //the previous buffer is done.
     uint16_t period_counter = (au->samples_played + 
                                AUDIO_SAMPLES_PER_QUEUES * must_finish_period[ch] - 
                                start_shift[ch]) / duty_reset;
-//    if(period_counter == old_period_counter && au->DIV_APU != 0)
-//        volume = old_volume;
     
     //a samples counter that is reset at the beginning of each new period
     uint64_t new_period_samples_played = au->samples_played                     + 
@@ -182,19 +182,12 @@ void fill_stream(s_emu *emu, int ch)
                                                1/8 * (au->r_output_vol + 1)        ;
     }
     
-    
-    if(au->fstream[au->samples_played])
+    //debug
+    if(emu->opt.audio_log)
     {
         fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%lu;%u;%lu\n",
         au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], period_counter,
         new_period_samples_played, duty, au->samples_played);
-    }
-//    old_volume = volume;
-//    old_period_counter = period_counter;
-
-    if(au->fstream[au->samples_played] || au->fstream[au->samples_played + 1])
-    {
-        
     }
 
     if(!must_finish_period[ch])
@@ -229,10 +222,8 @@ void update_channel_state(s_audio *au, s_io *io, int ch)
         io->NR52 |= 0x01 << ch;
         au->ch_vol_sweep_timer[ch] = 1;
         au->ch_len_timer[ch] = au->ch_init_len_timer[ch];
-//        au->DIV_APU               = 0;
         au->samples_timer         = 0;
         au->samples_played        = 0;
-//        au->DIV_APU               = 0;
         au->ch_vol_sweep_counter[ch] = 0;
         
         if(ch == 0)
@@ -341,11 +332,6 @@ int init_audio(s_emu *emu)
                 au->spec_want.samples, au->spec_have.samples);
         return EXIT_FAILURE;
     }
-    
-//    au->duty_ratios[0] = 0x01;
-//    au->duty_ratios[1] = 0x81;
-//    au->duty_ratios[2] = 0x87;
-//    au->duty_ratios[3] = 0x7E;
 
     au->duty_ratios[0] = 0.125;
     au->duty_ratios[1] = 0.25;

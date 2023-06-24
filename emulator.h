@@ -98,7 +98,7 @@ enum cartridge_types {
 
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
-         log_instrs, fast_forward, audio;
+         log_instrs, fast_forward, audio, audio_log;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
     FILE *logfile;

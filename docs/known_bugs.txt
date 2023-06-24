@@ -1,0 +1,2 @@
+- In Dr Mario, selected music in th menu should be blinking, but instead it is invisible.
+- Sounds in Dr Mario seams to not be as long as in other emulators, maybe an issue with variables reloading?
