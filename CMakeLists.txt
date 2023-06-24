@@ -12,7 +12,7 @@ set (HEADERS
     opcodes.h
     prefixed_opcodes.h
     graphics.h
-    interrupts.h
+    gb_interrupts.h
     audio.h
     instr_lists.h
     mbc.h
@@ -25,7 +25,7 @@ set (SOURCES
     opcodes.c
     prefixed_opcodes.c
     graphics.c
-    interrupts.c
+    gb_interrupts.c
     audio.c
     instr_lists.c
     mbc.c
