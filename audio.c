@@ -209,54 +209,31 @@ void fill_ch3_stream(s_emu *emu)
     {
         //disable channel
         emu->cpu.io_reg.NR52 &= ~(0x01 << 2);
-        
-//        if(emu->opt.audio_log)
-//            fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%u;%u;%lu\n",
-//            au->fstream[au->samples_played], 0, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], 0U,
-//            0U, 0U, au->samples_played);
-        
         return;
     }
     
-    //Variables used to seemlessly continue the sound when samples_played is reset to 0
-    //after a SDL_QueueAudio (new buffer beginning)
-    static bool period_ended = true;
-    //if the last period of the previous buffer is unfinished.
-    static bool must_finish_period = false;
-    //the samples_played value considered as the beginning of the first period of the
-    //current buffer, after the last period of the previous buffer is ended.
-    static uint16_t start_shift = 0;
+    static float local_samples_played = 0;
     
     if(au->ch_reset[2])
     {
-        au->ch_reset[2] = false;
-        period_ended = true;
-        start_shift = 0;
+        au->ch_reset[2] = false;        
+        local_samples_played = 0;
     }
     
-    if((au->samples_played == 0) && !period_ended)
-        must_finish_period = true;
+    float output_sp_per_src_sp = (float)AUDIO_SAMPLE_RATE / au->ch3_sample_rate * 2;
+
+    if(local_samples_played > output_sp_per_src_sp)
+    {
+        local_samples_played -= output_sp_per_src_sp;
+        au->ch3_samples_counter += 1;
+    }
     
-    
-    uint64_t period_reset_val = (float)AUDIO_SAMPLE_RATE / (au->ch_freq[2]) * 2;
-    
-    assert(period_reset_val > 0);
-    
-    uint16_t period_counter = (au->samples_played + 
-                               AUDIO_SAMPLES_PER_QUEUES * must_finish_period - 
-                               start_shift) / period_reset_val;
-                               
-    //a samples counter that is reset at the beginning of each new period
-    uint64_t new_period_samples_played = au->samples_played                            + 
-                                         AUDIO_SAMPLES_PER_QUEUES * must_finish_period - 
-                                         start_shift                                   - 
-                                         period_counter * period_reset_val             ;
-    
-    uint16_t source_sample_to_play = (float)new_period_samples_played / (2 * AUDIO_SAMPLES_PER_QUEUES) *
-                                      au->ch_freq[2];
-    assert(source_sample_to_play < 32);
+    if(au->ch3_samples_counter >= 32)
+    {
+        au->ch3_samples_counter = 0;
+    }
                                       
-    uint8_t nibble = (!(source_sample_to_play % 2)) * 4;
+    uint8_t nibble = (!(au->ch3_samples_counter % 2)) * 4;
     
     float output_level = 0;
     switch(au->ch3_output_level)
@@ -271,29 +248,16 @@ void fill_ch3_stream(s_emu *emu)
             output_level = 0.25;
             break;
     }
-    
-    //fills the data (left and right)
-    //0.5 volume is to avoid saturation
-    au->fstream[au->samples_played    ] += (float)((io->wave_RAM[source_sample_to_play / 2]           &
-                                           (0xF << nibble)) >> nibble) * 1/15 * au->ch_l[2]           * 
-                                           1/8 * (au->l_output_vol + 1) * output_level * 0.5;
+
+    au->fstream[au->samples_played    ] += (float)((io->wave_RAM[au->ch3_samples_counter / 2] &
+                                           (0xF << nibble)) >> nibble) * 1/15 * au->ch_l[2]   * 
+                                           1/8 * (au->l_output_vol + 1) * output_level * 0.5  ;
                                            
-    au->fstream[au->samples_played + 1] += (float)((io->wave_RAM[source_sample_to_play / 2]           &
-                                           (0xF << nibble)) >> nibble) * 1/15 * au->ch_r[2]           * 
-                                           1/8 * (au->r_output_vol + 1) * output_level * 0.5;
+    au->fstream[au->samples_played + 1] += (float)((io->wave_RAM[au->ch3_samples_counter / 2] &
+                                           (0xF << nibble)) >> nibble) * 1/15 * au->ch_r[2]   * 
+                                           1/8 * (au->r_output_vol + 1) * output_level * 0.5  ;
     
-    
-    if(!must_finish_period)
-        period_ended = (au->samples_played % period_reset_val == 0);
-    else
-        period_ended = ((AUDIO_SAMPLES_PER_QUEUES + au->samples_played - start_shift) % 
-                         period_reset_val == 0);
-        
-    if(must_finish_period && period_ended)
-    {
-        must_finish_period = false;
-        start_shift = au->samples_played;
-    }
+    local_samples_played += 2;
 }
 
 void update_square_channel_state(s_audio *au, s_io *io, int ch)
@@ -355,6 +319,7 @@ void update_ch3_state(s_audio *au, s_io *io)
         io->NR52 |= 0x04;
         au->ch_len_timer[2] = au->ch_init_len_timer[2];
         au->ch_trigger[2] = false;
+        au->ch3_samples_counter = 0;
     }
     
     au->ch_enable[2] = io->NR52 & (0x01 << 2);
@@ -376,8 +341,8 @@ void audio_update(s_emu *emu)
     if(au->queues_since_last_frame >= QUEUES_PER_FRAME)
         return;
         
-//    update_square_channel_state(au, io, 0);
-//    update_square_channel_state(au, io, 1);
+    update_square_channel_state(au, io, 0);
+    update_square_channel_state(au, io, 1);
     update_ch3_state(au, io);
     
     div_apu_update(au);
@@ -385,8 +350,8 @@ void audio_update(s_emu *emu)
     if(au->samples_timer >= CPU_FREQ / AUDIO_SAMPLE_RATE)
     {
         au->samples_timer -= CPU_FREQ / AUDIO_SAMPLE_RATE;
-//        fill_square_ch_stream(emu, 0);
-//        fill_square_ch_stream(emu, 1);
+        fill_square_ch_stream(emu, 0);
+        fill_square_ch_stream(emu, 1);
         fill_ch3_stream(emu);
         au->samples_played += 2;
     }
