@@ -420,7 +420,7 @@ void emulate(s_emu *emu)
             resize_screen(&emu->screen);
             emu->in.resize = SDL_FALSE;
         }
-        if(emu->in.key[SDL_SCANCODE_P])
+        if(emu->in.key[SDL_SCANCODE_P] || (emu->opt.framebyframe && emu->opt.newframe))
         {
             pause_menu(emu);
         }
@@ -526,8 +526,11 @@ void pause_menu(s_emu *emu)
     
     printf(
         "Emulator paused.\n"
-        "Press P to continue, O to options.\n"
+        "Press P to continue, N for next frame, O for options.\n"
     );
+    
+    emu->opt.newframe = false;
+    emu->opt.framebyframe = false;
     
     while(!emu->in.quit)
     {
@@ -535,13 +538,26 @@ void pause_menu(s_emu *emu)
         if(emu->in.key[SDL_SCANCODE_P])
         {
             while(emu->in.key[SDL_SCANCODE_P])
+            {
+                SDL_Delay(5);
                 update_event(emu);
+            }
             return;
         }
         if(emu->in.key[SDL_SCANCODE_O])
         {
             if(0 == parse_options_during_exec(&emu->opt))
                 return;
+        }
+        if(emu->in.key[SDL_SCANCODE_N])
+        {
+            while(emu->in.key[SDL_SCANCODE_N])
+            {
+                SDL_Delay(5);
+                update_event(emu);
+            }
+            emu->opt.framebyframe = true;
+            return;
         }
         SDL_Delay(5);
     }
@@ -738,6 +754,8 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->fast_forward = false;
     opt->audio = false;
     opt->audio_log = false;
+    opt->newframe = false;
+    opt->framebyframe = false;
     if(argc <= 1)
         return EXIT_SUCCESS;
     

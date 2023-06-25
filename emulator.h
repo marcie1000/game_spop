@@ -99,6 +99,8 @@ enum cartridge_types {
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
          log_instrs, fast_forward, audio, audio_log;
+    bool newframe; //for frame by frame step
+    bool framebyframe;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
     FILE *logfile;
@@ -169,6 +171,8 @@ typedef struct s_screen{
     bool obj_size;
     bool obj_enable;
     bool bg_win_enable_priority;
+    
+    uint8_t old_STAT;
     
     bool window_maximized;
     SDL_Rect render_dst;

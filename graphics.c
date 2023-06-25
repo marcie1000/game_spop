@@ -364,14 +364,6 @@ void ppu_modes_and_scanlines(s_emu *emu)
     
     io_reg->STAT &= ~0x03;
     
-//    //HARDCODE
-//    if(cpu->debug_clock == 476)
-//    {
-//        cpu->t_cycles = 0;
-//        cpu->io_reg.LY = 0;
-//    }
-        
-    
     if(cpu->t_cycles >= (CPU_FREQ / GB_VSNC / 154))
     {
         cpu->t_cycles -= (CPU_FREQ / GB_VSNC / 154);
@@ -423,13 +415,20 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     if(io_reg->LY < 144)
     {
         //io_reg->IF &= ~0x01;
+        screen->old_STAT = io_reg->STAT;
         return;
     }
     
     //set VBlank interrupt flag 
-    io_reg->IF |= 0x01;
+    if((screen->old_STAT & 0x03) != 1)
+    {
+        io_reg->IF |= 0x01;
+    }
+    
     io_reg->STAT &= ~0x03;
     io_reg->STAT |= 1;
+    
+    screen->old_STAT = io_reg->STAT;
     
     if(cpu->io_reg.LY < 154)
         return;
@@ -445,6 +444,7 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
         return;
         
     emu->audio.queues_since_last_frame = 0;
+    emu->opt.newframe = true;
 
     SDL_UnlockTexture(screen->scr);
     SDL_RenderClear(screen->r);

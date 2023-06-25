@@ -429,7 +429,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //8 KiB External RAM 
     else if((adress >= 0xA000) && (adress <= 0xBFFF))
     {
-        if(emu->opt.rom_argument)
+        if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
             cpu->SRAM[cpu->current_sram_bk][adress - 0xA000] = data;
     }
     //WRAM
@@ -496,7 +496,10 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     //8 KiB External RAM 
     else if((adress >= 0xA000) && (adress <= 0xBFFF))
     {
-        *data = cpu->SRAM[cpu->current_sram_bk][adress - 0xA000];
+        if(emu->cart.mbc.RAM_enable)
+            *data = cpu->SRAM[cpu->current_sram_bk][adress - 0xA000];
+        else
+            *data = 0;
     }
     //WRAM
     else if((adress >= 0xC000) && (adress <= 0xDFFF))
@@ -570,6 +573,9 @@ int initialize_cpu(s_cpu *cpu)
     cpu->pc = START_ADRESS;
     cpu->io_reg.P1_JOYP = 0xEF;
     cpu->cur_hi_rom_bk = 1;
+    
+//    memset(cpu->SRAM, 0xFF, sizeof(uint8_t[SRAM_BANKS_MAX][EXTERNAL_RAM_SIZE]));
+    
     return EXIT_SUCCESS;
 }
 
