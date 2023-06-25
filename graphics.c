@@ -215,14 +215,20 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     
     //8*16 sprite handle
     //IF (sprite 8*16) AND (LY is in the second tile of the sprite)
-    bool is_second_tile = ((scr->obj_size) && (cpu->OAM[sptd] + 16 - io->LY > 8));
+//    bool is_second_tile = ((scr->obj_size) && (cpu->OAM[sptd] + 16 - io->LY > 8));
+    bool is_second_tile = ((scr->obj_size) && (io->LY - (cpu->OAM[sptd] - 16) >= 8));
     //bool bgwin_over_obj = (cpu->OAM[sptd + 3] & 0x80);
     bool yflip = (cpu->OAM[sptd + 3] & 0x40);
     bool xflip = (cpu->OAM[sptd + 3] & 0x20);
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
     
+    if(is_second_tile)
+    {
+        
+    }
+    
     uint16_t data_adress = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
-    data_adress += 2 * (io->LY - cpu->OAM[sptd] + 16);
+    data_adress += 2 * (io->LY - cpu->OAM[sptd] + 16 - 8 * is_second_tile);
     if(yflip) data_adress = 8 - data_adress;
     
     uint8_t bitmask;
