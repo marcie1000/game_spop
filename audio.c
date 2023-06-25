@@ -256,17 +256,31 @@ void fill_ch3_stream(s_emu *emu)
                                       au->ch_freq[2];
     assert(source_sample_to_play < 32);
                                       
-    uint8_t nibble = (source_sample_to_play % 2) * 4;
+    uint8_t nibble = (!(source_sample_to_play % 2)) * 4;
+    
+    float output_level = 0;
+    switch(au->ch3_output_level)
+    {
+        case 1:
+            output_level = 1;
+            break;
+        case 2:
+            output_level = 0.5;
+            break;
+        case 3:
+            output_level = 0.25;
+            break;
+    }
     
     //fills the data (left and right)
     //0.5 volume is to avoid saturation
     au->fstream[au->samples_played    ] += (float)((io->wave_RAM[source_sample_to_play / 2]           &
                                            (0xF << nibble)) >> nibble) * 1/15 * au->ch_l[2]           * 
-                                           1/8 * (au->l_output_vol + 1) * 1/3 * au->ch3_output_level * 0.5;
+                                           1/8 * (au->l_output_vol + 1) * output_level * 0.5;
                                            
     au->fstream[au->samples_played + 1] += (float)((io->wave_RAM[source_sample_to_play / 2]           &
                                            (0xF << nibble)) >> nibble) * 1/15 * au->ch_r[2]           * 
-                                           1/8 * (au->r_output_vol + 1) * 1/3 * au->ch3_output_level * 0.5;
+                                           1/8 * (au->r_output_vol + 1) * output_level * 0.5;
     
     
     if(!must_finish_period)
@@ -362,8 +376,8 @@ void audio_update(s_emu *emu)
     if(au->queues_since_last_frame >= QUEUES_PER_FRAME)
         return;
         
-    update_square_channel_state(au, io, 0);
-    update_square_channel_state(au, io, 1);
+//    update_square_channel_state(au, io, 0);
+//    update_square_channel_state(au, io, 1);
     update_ch3_state(au, io);
     
     div_apu_update(au);
@@ -371,8 +385,8 @@ void audio_update(s_emu *emu)
     if(au->samples_timer >= CPU_FREQ / AUDIO_SAMPLE_RATE)
     {
         au->samples_timer -= CPU_FREQ / AUDIO_SAMPLE_RATE;
-        fill_square_ch_stream(emu, 0);
-        fill_square_ch_stream(emu, 1);
+//        fill_square_ch_stream(emu, 0);
+//        fill_square_ch_stream(emu, 1);
         fill_ch3_stream(emu);
         au->samples_played += 2;
     }
