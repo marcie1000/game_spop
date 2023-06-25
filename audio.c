@@ -188,8 +188,12 @@ void fill_square_ch_stream(s_emu *emu, int ch)
     if(!must_finish_period[ch])
         period_ended[ch] = (au->samples_played % duty_reset == 0);
     else
-        period_ended[ch] = ((AUDIO_SAMPLES_PER_QUEUES + au->samples_played - start_shift[ch]) % 
+    {
+        period_ended[ch]  = ((AUDIO_SAMPLES_PER_QUEUES + au->samples_played - start_shift[ch]) % 
                            duty_reset == 0);
+        period_ended[ch] |= ((AUDIO_SAMPLES_PER_QUEUES + au->samples_played + 1 - start_shift[ch]) % 
+                           duty_reset == 0);
+    }
         
     if(must_finish_period[ch] && period_ended[ch])
     {
