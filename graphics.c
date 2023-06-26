@@ -215,17 +215,11 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     
     //8*16 sprite handle
     //IF (sprite 8*16) AND (LY is in the second tile of the sprite)
-//    bool is_second_tile = ((scr->obj_size) && (cpu->OAM[sptd] + 16 - io->LY > 8));
     bool is_second_tile = ((scr->obj_size) && (io->LY - (cpu->OAM[sptd] - 16) >= 8));
     //bool bgwin_over_obj = (cpu->OAM[sptd + 3] & 0x80);
     bool yflip = (cpu->OAM[sptd + 3] & 0x40);
     bool xflip = (cpu->OAM[sptd + 3] & 0x20);
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
-    
-    if(is_second_tile)
-    {
-        
-    }
     
     uint16_t data_adress = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
     data_adress += 2 * (io->LY - cpu->OAM[sptd] + 16 - 8 * is_second_tile);
@@ -250,8 +244,10 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
         pix_tmp = (io->OBP0 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
     else
         pix_tmp = (io->OBP1 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
-    
-//    //transparency
+//    
+//    if(pix_tmp == 0)
+//        return EXIT_SUCCESS;
+
     *pixel = pix_tmp;
     
     return EXIT_SUCCESS;
@@ -266,17 +262,14 @@ int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCAN
         return EXIT_SUCCESS;
         
     //checks if sprite is on the pixel currently drawn
-    for(size_t j = 0; j < SPRITES_PER_SCANLINE && j < nb_sptd; j++)
+    for(int j = nb_sptd - 1; j >= 0; j--)
     {
         //if (spr_x <= pixel_x + 8) AND
         //   (spr_x + spr_w >= pixel_x + 8)
         if((cpu->OAM[sptd[j] + 1] <= i + 8) &&
            (cpu->OAM[sptd[j] + 1] + 8 > i + 8))
         {
-            //if(cpu->io_reg.LY)
-
             draw_OBJ_tile(emu, i, pixel, sptd[j]);
-            break;
         }
     }
     
