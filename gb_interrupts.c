@@ -8,39 +8,43 @@
 void LCD_STAT_interrupt_flags(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io_reg;
     
-    //io_reg->IF &= ~0x02;
-    
+    //io->IF &= ~0x02;
+    static uint8_t oldSTAT = 0;
+    static uint8_t oldLY = 0;
     //if interrupt not enabled
-    if(!(io_reg->IE & 0x02))
+    if(!(io->IE & 0x02))
+    {
+        oldSTAT = io->STAT;
+        oldLY = io->LY;
         return;
+    }
         
     //for each STAT enable flags
     //LYC == LY ?
-    if((io_reg->STAT & 0x40) && (io_reg->LYC == io_reg->LY))
+    if((io->STAT & 0x40) && (io->LYC == io->LY) && (oldLY != io->LY))
     {
-        io_reg->IF |= 0x02;
-        return;
+        io->IF |= 0x02;
     }
     //PPU mode 2 ?
-    else if((io_reg->STAT & 0x20) && ((io_reg->STAT & 0x03) == 2))
+    else if((io->STAT & 0x20) && ((io->STAT & 0x03) == 2) && (oldSTAT != io->STAT))
     {
-        io_reg->IF |= 0x02;
-        return;
+        io->IF |= 0x02;
     }
     //PPU mode 1 ?
-    else if((io_reg->STAT & 0x10) && ((io_reg->STAT & 0x03) == 1))
+    else if((io->STAT & 0x10) && ((io->STAT & 0x03) == 1) && (oldSTAT != io->STAT))
     {
-        io_reg->IF |= 0x02;
-        return;
+        io->IF |= 0x02;
     }
     //PPU mode 0 ?
-    else if((io_reg->STAT & 0x08) && ((io_reg->STAT & 0x03) == 0))
+    else if((io->STAT & 0x08) && ((io->STAT & 0x03) == 0) && (oldSTAT != io->STAT))
     {
-        io_reg->IF |= 0x02;
-        return;
+        io->IF |= 0x02;
     }
+    
+    oldSTAT = io->STAT;
+    oldLY = io->LY;
 }
 
 void interrupt_handler(s_emu *emu)
