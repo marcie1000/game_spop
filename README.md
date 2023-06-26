@@ -32,12 +32,12 @@ mingw32-make
 
 In the executable path, create a folder called `boot_rom`. Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`.
 
-Usage:
+### Usage:
 ```console
 ./game_spop <ROM file> [options]
 ```
 
-Options:
+### Options:
 * `--audio`, `-a`           = disable audio.
 * `--audio-log`             = print various audio variables in a file at each sample.
 * `--breakpoint`, `-p`      = enable debugging with breakpoints. The program will
@@ -58,8 +58,22 @@ Options:
                           at each new instruction and ask to continue or edit options.
 * `--help`, `-h`        = show this help message and exit.
 
-Controls:
-* `P` : Pause emulation
-* `O` (during pause) : Show an option menu
-* `N` (during pause) : Next frame
-* `Space` : Toggle fast forward
+### Controls:
+
+Since the program uses scancodes, the keys names of the controls are different depending
+on your keyboard layout, but the keys position remains the same.
+
+Control   | QWERTY key | AZERTY key | Bépo key
+---       | :---:      | :---:      | :---:
+UP        | W          | Z          | é
+DOWN      | S          | S          | U
+LEFT      | A          | Q          | A
+RIGHT     | D          | D          | I
+START     | Return     | Return     | Return
+SELECT    | RShift     | RShift     | RShift
+A         | L          | L          | R
+B         | M          | ,          | Q
+Pause emulation | P | P | J
+Show an option menu (during pause) | O | O | L
+Next frame (during pause) | N | N | '
+Toogle fast forward | SPACE | SPACE | SPACE
