@@ -260,7 +260,7 @@ int load_sav(s_emu *emu)
     if(!emu->opt.rom_argument)
         return EXIT_SUCCESS;
     if(cr->sram_banks < 1)
-        return EXIT_FAILURE;
+        return EXIT_SUCCESS;
         
     FILE *sav = fopen(emu->opt.sav_filename, "rb");
     if(NULL == sav)
