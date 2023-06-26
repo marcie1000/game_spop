@@ -584,7 +584,7 @@ void joypad_update(s_emu *emu)
 void pause_menu(s_emu *emu)
 {
     //wait for P key release
-    while(!emu->in.quit && (emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]))
+    while(!emu->in.quit && ((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E])))
     {
         update_event(emu);
         SDL_Delay(5);
