@@ -103,6 +103,7 @@ typedef struct s_opt{
     bool framebyframe;
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
+    char sav_filename[FILENAME_MAX];
     FILE *logfile;
 }s_opt;
 
@@ -268,22 +269,23 @@ typedef struct s_emu{
     s_cart cart;
 }s_emu;
 
-extern void flag_assign(bool cond, uint8_t *flag, uint8_t mask);
-extern void joypad_update(s_emu *emu);
-extern void update_event(s_emu *emu);
-extern int initialize_SDL(void);
-extern int initialize_emulator(s_emu *emu);
-extern void destroy_emulator(s_emu *emu, int status);
-extern void emulate(s_emu *emu);
-extern int load_boot_rom(s_cpu *cpu);
-extern int load_rom(s_emu *emu);
-extern int parse_start_options(s_opt *opt, int argc, char *argv[]);
-extern int parse_options_during_exec(s_opt *opt);
-extern int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning);
-extern void ask_breakpoint(s_opt *opt);
-extern void pause_menu(s_emu *emu);
-extern void log_instructions(s_emu *emu);
-extern int read_cartridge_header(s_emu *emu);
+void flag_assign(bool cond, uint8_t *flag, uint8_t mask);
+void joypad_update(s_emu *emu);
+void update_event(s_emu *emu);
+int initialize_SDL(void);
+int initialize_emulator(s_emu *emu);
+void destroy_emulator(s_emu *emu, int status);
+void emulate(s_emu *emu);
+int load_boot_rom(s_cpu *cpu);
+int load_rom(s_emu *emu);
+int parse_start_options(s_opt *opt, int argc, char *argv[]);
+int parse_options_during_exec(s_opt *opt);
+int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning);
+void ask_breakpoint(s_opt *opt);
+void pause_menu(s_emu *emu);
+void log_instructions(s_emu *emu);
+int read_cartridge_header(s_emu *emu);
+int load_sav(s_emu *emu);
 
 
 #endif //EMULATOR_H

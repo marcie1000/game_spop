@@ -209,6 +209,9 @@ int initialize_emulator(s_emu *emu)
     if(0 != load_rom(emu))
         return EXIT_FAILURE;
     
+    if(0 != load_sav(emu))
+        return EXIT_FAILURE;
+    
     if(emu->opt.bootrom)
     {
         if(0 != load_boot_rom(&emu->cpu))
@@ -246,6 +249,35 @@ int load_boot_rom(s_cpu *cpu)
     fclose(bootrom);
     
     printf("Boot rom loaded.\n");
+    
+    return EXIT_SUCCESS;
+}
+
+int load_sav(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_cart *cr = &emu->cart;
+    if(!emu->opt.rom_argument)
+        return EXIT_SUCCESS;
+    if(cr->sram_banks < 1)
+        return EXIT_FAILURE;
+        
+    FILE *sav = fopen(emu->opt.sav_filename, "rb");
+    if(NULL == sav)
+        return EXIT_SUCCESS;
+        
+    size_t ret = fread(&cpu->SRAM[0][0], sizeof(uint8_t[EXTERNAL_RAM_SIZE]), cr->sram_banks, sav);
+    
+    if(ret != (size_t)cr->sram_banks)
+    {
+        perror("Error reading sav: ");
+        fclose(sav);
+        return EXIT_FAILURE;
+    }
+    
+    fclose(sav);
+    
+    printf("sav loaded.\n");
     
     return EXIT_SUCCESS;
 }
@@ -292,9 +324,42 @@ int load_rom(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
+int save_sav(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_cart *cr = &emu->cart;
+    if(!emu->opt.rom_argument)
+        return EXIT_SUCCESS;
+        
+    if(cr->sram_banks < 1)
+        return EXIT_SUCCESS;
+        
+    FILE *sav = fopen(emu->opt.sav_filename, "wb");
+    if(NULL == sav)
+    {
+        perror("fopen: ");
+        return EXIT_FAILURE;
+    }
+    
+    size_t ret = fwrite(&cpu->SRAM[0][0], sizeof(uint8_t[EXTERNAL_RAM_SIZE]), cr->sram_banks, sav);
+    if(ret != (size_t)cr->sram_banks)
+    {
+        perror("Error writing sav: ");
+        fclose(sav);
+        return EXIT_FAILURE;
+    }
+    
+    fclose(sav);
+    return EXIT_SUCCESS;
+}
+
 void destroy_emulator(s_emu *emu, int status)
 {
     s_cpu *cpu = &emu->cpu;
+    
+    if(0 != save_sav(emu))
+        status = EXIT_FAILURE;
+    
     destroy_screen(&emu->screen);
     destroy_audio(emu);
     
@@ -478,7 +543,7 @@ void joypad_update(s_emu *emu)
                     &io->P1_JOYP,
                     0x08);
         //select
-        flag_assign(!in->key[SDL_SCANCODE_BACKSPACE],
+        flag_assign(!in->key[SDL_SCANCODE_RSHIFT],
                     &io->P1_JOYP,
                     0x04);
         //B
@@ -667,6 +732,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         {
             opt->rom_argument = true;
             snprintf(opt->rom_filename, FILENAME_MAX, "%s", argv[i]);
+            snprintf(opt->sav_filename, FILENAME_MAX, "%s.sav", argv[i]);
         }
     }
 

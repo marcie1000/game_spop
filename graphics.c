@@ -295,7 +295,7 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     if(!yflip)
         data_adress += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
     else
-        data_adress += 2 * (8 - (io->LY - cpu->OAM[sptd] + 16) - 8 * !is_second_tile);
+        data_adress += 2 * (7 - ((io->LY - cpu->OAM[sptd] + 16) - 8 * (!is_second_tile && scr->obj_size)));
     
     uint8_t bitmask;
     if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));

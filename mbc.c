@@ -35,8 +35,10 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
     {
         if(data == 0)
             mbc->RAM_enable = false;
-        else if(data == 0x0A)
+        else if(data == 0x0A && cr->sram_banks > 0)
+        {
             mbc->RAM_enable = true;
+        }
     }
     else if((adress >= 0x2000) && (adress <= 0x3FFF))
     {
