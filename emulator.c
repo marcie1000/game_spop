@@ -579,30 +579,27 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   ./game_spop <ROM file> [option]\n"
     "\n"
     "Options\n"
-    "   --audio, -a          = enable audio (expermimental).\n"
+    "   --audio,      -a     = disable audio.\n"
     "   --audio-log          = print various audio variables in a file at each \n"
     "                          sample.\n"
+    "   --bootrom,    -b     = launch the DMG bootrom before ROM. If no ROM is\n"
+    "                          provided, this option is always on. The file path must\n"
+    "                          be \"boot_rom/dmg_rom.bin\".\n"
     "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
-    "   --bypass-bootrom, -b = launch directly the ROM (only if a rom is passed\n"
-    "                          in argument). This option can only be provided at\n"
-    "                          launch.\n"
-    "   --debug-info, -i     = at every new instruction, prints the mnemonic, the\n"
-    "                          3 bytes object code, and all registers, PC, SP and\n"
-    "                          register F flags values in the console. Emulator is\n"
-    "                          much slower when this option is enabled.\n"
-    "   --gb-doctor, -d      = log cpu state into a file to be used with the Gameboy\n"
+    "   --debug-info, -i     = print cpu state at each instruction.\n"
+    "   --gb-doctor,  -d     = log cpu state into a file to be used with the Gameboy\n"
     "                          doctor tool (https://github.com/robert/gameboy-doctor), \n"
     "                          (only at launch). Emulator behavior might be inaccurate\n"
     "                          since LY reading always send 0x90 in this mode.\n"
     "   --log-instrs, -l     = log cpu state into a file for comparison with other\n"
     "                          emulators (only at launch).\n"
-    "   --step, -s           = enable step by step debugging. Emulator will stop\n"
+    "   --step,       -s     = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
-    "   --help, -h           = show this help message and exit.\n";
+    "   --help,       -h     = show this help message and exit.\n";
     
     const char help_msg_during_exec[] = 
     "Options\n"
@@ -610,27 +607,24 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
-    "   --debug-info, -i     = at every new instruction, prints the mnemonic, the\n"
-    "                          3 bytes object code, and all registers, PC, SP and\n"
-    "                          register F flags values in the console. Emulator is\n"
-    "                          much slower when this option is enabled.\n"
-    "   --step, -s           = enable step by step debugging. Emulator will stop\n"
+    "   --debug-info, -i     = print cpu state at each instruction.\n"
+    "   --step,       -s     = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
-    "   --help, -h           = show this help message and exit.\n";
+    "   --help,       -h     = show this help message and exit.\n";
     
     for(size_t i = 0 + is_program_beginning; i < argc; i++)
     {
         if(((0 == strcmp(argv[i], "--audio")) || (0 == strcmp(argv[i], "-a"))) && (is_program_beginning))
-            opt->audio = true;
+            opt->audio = false;
         else if((0 == strcmp(argv[i], "--audio-log")) && is_program_beginning)
         {
             opt->audio_log = true;
             opt->gb_doctor = false;
             opt->log_instrs = false;
         }
-        else if(((0 == strcmp(argv[i], "--bypass-bootrom")) || (0 == strcmp(argv[i], "-b"))) && (is_program_beginning))
-            opt->bootrom = false;
+        else if(((0 == strcmp(argv[i], "--bootrom")) || (0 == strcmp(argv[i], "-b"))) && (is_program_beginning))
+            opt->bootrom = true;
         else if((0 == strcmp(argv[i], "--debug-info")) || (0 == strcmp(argv[i], "-i")))
             opt->debug_info = !opt->debug_info;
         else if((0 == strcmp(argv[i], "--help")) || (0 == strcmp(argv[i], "-h")))
@@ -661,7 +655,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         {
             opt->step_by_step = !opt->step_by_step;
         }
-        else if(0 == strncmp(argv[i], "--", 2))
+        else if(0 == strncmp(argv[i], "--", 2) || ((argv[i][0] == '-') && (strlen(argv[i]) == 2)))
         {
             if(is_program_beginning)
                 fprintf(stderr, "Unknown argument '%s', abort.\n\n%s", argv[i], help_msg_beginning);
@@ -744,7 +738,7 @@ int parse_options_during_exec(s_opt *opt)
  */
 int parse_start_options(s_opt *opt, int argc, char *argv[])
 {
-    opt->bootrom = true;
+    opt->bootrom = false;
     opt->rom_argument = false;
     opt->debug_info = false;
     opt->breakpoints = false;
@@ -752,15 +746,15 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->gb_doctor = false;
     opt->log_instrs = false;
     opt->fast_forward = false;
-    opt->audio = false;
+    opt->audio = true;
     opt->audio_log = false;
     opt->newframe = false;
     opt->framebyframe = false;
-    if(argc <= 1)
-        return EXIT_SUCCESS;
-    
-    if(0 != parse_options(opt, (size_t) argc, argv, true))
-        return EXIT_FAILURE;
+    if(argc > 1)
+    {
+        if(0 != parse_options(opt, (size_t) argc, argv, true))
+            return EXIT_FAILURE;
+    }
     
     if(!opt->rom_argument && !opt->bootrom)
     {
