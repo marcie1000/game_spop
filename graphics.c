@@ -12,6 +12,7 @@ int initialize_screen(s_emu *emu)
     screen->r = NULL;
     screen->w = NULL;
     screen->scr = NULL;
+    screen->scrcpy = NULL;
     screen->pixel_w = 2;
     screen->pixel_h = 2;
     
@@ -34,14 +35,28 @@ int initialize_screen(s_emu *emu)
     }
 
     SDL_SetRenderTarget(screen->r, NULL);
+    SDL_SetRenderDrawBlendMode(screen->r, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(screen->r, 0, 0, 0, 255);
     
     screen->scr = SDL_CreateTexture(screen->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, PIX_BY_W, PIX_BY_H);
     if(NULL == screen->scr)
     {
-        fprintf(stderr, "Error SDL_CreateTexture: %s\n", SDL_GetError());
+        fprintf(stderr, "Error SDL_CreateTexture scr: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
+    
+    screen->scrcpy = SDL_CreateTexture(screen->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, PIX_BY_W, PIX_BY_H);
+    if(NULL == screen->scrcpy)
+    {
+        fprintf(stderr, "Error SDL_CreateTexture scrcpy: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+    if(0 != SDL_SetTextureAlphaMod(screen->scrcpy, 127))
+    {
+        fprintf(stderr, "Error SDL_SetTextureAlphaMod: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+    SDL_SetTextureBlendMode(screen->scrcpy, SDL_BLENDMODE_BLEND);
     
     if(0 != lockscreen(screen))
         return EXIT_FAILURE;
@@ -86,6 +101,8 @@ void destroy_screen(s_screen *screen)
         SDL_FreeFormat(screen->format);
     if(NULL != screen->scr)
         SDL_DestroyTexture(screen->scr);
+    if(NULL != screen->scrcpy)
+        SDL_DestroyTexture(screen->scrcpy);
     if(NULL != screen->r)
         SDL_DestroyRenderer(screen->r);
     if(NULL != screen->w)
@@ -155,7 +172,7 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     rel_bg_tilemap_adress += (Xtemp) / 8;
     if(rel_bg_tilemap_adress > 0x400)
     {
-        fprintf(stderr, "ERROR: adress is out of tile map bounds!\n");
+        fprintf(stderr, "ERROR: adress is out of bg tile map bounds!\n");
         return EXIT_FAILURE;
     }
     //number of the tile by its place in tile data
@@ -193,14 +210,67 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     return EXIT_SUCCESS;
 }
 
-int draw_window(s_emu *emu, UNUSED size_t i)
+int draw_window(s_emu *emu, size_t i, uint8_t *pixel)
 {
     s_screen *screen = &emu->screen;
+    s_cpu *cpu = &emu->cpu;
+    s_io *io = &cpu->io_reg;
+    
+    uint8_t Ytemp = io->LY + io->WY;
+    uint8_t Xtemp = io->WX - 7 + i;
+    
+    if(!screen->bg_win_enable_priority)
+        return EXIT_SUCCESS;
     if(!screen->window_enable)
         return EXIT_SUCCESS;
+    if(io->LY < io->WY)
+        return EXIT_SUCCESS;
         
-    fprintf(stderr, "WARNING: Attempt to draw window! (unimplemented)\n");
-    return EXIT_FAILURE;
+    uint16_t win_map_start_adress = screen->win_tile_map_area ? 0x1C00 : 0x1800;
+    uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x1000;
+    
+    //relative adress of the tile in the tile map
+    uint16_t rel_win_tilemap_adress = (Ytemp) / 8;
+    rel_win_tilemap_adress *= 32;
+    rel_win_tilemap_adress += (Xtemp) / 8;
+    if(rel_win_tilemap_adress > 0x400)
+    {
+        fprintf(stderr, "ERROR: adress is out of win tile map bounds!\n");
+        return EXIT_FAILURE;
+    }
+    //number of the tile by its place in tile data
+    int16_t tilenum = 0;
+    
+    assert((win_map_start_adress + rel_win_tilemap_adress) < VRAM_SIZE);
+    
+    if(screen->BG_win_tile_data_area)
+    {
+        tilenum = (uint8_t)cpu->VRAM[win_map_start_adress + rel_win_tilemap_adress];
+    }
+    else
+    {
+        tilenum = (int8_t) cpu->VRAM[win_map_start_adress + rel_win_tilemap_adress]; 
+    }
+
+    
+    // adress of the two bytes in tiles data we want to read (corresponding
+    // to the current scanline we are drawing)
+    uint16_t win_data_adress = bg_win_data_start_adr + 16 * tilenum;
+    win_data_adress += 2 * ((Ytemp) % 8);
+    
+    uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
+
+    assert((win_data_adress + 1) < VRAM_SIZE);
+
+    flag_assign((cpu->VRAM[win_data_adress] & bitmask),
+                 pixel, 0x01);
+    flag_assign((cpu->VRAM[win_data_adress + 1] & bitmask), 
+                 pixel, 0x02);
+    
+    //modify pixel color through the palette
+    *pixel = (io->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
+    
+    return EXIT_SUCCESS;
 }
 
 int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
@@ -222,13 +292,20 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
     
     uint16_t data_adress = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
-    data_adress += 2 * (io->LY - cpu->OAM[sptd] + 16 - 8 * is_second_tile);
-    if(yflip) data_adress = 8 - data_adress;
+    if(!yflip)
+        data_adress += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
+    else
+        data_adress += 2 * (8 - (io->LY - cpu->OAM[sptd] + 16) - 8 * !is_second_tile);
     
     uint8_t bitmask;
     if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));
     else bitmask = (0x01 << (i - cpu->OAM[sptd + 1] + 8));
-    
+//    
+//    if(data_adress + 1 > VRAM_SIZE)
+//    {
+//        
+//    }
+//    
     assert((data_adress + 1) < VRAM_SIZE);
     
     flag_assign((cpu->VRAM[data_adress] & bitmask),
@@ -339,7 +416,7 @@ int draw_scanline(s_emu *emu)
         uint8_t pixel = 0;
         if(0 != draw_background(emu, i, &pixel))
             return EXIT_FAILURE;
-        if(0 != draw_window(emu, i))
+        if(0 != draw_window(emu, i, &pixel))
             return EXIT_FAILURE;
         if(0 != draw_OBJ(emu, i, &pixel, sprites_to_draw, nb_sptd))
             return EXIT_FAILURE;
@@ -448,7 +525,14 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     SDL_UnlockTexture(screen->scr);
     SDL_RenderClear(screen->r);
     SDL_RenderCopy(screen->r, screen->scr, NULL, screen->render_dst_ptr);
+    SDL_RenderCopy(screen->r, screen->scrcpy, NULL, screen->render_dst_ptr);
     SDL_RenderPresent(screen->r);
+    
+    //screen copy
+    SDL_SetRenderTarget(screen->r, screen->scrcpy);
+    SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
+    SDL_SetRenderTarget(screen->r, NULL);
+    
     if(0 != lockscreen(screen))
         destroy_emulator(emu, EXIT_FAILURE);
 

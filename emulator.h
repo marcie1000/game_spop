@@ -159,6 +159,7 @@ typedef struct s_screen{
     SDL_Window *w;
     uint32_t pixel_h, pixel_w;
     SDL_Texture *scr;
+    SDL_Texture *scrcpy;
     int pitch;
     Uint32 *pixels;
     SDL_PixelFormat *format;

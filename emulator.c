@@ -482,11 +482,11 @@ void joypad_update(s_emu *emu)
                     &io->P1_JOYP,
                     0x04);
         //B
-        flag_assign(!in->key[SDL_SCANCODE_L],
+        flag_assign(!in->key[SDL_SCANCODE_M],
                     &io->P1_JOYP,
                     0x02);
         //A
-        flag_assign(!in->key[SDL_SCANCODE_M],
+        flag_assign(!in->key[SDL_SCANCODE_L],
                     &io->P1_JOYP,
                     0x01);
     }
