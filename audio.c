@@ -77,7 +77,7 @@ void volume_sweep(s_audio *au, int *volume, int ch)
     
     if(au->ch_vol_sweep_pace[ch] == 0)
     {
-        *volume = au->ch_init_volume[ch];
+        //*volume = au->ch_init_volume[ch];
         old_vol_sweep_timer[ch] = au->ch_vol_sweep_timer[ch];
         return;
     }
@@ -89,7 +89,7 @@ void volume_sweep(s_audio *au, int *volume, int ch)
         if(au->ch_vol_sweep_counter[ch] < 15)
             au->ch_vol_sweep_counter[ch]++;
     }
-    *volume = au->ch_init_volume[ch];
+    //*volume = au->ch_init_volume[ch];
     if(!au->ch_envl_dir[ch])
         *volume -= au->ch_vol_sweep_counter[ch];
     else
@@ -128,12 +128,14 @@ void fill_square_ch_stream(s_emu *emu, int ch)
     //the samples_played value considered as the beginning of the first period of the
     //current buffer, after the last period of the previous buffer is ended.
     static uint16_t start_shift[2] = {0, 0};
+    static int old_volume[2] = {0, 0};
     
     if(au->ch_reset[ch])
     {
         au->ch_reset[ch] = false;
         period_ended[ch] = true;
         start_shift[ch] = 0;
+        old_volume[ch] = au->ch_init_volume[ch];
     }
     
     if((au->samples_played == 0) && !period_ended[ch])
@@ -141,8 +143,10 @@ void fill_square_ch_stream(s_emu *emu, int ch)
     
     assert(au->ch_duty_ratio[ch] < 4);
     
-    int volume;
+    int volume = au->ch_init_volume[ch];
     volume_sweep(au, &volume, ch);
+    if(!period_ended[ch])
+        volume = old_volume[ch];
     
     uint64_t duty_change, duty_reset;
     //after how many samples a complete period is elapsed
@@ -171,10 +175,10 @@ void fill_square_ch_stream(s_emu *emu, int ch)
         //fills the data (left and right)
         //0.5 volume is to avoid saturation
         au->fstream[au->samples_played    ] += (float)volume * 1/15 * au->ch_l[ch] * 
-                                               1/8 * (au->l_output_vol + 1) * 0.5  ;
+                                               1/8 * (au->l_output_vol + 1) * 0.45  ;
                                                
         au->fstream[au->samples_played + 1] += (float)volume * 1/15 * au->ch_r[ch] * 
-                                               1/8 * (au->r_output_vol + 1) * 0.5  ;
+                                               1/8 * (au->r_output_vol + 1) * 0.45  ;
     }
     
     //debug
@@ -184,6 +188,8 @@ void fill_square_ch_stream(s_emu *emu, int ch)
         au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], period_counter,
         new_period_samples_played, duty, au->samples_played);
     }
+
+    old_volume[ch] = volume;
 
     if(!must_finish_period[ch])
     {
@@ -258,11 +264,11 @@ void fill_ch3_stream(s_emu *emu)
 
     au->fstream[au->samples_played    ] += (float)((io->wave_RAM[au->ch3_samples_counter / 2] &
                                            (0xF << nibble)) >> nibble) * 1/15 * au->ch_l[2]   * 
-                                           1/8 * (au->l_output_vol + 1) * output_level * 0.5  ;
+                                           1/8 * (au->l_output_vol + 1) * output_level * 0.45  ;
                                            
     au->fstream[au->samples_played + 1] += (float)((io->wave_RAM[au->ch3_samples_counter / 2] &
                                            (0xF << nibble)) >> nibble) * 1/15 * au->ch_r[2]   * 
-                                           1/8 * (au->r_output_vol + 1) * output_level * 0.5  ;
+                                           1/8 * (au->r_output_vol + 1) * output_level * 0.45  ;
     
     local_samples_played += 2;
 }
