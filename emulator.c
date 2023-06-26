@@ -485,7 +485,8 @@ void emulate(s_emu *emu)
             resize_screen(&emu->screen);
             emu->in.resize = SDL_FALSE;
         }
-        if(emu->in.key[SDL_SCANCODE_P] || (emu->opt.framebyframe && emu->opt.newframe))
+        if((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]) || 
+           (emu->opt.framebyframe && emu->opt.newframe))
         {
             pause_menu(emu);
         }
@@ -583,7 +584,7 @@ void joypad_update(s_emu *emu)
 void pause_menu(s_emu *emu)
 {
     //wait for P key release
-    while(!emu->in.quit && emu->in.key[SDL_SCANCODE_P])
+    while(!emu->in.quit && (emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]))
     {
         update_event(emu);
         SDL_Delay(5);
@@ -600,23 +601,23 @@ void pause_menu(s_emu *emu)
     while(!emu->in.quit)
     {
         update_event(emu);
-        if(emu->in.key[SDL_SCANCODE_P])
+        if((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]))
         {
-            while(emu->in.key[SDL_SCANCODE_P])
+            while((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]))
             {
                 SDL_Delay(5);
                 update_event(emu);
             }
             return;
         }
-        if(emu->in.key[SDL_SCANCODE_O])
+        if(emu->in.key[SDL_SCANCODE_O] || emu->in.key[SDL_SCANCODE_R])
         {
             if(0 == parse_options_during_exec(&emu->opt))
                 return;
         }
-        if(emu->in.key[SDL_SCANCODE_N])
+        if(emu->in.key[SDL_SCANCODE_N] || emu->in.key[SDL_SCANCODE_SEMICOLON])
         {
-            while(emu->in.key[SDL_SCANCODE_N])
+            while(emu->in.key[SDL_SCANCODE_N] || emu->in.key[SDL_SCANCODE_SEMICOLON])
             {
                 SDL_Delay(5);
                 update_event(emu);
