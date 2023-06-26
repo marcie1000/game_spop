@@ -73,7 +73,7 @@ START     | Return     | Return     | Return
 SELECT    | RShift     | RShift     | RShift
 A         | L          | L          | R
 B         | M          | ,          | Q
-Pause emulation | P | P | J
-Show an option menu (during pause) | O | O | L
-Next frame (during pause) | N | N | '
+Pause emulation | P | P | P *(or J)*
+Show an option menu (during pause) | O | O | O *(or L)*
+Next frame (during pause) | N | N | N *(or ')*
 Toogle fast forward | SPACE | SPACE | SPACE
