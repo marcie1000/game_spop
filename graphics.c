@@ -8,105 +8,105 @@
 
 int initialize_screen(s_emu *emu)
 {
-    s_screen *screen = &emu->screen;
-    screen->r = NULL;
-    screen->w = NULL;
-    screen->scr = NULL;
-    screen->scrcpy = NULL;
-    screen->pixel_w = 2;
-    screen->pixel_h = 2;
+    s_screen *scr = &emu->scr;
+    scr->r = NULL;
+    scr->w = NULL;
+    scr->scr = NULL;
+    scr->scrcpy = NULL;
+    scr->pixel_w = 2;
+    scr->pixel_h = 2;
     
-    screen->window_maximized = false;
+    scr->window_maximized = false;
     
-    screen->w = SDL_CreateWindow("Game_spop", SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED, PIX_BY_W * screen->pixel_w, PIX_BY_H * screen->pixel_h,
+    scr->w = SDL_CreateWindow("Game_spop", SDL_WINDOWPOS_CENTERED,
+                                 SDL_WINDOWPOS_CENTERED, PIX_BY_W * scr->pixel_w, PIX_BY_H * scr->pixel_h,
                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if(screen->w == NULL)
+    if(scr->w == NULL)
     {
         fprintf(stderr, "Error SDL_CreateWindow: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
     
-    screen->r = SDL_CreateRenderer(screen->w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if(screen->r == NULL)
+    scr->r = SDL_CreateRenderer(scr->w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if(scr->r == NULL)
     {
         fprintf(stderr, "Error SDL_CreateRenderer: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
 
-    SDL_SetRenderTarget(screen->r, NULL);
-    SDL_SetRenderDrawBlendMode(screen->r, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(screen->r, 0, 0, 0, 255);
+    SDL_SetRenderTarget(scr->r, NULL);
+    SDL_SetRenderDrawBlendMode(scr->r, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(scr->r, 0, 0, 0, 255);
     
-    screen->scr = SDL_CreateTexture(screen->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, PIX_BY_W, PIX_BY_H);
-    if(NULL == screen->scr)
+    scr->scr = SDL_CreateTexture(scr->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, PIX_BY_W, PIX_BY_H);
+    if(NULL == scr->scr)
     {
         fprintf(stderr, "Error SDL_CreateTexture scr: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
     
-    screen->scrcpy = SDL_CreateTexture(screen->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, PIX_BY_W, PIX_BY_H);
-    if(NULL == screen->scrcpy)
+    scr->scrcpy = SDL_CreateTexture(scr->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, PIX_BY_W, PIX_BY_H);
+    if(NULL == scr->scrcpy)
     {
         fprintf(stderr, "Error SDL_CreateTexture scrcpy: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
-    if(0 != SDL_SetTextureAlphaMod(screen->scrcpy, 127))
+    if(0 != SDL_SetTextureAlphaMod(scr->scrcpy, 127))
     {
         fprintf(stderr, "Error SDL_SetTextureAlphaMod: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
-    SDL_SetTextureBlendMode(screen->scrcpy, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureBlendMode(scr->scrcpy, SDL_BLENDMODE_BLEND);
     
-    if(0 != lockscreen(screen))
+    if(0 != lockscreen(scr))
         return EXIT_FAILURE;
     
-    screen->format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    if(NULL == screen->format)
+    scr->format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    if(NULL == scr->format)
     {
         fprintf(stderr, "Error SDL_AllocFormat: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
     
-    emu->cpu.io_reg.STAT = 2;
-    screen->LCD_PPU_enable = false;
-    screen->win_tile_map_area = false;
-    screen->window_enable = false;
-    screen->BG_win_tile_data_area = false;
-    screen->BG_tile_map_area = false;
-    screen->obj_size = false;
-    screen->obj_enable = false;
-    screen->bg_win_enable_priority = false;
+    emu->cpu.io.STAT = 2;
+    scr->LCD_PPU_enable = false;
+    scr->win_tile_map_area = false;
+    scr->window_enable = false;
+    scr->BG_win_tile_data_area = false;
+    scr->BG_tile_map_area = false;
+    scr->obj_size = false;
+    scr->obj_enable = false;
+    scr->bg_win_enable_priority = false;
     
     return EXIT_SUCCESS;
 }
 
-int lockscreen(s_screen *screen)
+int lockscreen(s_screen *scr)
 {
     void *tmp;
     
-    if(0 != SDL_LockTexture(screen->scr, NULL, &tmp, &screen->pitch))
+    if(0 != SDL_LockTexture(scr->scr, NULL, &tmp, &scr->pitch))
     {
         fprintf(stderr, "Error SDL_LockTexture: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
     
-    screen->pixels = tmp;
+    scr->pixels = tmp;
     return EXIT_SUCCESS;
 }
 
-void destroy_screen(s_screen *screen)
+void destroy_screen(s_screen *scr)
 {
-    if(NULL != screen->format)
-        SDL_FreeFormat(screen->format);
-    if(NULL != screen->scr)
-        SDL_DestroyTexture(screen->scr);
-    if(NULL != screen->scrcpy)
-        SDL_DestroyTexture(screen->scrcpy);
-    if(NULL != screen->r)
-        SDL_DestroyRenderer(screen->r);
-    if(NULL != screen->w)
-        SDL_DestroyWindow(screen->w);
+    if(NULL != scr->format)
+        SDL_FreeFormat(scr->format);
+    if(NULL != scr->scr)
+        SDL_DestroyTexture(scr->scr);
+    if(NULL != scr->scrcpy)
+        SDL_DestroyTexture(scr->scrcpy);
+    if(NULL != scr->r)
+        SDL_DestroyRenderer(scr->r);
+    if(NULL != scr->w)
+        SDL_DestroyWindow(scr->w);
 }
 
 void resize_screen(s_screen *s)
@@ -153,18 +153,18 @@ void resize_screen(s_screen *s)
 
 int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
 {
-    s_screen *screen = &emu->screen;
+    s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
-    uint8_t Ytemp = io_reg->LY + io_reg->SCY;
-    uint8_t Xtemp = io_reg->SCX + i;
+    uint8_t Ytemp = io->LY + io->SCY;
+    uint8_t Xtemp = io->SCX + i;
     
-    if(!screen->bg_win_enable_priority)
+    if(!scr->bg_win_enable_priority)
         return EXIT_SUCCESS;
         
-    uint16_t bg_map_start_adress = screen->BG_tile_map_area ? 0x1C00 : 0x1800;
-    uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x1000;
+    uint16_t bg_map_start_adress = scr->BG_tile_map_area ? 0x1C00 : 0x1800;
+    uint16_t bg_win_data_start_adr = scr->BG_win_tile_data_area ? 0 : 0x1000;
     
     //relative adress of the tile in the tile map
     uint16_t rel_bg_tilemap_adress = (Ytemp) / 8;
@@ -180,7 +180,7 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     
     assert((bg_map_start_adress + rel_bg_tilemap_adress) < VRAM_SIZE);
     
-    if(screen->BG_win_tile_data_area)
+    if(scr->BG_win_tile_data_area)
     {
         tilenum = (uint8_t)cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress];
     }
@@ -205,29 +205,29 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
                  pixel, 0x02);
     
     //modify pixel color through the palette
-    *pixel = (io_reg->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
+    *pixel = (io->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
     
     return EXIT_SUCCESS;
 }
 
 int draw_window(s_emu *emu, size_t i, uint8_t *pixel)
 {
-    s_screen *screen = &emu->screen;
+    s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
     uint8_t Ytemp = io->LY + io->WY;
     uint8_t Xtemp = io->WX - 7 + i;
     
-    if(!screen->bg_win_enable_priority)
+    if(!scr->bg_win_enable_priority)
         return EXIT_SUCCESS;
-    if(!screen->window_enable)
+    if(!scr->window_enable)
         return EXIT_SUCCESS;
     if(io->LY < io->WY)
         return EXIT_SUCCESS;
         
-    uint16_t win_map_start_adress = screen->win_tile_map_area ? 0x1C00 : 0x1800;
-    uint16_t bg_win_data_start_adr = screen->BG_win_tile_data_area ? 0 : 0x1000;
+    uint16_t win_map_start_adress = scr->win_tile_map_area ? 0x1C00 : 0x1800;
+    uint16_t bg_win_data_start_adr = scr->BG_win_tile_data_area ? 0 : 0x1000;
     
     //relative adress of the tile in the tile map
     uint16_t rel_win_tilemap_adress = (Ytemp) / 8;
@@ -243,7 +243,7 @@ int draw_window(s_emu *emu, size_t i, uint8_t *pixel)
     
     assert((win_map_start_adress + rel_win_tilemap_adress) < VRAM_SIZE);
     
-    if(screen->BG_win_tile_data_area)
+    if(scr->BG_win_tile_data_area)
     {
         tilenum = (uint8_t)cpu->VRAM[win_map_start_adress + rel_win_tilemap_adress];
     }
@@ -277,9 +277,9 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
 {
     assert((sptd + 3) < OAM_SIZE);
     
-    s_screen *scr = &emu->screen;
+    s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
     uint8_t pix_tmp = 0;
     
@@ -333,7 +333,7 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
 
 int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
 {
-    s_screen *scr = &emu->screen;
+    s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
     if(!scr->obj_enable)
         return EXIT_SUCCESS;
@@ -361,9 +361,9 @@ int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCAN
  */
 void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE], uint8_t *nb_sptd)
 {
-    s_screen *scr = &emu->screen;
+    s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
+    s_io *io = &cpu->io;
     if(!scr->obj_enable)
         return;
     
@@ -384,21 +384,21 @@ void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE], uint8_t
 
 int draw_scanline(s_emu *emu)
 {
-    //s_screen *screen = &emu->screen;
+    //s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
-    s_screen *screen = &emu->screen;
+    s_io *io = &cpu->io;
+    s_screen *scr = &emu->scr;
     
-    if(io_reg->LY >= 144)
+    if(io->LY >= 144)
         return EXIT_SUCCESS;
 
-    if(!screen->LCD_PPU_enable)
+    if(!scr->LCD_PPU_enable)
     {
         for(size_t i = 0; i < PIX_BY_W; i++)
         {
             //draw blank line
-            screen->pixels[io_reg->LY * PIX_BY_W + i] = SDL_MapRGBA(
-                screen->format, 255, 255, 255, 255
+            scr->pixels[io->LY * PIX_BY_W + i] = SDL_MapRGBA(
+                scr->format, 255, 255, 255, 255
             );
         }
         return EXIT_SUCCESS;
@@ -424,8 +424,8 @@ int draw_scanline(s_emu *emu)
         //convert to 4 possible grayscales [0, 255] values
         pixel = 255 - 85 * pixel;
         //draw in texture
-        screen->pixels[io_reg->LY * PIX_BY_W + i] = SDL_MapRGBA(
-            screen->format, pixel, pixel, pixel, 255
+        scr->pixels[io->LY * PIX_BY_W + i] = SDL_MapRGBA(
+            scr->format, pixel, pixel, pixel, 255
         );
     }
     
@@ -435,49 +435,49 @@ int draw_scanline(s_emu *emu)
 void ppu_modes_and_scanlines(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
-    s_screen *screen = &emu->screen;
+    s_io *io = &cpu->io;
+    s_screen *scr = &emu->scr;
     
-    io_reg->STAT &= ~0x03;
+    io->STAT &= ~0x03;
     
     if(cpu->t_cycles >= (CPU_FREQ / GB_VSNC / 154))
     {
         cpu->t_cycles -= (CPU_FREQ / GB_VSNC / 154);
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
-        io_reg->STAT |= (screen->LCD_PPU_enable) ? 2 : 1;    
+        io->STAT |= (scr->LCD_PPU_enable) ? 2 : 1;    
         if(0 != draw_scanline(emu))
             destroy_emulator(emu, EXIT_FAILURE);
-        if(screen->LCD_PPU_enable)
-            cpu->io_reg.LY++;
+        if(scr->LCD_PPU_enable)
+            cpu->io.LY++;
         return;
     }
     
-    if(!screen->LCD_PPU_enable)
+    if(!scr->LCD_PPU_enable)
     {
 //        //vblank
-//        io_reg->STAT |= 1;
-        cpu->io_reg.LY = 0;
+//        io->STAT |= 1;
+        cpu->io.LY = 0;
         return;
     }
     
     if(cpu->t_cycles < PPU_MODE2)
     {
         //Searching OAM for OBJs whose Y coordinate overlap this line
-        io_reg->STAT |= 2;
+        io->STAT |= 2;
         return;
     }
     
     if(cpu->t_cycles < PPU_MODE3 + PPU_MODE2)
     {
         //Reading OAM and VRAM to generate the picture
-        io_reg->STAT |= 3;
+        io->STAT |= 3;
         return;
     }
     
     if(cpu->t_cycles < PPU_MODE0 + PPU_MODE3 + PPU_MODE2)
     {
         //Nothing (HBlank)
-        io_reg->STAT |= 0;
+        io->STAT |= 0;
         return;
     }
 }
@@ -485,28 +485,28 @@ void ppu_modes_and_scanlines(s_emu *emu)
 void render_frame_and_vblank_if_needed(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_screen *screen = &emu->screen;
-    s_io *io_reg = &cpu->io_reg;
+    s_screen *scr = &emu->scr;
+    s_io *io = &cpu->io;
     
-    if(io_reg->LY < 144)
+    if(io->LY < 144)
     {
-        //io_reg->IF &= ~0x01;
-        screen->old_STAT = io_reg->STAT;
+        //io->IF &= ~0x01;
+        scr->old_STAT = io->STAT;
         return;
     }
     
     //set VBlank interrupt flag 
-    if((screen->old_STAT & 0x03) != 1)
+    if((scr->old_STAT & 0x03) != 1)
     {
-        io_reg->IF |= 0x01;
+        io->IF |= 0x01;
     }
     
-    io_reg->STAT &= ~0x03;
-    io_reg->STAT |= 1;
+    io->STAT &= ~0x03;
+    io->STAT |= 1;
     
-    screen->old_STAT = io_reg->STAT;
+    scr->old_STAT = io->STAT;
     
-    if(cpu->io_reg.LY < 154)
+    if(cpu->io.LY < 154)
         return;
         
 //    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
@@ -515,25 +515,25 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
 //        SDL_Delay(17 - elapsed);
 //        elapsed = 17;
 //    }
-    if((emu->audio.queues_since_last_frame < QUEUES_PER_FRAME) && 
-      (!emu->opt.fast_forward) && emu->opt.audio)
+    if((emu->au.queues_since_last_frame < QUEUES_PER_FRAME) && 
+      (!emu->opt.fast_forward) && emu->opt.audio && emu->au.apu_enable)
         return;
         
-    emu->audio.queues_since_last_frame = 0;
+    emu->au.queues_since_last_frame = 0;
     emu->opt.newframe = true;
 
-    SDL_UnlockTexture(screen->scr);
-    SDL_RenderClear(screen->r);
-    SDL_RenderCopy(screen->r, screen->scr, NULL, screen->render_dst_ptr);
-    SDL_RenderCopy(screen->r, screen->scrcpy, NULL, screen->render_dst_ptr);
-    SDL_RenderPresent(screen->r);
+    SDL_UnlockTexture(scr->scr);
+    SDL_RenderClear(scr->r);
+    SDL_RenderCopy(scr->r, scr->scr, NULL, scr->render_dst_ptr);
+    SDL_RenderCopy(scr->r, scr->scrcpy, NULL, scr->render_dst_ptr);
+    SDL_RenderPresent(scr->r);
     
     //screen copy
-    SDL_SetRenderTarget(screen->r, screen->scrcpy);
-    SDL_RenderCopy(screen->r, screen->scr, NULL, NULL);
-    SDL_SetRenderTarget(screen->r, NULL);
+    SDL_SetRenderTarget(scr->r, scr->scrcpy);
+    SDL_RenderCopy(scr->r, scr->scr, NULL, NULL);
+    SDL_SetRenderTarget(scr->r, NULL);
     
-    if(0 != lockscreen(screen))
+    if(0 != lockscreen(scr))
         destroy_emulator(emu, EXIT_FAILURE);
 
 //    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
@@ -554,56 +554,56 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
         
         char tmp[25] = "";
         snprintf(tmp, 25, "game_spop %.2f fps", fps);
-        SDL_SetWindowTitle(screen->w, tmp);
+        SDL_SetWindowTitle(scr->w, tmp);
     }
     
-    cpu->io_reg.LY = 0;
+    cpu->io.LY = 0;
     //clear VBlank flag
-    //io_reg->IF &= (~0x01);
+    //io->IF &= (~0x01);
 }
 
 int DMA_transfer(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
-    if(io_reg->DMA > 0xDF)
+    if(io->DMA > 0xDF)
     {
-        fprintf(stderr, "ERROR: DMA value exceed 0xDF! (DMA = 0x%02X)\n", io_reg->DMA);
+        fprintf(stderr, "ERROR: DMA value exceed 0xDF! (DMA = 0x%02X)\n", io->DMA);
         return EXIT_FAILURE;
     }
     
     //ROM bank 00
-    if(io_reg->DMA <= 0x3F)
+    if(io->DMA <= 0x3F)
     {
-        memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_low_rom_bk][io_reg->DMA << 8], OAM_SIZE);
+        memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_low_rom_bk][io->DMA << 8], OAM_SIZE);
     }
     
     //ROM bank 01
-    else if(io_reg->DMA <= 0x7F)
+    else if(io->DMA <= 0x7F)
     {
-        uint16_t start_adress = (io_reg->DMA << 8) - 0x4000;
+        uint16_t start_adress = (io->DMA << 8) - 0x4000;
         memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_hi_rom_bk][start_adress], OAM_SIZE);
     }
     
     //VRAM
-    else if(io_reg->DMA <= 0x9F)
+    else if(io->DMA <= 0x9F)
     {
-        uint16_t start_adress = (io_reg->DMA << 8) - 0x8000;
+        uint16_t start_adress = (io->DMA << 8) - 0x8000;
         memcpy(cpu->OAM, &cpu->VRAM[start_adress], OAM_SIZE);
     }
     
     //external RAM
-    else if(io_reg->DMA <= 0xBF)
+    else if(io->DMA <= 0xBF)
     {
-        uint16_t start_adress = (io_reg->DMA << 8) - 0xA000;
+        uint16_t start_adress = (io->DMA << 8) - 0xA000;
         memcpy(cpu->OAM, &cpu->SRAM[cpu->current_sram_bk][start_adress], OAM_SIZE);
     }
     
     //external WRAM
-    else if(io_reg->DMA <= 0xDF)
+    else if(io->DMA <= 0xDF)
     {
-        uint16_t start_adress = (io_reg->DMA << 8) - 0xC000;
+        uint16_t start_adress = (io->DMA << 8) - 0xC000;
         memcpy(cpu->OAM, &cpu->WRAM[start_adress], OAM_SIZE);
     }
     

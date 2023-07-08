@@ -8,7 +8,7 @@
 void LCD_STAT_interrupt_flags(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
     //io->IF &= ~0x02;
     static uint8_t oldSTAT = 0;
@@ -50,9 +50,9 @@ void LCD_STAT_interrupt_flags(s_emu *emu)
 void interrupt_handler(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
-    if(!io_reg->IME && !cpu->in_halt)
+    if(!io->IME && !cpu->in_halt)
         return;
     
 //    cpu->quit_halt = false;
@@ -61,21 +61,21 @@ void interrupt_handler(s_emu *emu)
     {
         //check for each interrupt type
         //if not enabled
-        if(!(io_reg->IE & (0x01 << i)))
+        if(!(io->IE & (0x01 << i)))
             continue;
         //if no flag
-        if(!(io_reg->IF & (0x01 << i)))
+        if(!(io->IF & (0x01 << i)))
             continue;
         
         if(cpu->in_halt)
             cpu->quit_halt = true;
         
-        if(!io_reg->IME)
+        if(!io->IME)
             return;
         //disables interrupt when entering in interrupt routine
-        io_reg->IME = false;
+        io->IME = false;
         //disables the IF flag
-        io_reg->IF &= ~(0x01 << i);
+        io->IF &= ~(0x01 << i);
         //push PC into stack
         cpu->sp--;
         if(0 != write_memory(emu, cpu->sp, (cpu->pc & 0xff00) >> 8))
@@ -97,14 +97,14 @@ void interrupt_handler(s_emu *emu)
 void timer_handle(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io_reg = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
 //    static Uint64 init_time = 0;
     static uint16_t old_timer = 0;
 //    static uint8_t old_TIMA = 0;
     static bool overflow = false;
     //if not timer enable
-    if(!(io_reg->TAC & 0x04))
+    if(!(io->TAC & 0x04))
     {
         //cpu->timer_clock = 0;
         old_timer = cpu->timer_clock;
@@ -112,7 +112,7 @@ void timer_handle(s_emu *emu)
     }
         
     unsigned clock_div;
-    switch(io_reg->TAC & 0x03)
+    switch(io->TAC & 0x03)
     {
         case 0:
             clock_div = 1024;
@@ -135,20 +135,20 @@ void timer_handle(s_emu *emu)
 //    if(overflow)
 //    {
 //        overflow = false;
-//        io_reg->TIMA = io_reg->TMA;
-//        io_reg->IF |= 0x04;
+//        io->TIMA = io->TMA;
+//        io->IF |= 0x04;
 //    }
     
     
 //    if((old_timer & (clock_div >> 1)) && !(cpu->timer_clock & (clock_div >> 1)))
 //    {
-//        if(io_reg->TIMA == 0xFF)
+//        if(io->TIMA == 0xFF)
 //        {
-//            io_reg->TIMA = 0;
+//            io->TIMA = 0;
 //            overflow = true;
 //        }
 //        else
-//            io_reg->TIMA++;
+//            io->TIMA++;
 ////        cpu->timer_clock -= clock_div;
 //    }
     
@@ -159,26 +159,26 @@ void timer_handle(s_emu *emu)
         if(overflow && (i == timer_when_overflow + 4))
         {
             overflow = false;
-            io_reg->TIMA = io_reg->TMA;
-            io_reg->IF |= 0x04;
+            io->TIMA = io->TMA;
+            io->IF |= 0x04;
         }
         
         if((prev & (clock_div >> 1)) && !(i & (clock_div >> 1)))
         {
-            if(io_reg->TIMA == 0xFF)
+            if(io->TIMA == 0xFF)
             {
-                io_reg->TIMA = 0;
+                io->TIMA = 0;
                 overflow = true;
                 timer_when_overflow = i;
             }
             else
-                io_reg->TIMA++;
+                io->TIMA++;
         }
         prev = i;
     }
     
     old_timer = cpu->timer_clock;
-//    old_TIMA  = io_reg->TIMA;
+//    old_TIMA  = io->TIMA;
 }
 
 

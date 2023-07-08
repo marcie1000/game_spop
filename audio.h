@@ -12,6 +12,9 @@ void div_apu_update(s_audio *au);
 void wavelength_sweep(s_audio *au, s_io *io);
 void volume_sweep(s_audio *au, int *volume, int ch);
 void update_ch3_state(s_audio *au, s_io *io);
+void update_ch4_state(s_audio *au, s_io *io);
+void fill_noise_channel_stream(s_emu *emu);
+void fill_ch3_stream(s_emu *emu);
 
 #endif //AUDIO_H
 

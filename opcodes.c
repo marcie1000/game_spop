@@ -2804,7 +2804,7 @@ void RETI(void *arg, uint32_t op)
     cpu->pc |= data << 8;
     cpu->sp++;
     
-    cpu->io_reg.IME = true;
+    cpu->io.IME = true;
     
     //take the pc incrementation in the interpret function into account
     cpu->pc -= 1;
@@ -3081,7 +3081,7 @@ void DI(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->io_reg.IME = false;
+    cpu->io.IME = false;
     cpu->t_cycles += emu->timing_table[0][(op & 0x00FF0000) >> 16]; //4;
 }
 //void dont_exist(void *arg, uint32_t op) [0][(op & 0x00FF0000) >> 16]
@@ -3175,7 +3175,7 @@ void EI(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    cpu->io_reg.IME = true;
+    cpu->io.IME = true;
     cpu->t_cycles += emu->timing_table[0][(op & 0x00FF0000) >> 16]; //4;
 }
 //void dont_exist(void *arg, uint32_t op) [0][(op & 0x00FF0000) >> 16]

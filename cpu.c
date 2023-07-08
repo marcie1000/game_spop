@@ -11,12 +11,12 @@
 #include "audio.h"
 #include "mbc.h"
 
-int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
+int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
-    s_screen *screen = &emu->screen;
-    s_audio *au = &emu->audio;
+    s_io *io = &cpu->io;
+    s_screen *scr = &emu->scr;
+    s_audio *au = &emu->au;
     
     switch(adress)
     {
@@ -113,15 +113,24 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF20:
             io->NR41 = data;
+            au->ch_init_len_timer[3] = data & 0x1F;
             break;
         case 0xFF21:
             io->NR42 = data;
+            au->ch_init_volume[3] = (data & 0xF0) >> 4;
+            au->ch_envl_dir[3] = data & 0x08;
+            au->ch_vol_sweep_pace[3] = data & 0x07;
             break;
         case 0xFF22:
             io->NR43 = data;
+            au->ch4_clock_shift = (data & 0xF0) >> 4;
+            au->ch4_lfsr_w      =  data & 0x08;
+            au->ch4_clock_div   =  data & 0x07;
             break;
         case 0xFF23:
             io->NR44 = data;
+            au->ch_trigger[3] = data & 0x80;
+            au->ch_sound_len_enable[3] = data & 0x40;
             break;
         case 0xFF24:
             io->NR50 = data;
@@ -138,9 +147,12 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             au->ch_r[1] = (io->NR51 & 0x02);
             au->ch_l[2] = (io->NR51 & 0x40);
             au->ch_r[2] = (io->NR51 & 0x04);
+            au->ch_l[3] = (io->NR51 & 0x80);
+            au->ch_r[3] = (io->NR51 & 0x08);
             break;
         case 0xFF26:
             flag_assign(data & 0x80, &io->NR52, 0x80);
+            au->apu_enable = data & 0x80;
             break;
         case 0xFF30:
         case 0xFF31:
@@ -164,14 +176,14 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         {
             io->LCDC = data;
                 
-            screen->LCD_PPU_enable          = io->LCDC & 0x80;
-            screen->win_tile_map_area       = io->LCDC & 0x40;
-            screen->window_enable           = io->LCDC & 0x20;
-            screen->BG_win_tile_data_area   = io->LCDC & 0x10;
-            screen->BG_tile_map_area        = io->LCDC & 0x08;
-            screen->obj_size                = io->LCDC & 0x04;
-            screen->obj_enable              = io->LCDC & 0x02;
-            screen->bg_win_enable_priority  = io->LCDC & 0x01;
+            scr->LCD_PPU_enable          = io->LCDC & 0x80;
+            scr->win_tile_map_area       = io->LCDC & 0x40;
+            scr->window_enable           = io->LCDC & 0x20;
+            scr->BG_win_tile_data_area   = io->LCDC & 0x10;
+            scr->BG_tile_map_area        = io->LCDC & 0x08;
+            scr->obj_size                = io->LCDC & 0x04;
+            scr->obj_enable              = io->LCDC & 0x02;
+            scr->bg_win_enable_priority  = io->LCDC & 0x01;
             
             break;
         }
@@ -231,10 +243,10 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
     return EXIT_SUCCESS;
 }
 
-int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
+int read_ioisters(s_emu *emu, uint16_t adress, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
+    s_io *io = &cpu->io;
     
     switch(adress)
     {
@@ -455,7 +467,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
     {
-        if(0 != write_io_registers(emu, adress, data))
+        if(0 != write_ioisters(emu, adress, data))
             return EXIT_FAILURE;
     }    
     //HRAM
@@ -465,7 +477,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if(adress == 0xFFFF)
     {
-        cpu->io_reg.IE = data;
+        cpu->io.IE = data;
     }
     
 //    if(emu->opt.debug_info)
@@ -523,7 +535,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
     {
-        if(0 != read_io_registers(emu, adress, data))
+        if(0 != read_ioisters(emu, adress, data))
             return EXIT_FAILURE;
     }    
     //HRAM
@@ -533,7 +545,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if(adress == 0xFFFF)
     {
-        *data = cpu->io_reg.IE;
+        *data = cpu->io.IE;
     }
     
 //    if(emu->opt.debug_info)
@@ -571,7 +583,7 @@ int initialize_cpu(s_cpu *cpu)
     }
     
     cpu->pc = START_ADRESS;
-    cpu->io_reg.P1_JOYP = 0xEF;
+    cpu->io.P1_JOYP = 0xEF;
     cpu->cur_hi_rom_bk = 1;
     
 //    memset(cpu->SRAM, 0xFF, sizeof(uint8_t[SRAM_BANKS_MAX][EXTERNAL_RAM_SIZE]));
@@ -637,13 +649,13 @@ void step_by_step_handle(s_emu *emu)
 void div_handle(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    uint8_t old_DIV = cpu->io_reg.DIV;
+    uint8_t old_DIV = cpu->io.DIV;
 
-    cpu->io_reg.DIV = (cpu->timer_clock & 0xFF00) >> 8;
+    cpu->io.DIV = (cpu->timer_clock & 0xFF00) >> 8;
 
-    if((old_DIV & 0x10) && !(cpu->io_reg.DIV & 0x10))
+    if((old_DIV & 0x10) && !(cpu->io.DIV & 0x10))
     {
-        emu->audio.DIV_APU++;
+        emu->au.DIV_APU++;
     }
 }
 
@@ -664,7 +676,7 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     
     cpu->timer_clock += (cpu->t_cycles - t_cycles_old);
     cpu->debug_clock += (cpu->t_cycles - t_cycles_old);
-    emu->audio.samples_timer += (cpu->t_cycles - t_cycles_old);
+    emu->au.samples_timer += (cpu->t_cycles - t_cycles_old);
 
     cpu->pc += emu->length_table[action];
     

@@ -22,8 +22,10 @@ void div_apu_update(s_audio *au)
             au->ch_len_timer[0]++;
         if(au->ch_len_timer[1] < 64)
             au->ch_len_timer[1]++;
-        if(au->ch_len_timer[2] < 64)
+        if(au->ch_len_timer[2] < 256)
             au->ch_len_timer[2]++;
+        if(au->ch_len_timer[3] < 64)
+            au->ch_len_timer[3]++;
     }
     if((au->DIV_APU % 4 == 3) && (old_DIV_APU % 4 == 2))
     {
@@ -33,6 +35,7 @@ void div_apu_update(s_audio *au)
     {
         au->ch_vol_sweep_timer[0]++;
         au->ch_vol_sweep_timer[1]++;
+        au->ch_vol_sweep_timer[3]++;
         au->DIV_APU = 0;
     }
     old_DIV_APU = au->DIV_APU;
@@ -73,7 +76,11 @@ void wavelength_sweep(s_audio *au, s_io *io)
 
 void volume_sweep(s_audio *au, int *volume, int ch)
 {
-    static uint8_t old_vol_sweep_timer[2] = {1, 1};
+    //channel 3 doesn't have volume sweep
+    assert(ch != 2);
+    assert(ch < 4);
+    
+    static uint8_t old_vol_sweep_timer[4] = {1, 1, 1, 1};
     
     if(au->ch_vol_sweep_pace[ch] == 0)
     {
@@ -103,14 +110,14 @@ void volume_sweep(s_audio *au, int *volume, int ch)
 
 void fill_square_ch_stream(s_emu *emu, int ch)
 {
-    s_audio *au = &emu->audio;
-    wavelength_sweep(au, &emu->cpu.io_reg);
+    s_audio *au = &emu->au;
+    wavelength_sweep(au, &emu->cpu.io);
     
     //if no sound to be played (because length timer is ended or channel not enabled)
     if((au->ch_sound_len_enable[ch] && (au->ch_len_timer[ch] == 64)) || !au->ch_enable[ch])
     {
         //disable channel
-        emu->cpu.io_reg.NR52 &= ~(0x01 << ch);
+        emu->cpu.io.NR52 &= ~(0x01 << ch);
         
         if(emu->opt.audio_log)
             fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%u;%u;%lu\n",
@@ -213,15 +220,16 @@ void fill_square_ch_stream(s_emu *emu, int ch)
 
 void fill_ch3_stream(s_emu *emu)
 {
-    s_audio *au = &emu->audio;
-    s_io *io = &emu->cpu.io_reg;
+    s_audio *au = &emu->au;
+    s_io *io = &emu->cpu.io;
 
     //if no sound to be played (because length timer is ended or channel not enabled)
-    if((au->ch_sound_len_enable[2] && (au->ch_len_timer[2] == 64)) || !au->ch_enable[2] ||
+    if((au->ch_sound_len_enable[2] && (au->ch_len_timer[2] == 256)) || !au->ch_enable[2] ||
        !au->ch3_dac_enable)
     {
         //disable channel
-        emu->cpu.io_reg.NR52 &= ~(0x01 << 2);
+        emu->cpu.io.NR52 &= ~(0x01 << 2);
+        au->ch_enable[2] = false;
         return;
     }
     
@@ -273,8 +281,82 @@ void fill_ch3_stream(s_emu *emu)
     local_samples_played += 2;
 }
 
+void fill_noise_channel_stream(s_emu *emu)
+{
+    s_audio *au = &emu->au;
+    s_io *io = &emu->cpu.io;
+
+    //if no sound to be played (because length timer is ended or channel not enabled)
+    if((au->ch_sound_len_enable[3] && (au->ch_len_timer[3] == 64)) || !au->ch_enable[3])
+    {
+        //disable channel
+        io->NR52 &= ~(0x01 << 3);
+        au->ch_enable[3] = false;
+        return;
+    }
+    
+    uint64_t samples_per_tick = ((float)AUDIO_SAMPLE_RATE / au->ch_freq[3]) * 2;
+    static uint64_t local_samples_played = 0;
+    
+    if(au->ch_reset[3])
+    {
+        local_samples_played = 0;
+        au->ch_reset[3] = false;
+    }
+    
+    static bool signal_state = false;
+    
+    //a tick occurs
+    if(local_samples_played >= samples_per_tick)
+    {
+        local_samples_played = 0;
+        
+        // LSFR_15 = !(LSFR_0 ^ LFSR_1)
+        flag_assign16(
+            !( (au->ch4_lfsr & 0x0001) ^ ( (au->ch4_lfsr & 0x0002) >> 1) ),
+            &au->ch4_lfsr,
+            0x8000
+        );
+        
+        //if short mode (7 bits), LSFR_7 = LSFR_15
+        if(au->ch4_lfsr_w)
+        {
+            flag_assign16(
+                au->ch4_lfsr & 0x8000,
+                &au->ch4_lfsr,
+                0x0080
+            );
+        }
+        
+        //signal_state = LSFR_0
+        signal_state = au->ch4_lfsr & 0x0001;
+        
+        au->ch4_lfsr >>= 1;
+    }
+    
+    int volume = au->ch_init_volume[3];
+    volume_sweep(au, &volume, 3);
+    
+    assert(au->samples_played + 1 < AUDIO_SAMPLES_PER_QUEUES);
+    if(signal_state)
+    {
+        //fills the data (left and right)
+        //0.5 volume is to avoid saturation
+        au->fstream[au->samples_played    ] += (float)volume * 1/15 * au->ch_l[3] * 
+                                               1/8 * (au->l_output_vol + 1) * 0.45  ;
+                                               
+        au->fstream[au->samples_played + 1] += (float)volume * 1/15 * au->ch_r[3] * 
+                                               1/8 * (au->r_output_vol + 1) * 0.45  ;
+    }
+    
+    
+    local_samples_played += 2;
+}
+
 void update_square_channel_state(s_audio *au, s_io *io, int ch)
 {
+    assert(ch >= 0 && ch <= 1);
+    
     if(ch == 0)
         au->ch_wavelen[ch] = io->NR13 + ((io->NR14 & 0x07) << 8);
     else if(ch == 1)
@@ -332,19 +414,46 @@ void update_ch3_state(s_audio *au, s_io *io)
         io->NR52 |= 0x04;
         au->ch_len_timer[2] = au->ch_init_len_timer[2];
         au->ch_trigger[2] = false;
-        au->ch3_samples_counter = 0;
+        au->ch3_samples_counter = 1;
     }
     
     au->ch_enable[2] = io->NR52 & (0x01 << 2);
 }
 
+void update_ch4_state(s_audio *au, s_io *io)
+{
+    float r = au->ch4_clock_div;
+    if (au->ch4_clock_div == 0) r = 0.5; 
+    
+    if(au->ch4_clock_div != 0)
+        au->ch_freq[3] = 262144 / (r * (pow(2.0, au->ch4_clock_shift)));
+    else
+        au->ch_freq[3] = 20000;
+        
+    if(au->ch_trigger[3])
+    {
+        au->ch_reset[3] = true;
+        au->ch_trigger[3] = false;
+        io->NR52 |= 0x08;
+        au->ch_len_timer[3] = au->ch_init_len_timer[3];
+        au->ch_vol_sweep_timer[3] = 1;
+        au->ch_vol_sweep_counter[3] = 0;
+        au->ch4_lfsr = 0;
+    }
+    
+    au->ch_enable[3] = io->NR52 & 0x08;
+}
+
 void audio_update(s_emu *emu)
 {
-    s_audio *au = &emu->audio;
-    s_io *io = &emu->cpu.io_reg;
+    s_audio *au = &emu->au;
+    s_io *io = &emu->cpu.io;
     s_opt *opt = &emu->opt;
     
     if(!opt->audio)
+        return;
+        
+    if(!au->apu_enable)
         return;
 
     //sound on/off
@@ -357,6 +466,7 @@ void audio_update(s_emu *emu)
     update_square_channel_state(au, io, 0);
     update_square_channel_state(au, io, 1);
     update_ch3_state(au, io);
+    update_ch4_state(au, io);
     
     div_apu_update(au);
     
@@ -366,6 +476,7 @@ void audio_update(s_emu *emu)
         fill_square_ch_stream(emu, 0);
         fill_square_ch_stream(emu, 1);
         fill_ch3_stream(emu);
+//        fill_noise_channel_stream(emu);
         au->samples_played += 2;
     }
     
@@ -404,7 +515,7 @@ int init_audio(s_emu *emu)
     if(!emu->opt.audio)
         return EXIT_SUCCESS;
         
-    s_audio *au = &emu->audio;
+    s_audio *au = &emu->au;
  
     memset(au, 0, sizeof(s_audio));
     
@@ -445,7 +556,7 @@ void destroy_audio(s_emu *emu)
 {
     if(!emu->opt.audio)
         return;
-    if(0 != emu->audio.dev)
-        SDL_CloseAudioDevice(emu->audio.dev);
+    if(0 != emu->au.dev)
+        SDL_CloseAudioDevice(emu->au.dev);
 }
 

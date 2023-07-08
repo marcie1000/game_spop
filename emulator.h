@@ -140,7 +140,7 @@ typedef struct s_cpu {
     uint8_t WRAM[WRAM_SIZE];
     uint8_t HRAM[HRAM_SIZE];
     uint8_t OAM[OAM_SIZE];
-    s_io io_reg;
+    s_io io;
     uint8_t SRAM[SRAM_BANKS_MAX][EXTERNAL_RAM_SIZE];
     uint8_t regA, regB, regC, regD, regE, regH, regL, regF; //registers
     uint16_t sp; //stack pointer
@@ -193,25 +193,27 @@ typedef struct s_audio{
     
     float fstream[AUDIO_SAMPLES_PER_QUEUES];
     
+    bool apu_enable;
+    
     bool VIN_l, VIN_r;
     uint8_t l_output_vol, r_output_vol;
     
     
     uint16_t ch_wavelen[2];
-    uint8_t ch_len_timer[3];
-    uint8_t ch_init_len_timer[3];
-    uint8_t ch_vol_sweep_timer[2];
-    uint8_t ch_vol_sweep_counter[2];
+    uint16_t ch_len_timer[4];
+    uint8_t ch_init_len_timer[4];
+    uint8_t ch_vol_sweep_timer[4];
+    uint8_t ch_vol_sweep_counter[4];
     uint8_t ch_duty_ratio[2];
-    uint8_t ch_init_volume[2];
-    bool    ch_envl_dir[2];
-    uint8_t ch_vol_sweep_pace[2];
-    bool    ch_l[3], ch_r[3];
-    bool ch_sound_len_enable[3];
-    uint16_t ch_freq[3];
-    bool ch_trigger[3];
-    bool ch_reset[3];
-    bool ch_enable[3];
+    uint8_t ch_init_volume[4];
+    bool    ch_envl_dir[4];
+    uint8_t ch_vol_sweep_pace[4];
+    bool    ch_l[4], ch_r[4];
+    bool ch_sound_len_enable[4];
+    uint16_t ch_freq[4];
+    bool ch_trigger[4];
+    bool ch_reset[4];
+    bool ch_enable[4];
     
     uint8_t ch1_wl_sweep_timer;
     uint8_t ch1_wl_sweep_counter;
@@ -224,6 +226,12 @@ typedef struct s_audio{
     uint16_t ch3_period;
     uint32_t ch3_sample_rate;
     uint8_t  ch3_samples_counter;
+    
+    
+    uint8_t  ch4_clock_shift;
+    bool     ch4_lfsr_w;
+    uint8_t  ch4_clock_div;
+    uint16_t ch4_lfsr;
 
 
     double samples_timer;
@@ -250,7 +258,7 @@ typedef struct s_cart{
 
 typedef struct s_emu{
     Uint64 frame_timer;
-    s_screen screen;
+    s_screen scr;
     uint8_t length_table[OPCODE_NB];
     
     //timing_table[0] => timing without branch
@@ -265,11 +273,12 @@ typedef struct s_emu{
     s_cpu cpu;
     s_input in;
     s_opt opt;
-    s_audio audio;
+    s_audio au;
     s_cart cart;
 }s_emu;
 
 void flag_assign(bool cond, uint8_t *flag, uint8_t mask);
+void flag_assign16(bool cond, uint16_t *flag, uint16_t mask);
 void joypad_update(s_emu *emu);
 void update_event(s_emu *emu);
 int initialize_SDL(void);

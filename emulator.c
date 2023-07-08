@@ -14,6 +14,11 @@ void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
     *flag = cond ? mask | *flag : ~mask & *flag;
 }
 
+void flag_assign16(bool cond, uint16_t *flag, uint16_t mask)
+{
+    *flag = cond ? mask | *flag : ~mask & *flag;
+}
+
 void update_event(s_emu *emu)
 {
     s_input *input = &emu->in;
@@ -360,7 +365,7 @@ void destroy_emulator(s_emu *emu, int status)
     if(0 != save_sav(emu))
         status = EXIT_FAILURE;
     
-    destroy_screen(&emu->screen);
+    destroy_screen(&emu->scr);
     destroy_audio(emu);
     
     for(size_t i = 0; i < ROM_BANKS_MAX; i++)
@@ -381,8 +386,8 @@ void destroy_emulator(s_emu *emu, int status)
 void bypass_bootrom(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
-    s_screen *screen = &emu->screen;
+    s_io *io = &cpu->io;
+    s_screen *scr = &emu->scr;
     
     cpu->t_cycles = 14;
     
@@ -426,14 +431,14 @@ void bypass_bootrom(s_emu *emu)
     io->DMA = 0xff;
     io->BGP = 0xfc;    
     
-    screen->LCD_PPU_enable          = io->LCDC & 0x80;
-    screen->win_tile_map_area       = io->LCDC & 0x40;
-    screen->window_enable           = io->LCDC & 0x20;
-    screen->BG_win_tile_data_area   = io->LCDC & 0x10;
-    screen->BG_tile_map_area        = io->LCDC & 0x08;
-    screen->obj_size                = io->LCDC & 0x04;
-    screen->obj_enable              = io->LCDC & 0x02;
-    screen->bg_win_enable_priority  = io->LCDC & 0x01;
+    scr->LCD_PPU_enable          = io->LCDC & 0x80;
+    scr->win_tile_map_area       = io->LCDC & 0x40;
+    scr->window_enable           = io->LCDC & 0x20;
+    scr->BG_win_tile_data_area   = io->LCDC & 0x10;
+    scr->BG_tile_map_area        = io->LCDC & 0x08;
+    scr->obj_size                = io->LCDC & 0x04;
+    scr->obj_enable              = io->LCDC & 0x02;
+    scr->bg_win_enable_priority  = io->LCDC & 0x01;
 }
 
 void fast_forward_toggle(s_emu *emu)
@@ -445,7 +450,7 @@ void fast_forward_toggle(s_emu *emu)
         if(!opt->fast_forward)
         {
             opt->fast_forward = true;
-            if(0 != SDL_RenderSetVSync(emu->screen.r, 0))
+            if(0 != SDL_RenderSetVSync(emu->scr.r, 0))
             {
                 fprintf(stderr, "Unable to set VSync to off: %s\n", SDL_GetError());
                 destroy_emulator(emu, EXIT_FAILURE);
@@ -454,7 +459,7 @@ void fast_forward_toggle(s_emu *emu)
         else
         {
             opt->fast_forward = false;
-            if(0 != SDL_RenderSetVSync(emu->screen.r, 1))
+            if(0 != SDL_RenderSetVSync(emu->scr.r, 1))
             {
                 fprintf(stderr, "Unable to set VSync to on: %s\n", SDL_GetError());
                 destroy_emulator(emu, EXIT_FAILURE);
@@ -475,14 +480,14 @@ void emulate(s_emu *emu)
         bypass_bootrom(emu);
     
     if(emu->opt.audio)
-        SDL_PauseAudioDevice(emu->audio.dev, 0);
+        SDL_PauseAudioDevice(emu->au.dev, 0);
     
     while(!emu->in.quit)
     {
         update_event(emu);
         if(emu->in.resize)
         {
-            resize_screen(&emu->screen);
+            resize_screen(&emu->scr);
             emu->in.resize = SDL_FALSE;
         }
         if((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]) || 
@@ -534,7 +539,7 @@ void emulate(s_emu *emu)
 
 void joypad_update(s_emu *emu)
 {
-    s_io *io = &emu->cpu.io_reg;
+    s_io *io = &emu->cpu.io;
     s_input *in = &emu->in;
     //action buttons
     if(!(io->P1_JOYP & 0x20))
@@ -887,7 +892,7 @@ void ask_breakpoint(s_opt *opt)
 void log_instructions(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    s_io *io = &cpu->io_reg;
+    s_io *io = &cpu->io;
     s_opt *opt = &emu->opt;
     
     cpu->inst_counter++;
