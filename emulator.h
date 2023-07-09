@@ -46,8 +46,9 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 #define KEYOPT_NB (13)
+#define INI_OPT_NB (5)
 
-enum keyopts {
+enum keyctrls {
     JOYP_UP,
     JOYP_DOWN,
     JOYP_LEFT,
@@ -61,6 +62,14 @@ enum keyopts {
     OPT_NEXT_FRAME,
     OPT_FAST_FORWARD,
     OPT_FULLSCREEN
+};
+
+enum iniopts {
+    BOOTROM_FILENAME,
+    AUDIO_CH1,
+    AUDIO_CH2,
+    AUDIO_CH3,
+    AUDIO_CH4
 };
 
 enum flags_masks {
@@ -119,14 +128,17 @@ typedef struct s_opt{
          log_instrs, fast_forward, audio, audio_log, fullscreen;
     bool newframe; //for frame by frame step
     bool framebyframe;
+    bool audio_ch[4];
     uint16_t breakpoint_value;
     char rom_filename[FILENAME_MAX];
     char sav_filename[FILENAME_MAX];
+    char bootrom_filename[FILENAME_MAX];
     FILE *logfile;
     FILE *inifile;
     SDL_Scancode opt_scancodes[KEYOPT_NB];
     SDL_Scancode default_scancodes[KEYOPT_NB];
-    char opt_names[KEYOPT_NB][25];
+    char ctrl_names[KEYOPT_NB][25];
+    char ini_opt_names[INI_OPT_NB][25];
 }s_opt;
 
 typedef struct s_input{
@@ -307,7 +319,7 @@ int initialize_SDL(void);
 int initialize_emulator(s_emu *emu);
 void destroy_emulator(s_emu *emu, int status);
 void emulate(s_emu *emu);
-int load_boot_rom(s_cpu *cpu);
+int load_boot_rom(s_emu *emu);
 int load_rom(s_emu *emu);
 int parse_start_options(s_opt *opt, int argc, char *argv[]);
 int parse_options_during_exec(s_opt *opt);

@@ -473,10 +473,10 @@ void audio_update(s_emu *emu)
     if(au->samples_timer >= CPU_FREQ / AUDIO_SAMPLE_RATE)
     {
         au->samples_timer -= CPU_FREQ / AUDIO_SAMPLE_RATE;
-        fill_square_ch_stream(emu, 0);
-        fill_square_ch_stream(emu, 1);
-        fill_ch3_stream(emu);
-//        fill_noise_channel_stream(emu);
+        if(opt->audio_ch[0]) fill_square_ch_stream(emu, 0);
+        if(opt->audio_ch[1]) fill_square_ch_stream(emu, 1);
+        if(opt->audio_ch[2]) fill_ch3_stream(emu);
+        if(opt->audio_ch[3]) fill_noise_channel_stream(emu);
         au->samples_played += 2;
     }
     

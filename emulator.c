@@ -46,50 +46,58 @@ int create_inifile(s_emu *emu)
     
     //UP
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_W);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[0], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[0], SDL_GetKeyName(keycode));
     
     //DOWN
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_S);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[1], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[1], SDL_GetKeyName(keycode));
     
     //LEFT
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_A);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[2], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[2], SDL_GetKeyName(keycode));
     
     //RIGHT
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_D);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[3], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[3], SDL_GetKeyName(keycode));
     
     //START
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_RETURN);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[4], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[4], SDL_GetKeyName(keycode));
     
     //SELECT
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_RSHIFT);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[5], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[5], SDL_GetKeyName(keycode));
     
     //A
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_L);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[6], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[6], SDL_GetKeyName(keycode));
     
     //B
     keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_M);
-    fprintf(shrt, "%s=%s\n", opt->opt_names[7], SDL_GetKeyName(keycode));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[7], SDL_GetKeyName(keycode));
     
     //PAUSE
-    fprintf(shrt, "%s=%s\n", opt->opt_names[8], SDL_GetKeyName(SDLK_p));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[8], SDL_GetKeyName(SDLK_p));
     
     //OPTION
-    fprintf(shrt, "%s=%s\n", opt->opt_names[9], SDL_GetKeyName(SDLK_o));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[9], SDL_GetKeyName(SDLK_o));
     
     //NEXT FRAME
-    fprintf(shrt, "%s=%s\n", opt->opt_names[10], SDL_GetKeyName(SDLK_n));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[10], SDL_GetKeyName(SDLK_n));
     
     //FAST FORWARD
-    fprintf(shrt, "%s=%s\n", opt->opt_names[11], SDL_GetKeyName(SDLK_SPACE));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[11], SDL_GetKeyName(SDLK_SPACE));
     
     //FULLSCREEN
-    fprintf(shrt, "%s=%s\n", opt->opt_names[12], SDL_GetKeyName(SDLK_F11));
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[12], SDL_GetKeyName(SDLK_F11));
+    
+    fprintf(shrt, "\n");
+    fprintf(shrt, "[options]\n");
+    fprintf(shrt, "bootrom_path=boot_rom/dmg_rom.bin\n");
+    fprintf(shrt, "audio_ch_1=ON\n");
+    fprintf(shrt, "audio_ch_2=ON\n");
+    fprintf(shrt, "audio_ch_3=ON\n");
+    fprintf(shrt, "audio_ch_4=OFF\n");
     
     return EXIT_SUCCESS;
 }
@@ -98,19 +106,27 @@ int open_inifile(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
     
-    snprintf(opt->opt_names[0], 25, "JOYP_UP");
-    snprintf(opt->opt_names[1], 25, "JOYP_DOWN");
-    snprintf(opt->opt_names[2], 25, "JOYP_LEFT");
-    snprintf(opt->opt_names[3], 25, "JOYP_RIGHT");
-    snprintf(opt->opt_names[4], 25, "JOYP_START");
-    snprintf(opt->opt_names[5], 25, "JOYP_SELECT");
-    snprintf(opt->opt_names[6], 25, "JOYP_A");
-    snprintf(opt->opt_names[7], 25, "JOYP_B");
-    snprintf(opt->opt_names[8], 25, "OPT_PAUSE");
-    snprintf(opt->opt_names[9], 25, "OPT_OPTIONS");
-    snprintf(opt->opt_names[10], 25, "OPT_NEXT_FRAME");
-    snprintf(opt->opt_names[11], 25, "OPT_FAST_FORWARD");
-    snprintf(opt->opt_names[12], 25, "OPT_FULLSCREEN");
+    snprintf(opt->ctrl_names[0], 25, "JOYP_UP");
+    snprintf(opt->ctrl_names[1], 25, "JOYP_DOWN");
+    snprintf(opt->ctrl_names[2], 25, "JOYP_LEFT");
+    snprintf(opt->ctrl_names[3], 25, "JOYP_RIGHT");
+    snprintf(opt->ctrl_names[4], 25, "JOYP_START");
+    snprintf(opt->ctrl_names[5], 25, "JOYP_SELECT");
+    snprintf(opt->ctrl_names[6], 25, "JOYP_A");
+    snprintf(opt->ctrl_names[7], 25, "JOYP_B");
+    snprintf(opt->ctrl_names[8], 25, "OPT_PAUSE");
+    snprintf(opt->ctrl_names[9], 25, "OPT_OPTIONS");
+    snprintf(opt->ctrl_names[10], 25, "OPT_NEXT_FRAME");
+    snprintf(opt->ctrl_names[11], 25, "OPT_FAST_FORWARD");
+    snprintf(opt->ctrl_names[12], 25, "OPT_FULLSCREEN");
+    
+    snprintf(opt->bootrom_filename, FILENAME_MAX, "boot_rom/dmg_rom.bin");
+    
+    snprintf(opt->ini_opt_names[0], 25, "bootrom_filename");
+    snprintf(opt->ini_opt_names[1], 25, "audio_ch_1");
+    snprintf(opt->ini_opt_names[2], 25, "audio_ch_2");
+    snprintf(opt->ini_opt_names[3], 25, "audio_ch_3");
+    snprintf(opt->ini_opt_names[4], 25, "audio_ch_4");
     
     opt->default_scancodes[JOYP_UP] = SDL_SCANCODE_W;
     opt->default_scancodes[JOYP_DOWN] = SDL_SCANCODE_S;
@@ -140,6 +156,11 @@ int open_inifile(s_emu *emu)
     opt->opt_scancodes[OPT_FAST_FORWARD] = opt->default_scancodes[OPT_FAST_FORWARD];
     opt->opt_scancodes[OPT_FULLSCREEN] = opt->default_scancodes[OPT_FULLSCREEN];
     
+    opt->audio_ch[0] = true;
+    opt->audio_ch[1] = true;
+    opt->audio_ch[2] = true;
+    opt->audio_ch[3] = false;
+    
     opt->inifile = fopen("game_spop.ini", "r");
     if(NULL == opt->inifile)
     {
@@ -152,14 +173,29 @@ int open_inifile(s_emu *emu)
     
     //read file
     char buf[255] = "";
+    bool controls = false;
+    bool options = false;
     while(NULL != fgets(buf, 255, opt->inifile))
     {
-        if(buf[0] == ';' || buf[0] == ' ' || buf[0] == '\0' || buf[0] == '[')
+        if(buf[0] == ';' || buf[0] == ' ' || buf[0] == '\0')
             continue;
 
-        for(int i = 0; i < KEYOPT_NB; i++)
+        if(0 == strncmp(buf, "[controls]", 10))
         {
-            if(NULL == strstr(buf, opt->opt_names[i]))
+            controls = true;
+            options = false;
+            continue;
+        }
+        else if(0 == strncmp(buf, "[options]", 9))
+        {
+            controls = false;
+            options = true;
+            continue;
+        }
+        
+        for(int i = 0; (i < KEYOPT_NB) && controls; i++)
+        {
+            if(NULL == strstr(buf, opt->ctrl_names[i]))
                 continue;
                 
             char *name = strchr(buf, '=');
@@ -180,6 +216,35 @@ int open_inifile(s_emu *emu)
             
             opt->opt_scancodes[i] = SDL_GetScancodeFromKey(key);
             break;
+        }
+        
+        for(int i = 0; (i < INI_OPT_NB) && options; i++)
+        {
+            if(NULL == strstr(buf, opt->ini_opt_names[i]))
+                continue;
+            
+            char *param = strchr(buf, '=');
+            if(NULL == param)
+                continue;
+            
+            param++;
+            char *sub = strtok(param, "\n");
+            
+            switch(i)
+            {
+                case BOOTROM_FILENAME:
+                    snprintf(opt->bootrom_filename, FILENAME_MAX, "%s", sub);
+                    break;
+                case AUDIO_CH1:
+                case AUDIO_CH2:
+                case AUDIO_CH3:
+                case AUDIO_CH4:
+                    if(0 == strncmp(sub, "ON", 2))
+                        opt->audio_ch[i - AUDIO_CH1] = true;
+                    else if(0 == strncmp(sub, "OFF", 3))
+                        opt->audio_ch[i - AUDIO_CH1] = false;
+                    break;
+            }
         }
     }
     
@@ -391,7 +456,7 @@ int initialize_emulator(s_emu *emu)
     
     if(emu->opt.bootrom)
     {
-        if(0 != load_boot_rom(&emu->cpu))
+        if(0 != load_boot_rom(emu))
             return EXIT_FAILURE;
     }
     
@@ -413,12 +478,13 @@ int initialize_emulator(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
-int load_boot_rom(s_cpu *cpu)
+int load_boot_rom(s_emu *emu)
 {
-    FILE *bootrom = fopen("boot_rom/dmg_rom.bin", "rb");
+    s_cpu *cpu = &emu->cpu;
+    FILE *bootrom = fopen(emu->opt.bootrom_filename, "rb");
     if(NULL == bootrom)
     {
-        perror("ERROR: cannot open boot_rom/dmg_rom.bin: ");
+        fprintf(stderr, "ERROR: cannot open %s: %s", emu->opt.bootrom_filename, strerror(errno));
         return EXIT_FAILURE;
     }
     
@@ -869,8 +935,9 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   --audio-log          = print various audio variables in a file at each \n"
     "                          sample.\n"
     "   --bootrom,    -b     = launch the DMG bootrom before ROM. If no ROM is\n"
-    "                          provided, this option is always on. The file path must\n"
-    "                          be \"boot_rom/dmg_rom.bin\".\n"
+    "                          provided, this option is always on. The default file path\n"
+    "                          is \"boot_rom/dmg_rom.bin\" but can be modified in\n"
+    "                          game_spop.ini.\n"
     "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"

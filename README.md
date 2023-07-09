@@ -33,19 +33,14 @@ mingw32-make
 
 ## How to use:
 
-You need a Gameboy ROM file.
-
-OPTIONAL: to run the bootrom, create a folder called `boot_rom` in the executable path.
-          Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`. Then
-          run the program with `-b` option. It is possible to run only the bootrom, without 
-          any ROM.
+You need a Gameboy ROM file or a boot ROM file (see below).
 
 ### Usage:
 ```console
 ./game_spop <ROM file> [options]
 ```
 
-### Options:
+### Command line options:
 * `--audio`, `-a`           = disable audio.
 * `--audio-log`             = print various audio variables in a file at each sample.
 * `--breakpoint`, `-p`      = enable debugging with breakpoints. The program will
@@ -53,8 +48,9 @@ OPTIONAL: to run the bootrom, create a folder called `boot_rom` in the executabl
                               ask for a new breakpoint when the previous one is
                               reached.
 * `--bootrom`, `-b`         = launch the DMG bootrom before ROM. If no ROM is
-                              provided, this option is always on. The file path must
-                              be `boot_rom/dmg_rom.bin`.
+                              provided, this option is always on. The default file path is
+                              `boot_rom/dmg_rom.bin`, but can be modified in `game_spop.ini` 
+                              (see below).
 * `--debug-info`, `-i`    = print cpu state at each instruction.
 * `--gb-doctor`, `-d`    =  log cpu state into a file to be used with the [Gameboy
                             doctor tool](https://github.com/robert/gameboy-doctor) (only at launch).
@@ -66,9 +62,9 @@ OPTIONAL: to run the bootrom, create a folder called `boot_rom` in the executabl
                           at each new instruction and ask to continue or edit options.
 * `--help`, `-h`        = show this help message and exit.
 
-### Controls:
+### Controls and other options:
 
-Controls are customizable through the file `game_spop.ini`. If the file doesn't exist, it is 
+Controls are customizable through the file `game_spop.ini`, below the `[controls]` section. If the file doesn't exist, it is 
 automatically created with default parameters in the current path when the program is launched.
 
 To modify a control, write a key name after the wanted control, using one of the names provided in the
@@ -93,5 +89,9 @@ Next frame (during pause) | N | N | N
 Toogle fast forward | SPACE | SPACE | SPACE
 Toogle fullscreen | F11 | F11 | F11
 
-Note: for other keyoard layouts, scancodes are used for Gameboy joypad buttons controls (same keys positions 
-but different key names), and keycodes for other emulator options (same key names but possible different positions).
+*Note: for other keyoard layouts, scancodes are used for Gameboy joypad buttons controls (same keys positions 
+but different key names), and keycodes for other emulator options (same key names but possible different positions).*
+
+You can also change other options below the `[options]` section:
+* `bootrom_path`
+* `audio_ch_x` (where `x` is the 1~4 channel number): enable or disable an audio channel with `ON` or `OFF` keywords.
