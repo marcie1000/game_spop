@@ -3,7 +3,7 @@ A Gameboy emulator
 
 ## Build project:
 
-### Linux:
+### Linux / macOS / Unix:
 
 You need to have [SDL2](https://wiki.libsdl.org/SDL2/Installation) and [CMake](https://cmake.org/) installed.
 
@@ -13,6 +13,9 @@ cd build
 cmake .. -G "Unix Makefiles"
 make
 ```
+
+(Note: build have only been tested on Linux for now).
+
 ### Windows:
 
 In MinGW [MSYS2](https://www.msys2.org/) terminal, install the following packages (if needed):
@@ -31,9 +34,11 @@ mingw32-make
 ## How to use:
 
 You need a Gameboy ROM file.
+
 OPTIONAL: to run the bootrom, create a folder called `boot_rom` in the executable path.
           Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`. Then
-          run the program with `-b` option.
+          run the program with `-b` option. It is possible to run only the bootrom, without 
+          any ROM.
 
 ### Usage:
 ```console
@@ -63,8 +68,14 @@ OPTIONAL: to run the bootrom, create a folder called `boot_rom` in the executabl
 
 ### Controls:
 
-Since the program uses scancodes, the keys names of the controls are different depending
-on your keyboard layout, but the keys position remains the same.
+Controls are customizable through the file `game_spop.ini`. If the file doesn't exist, it is 
+automatically created with default parameters in the current path when the program is launched.
+
+To modify a control, write a key name after the wanted control, using one of the names provided in the
+`Key Name` column in the [SDL_Keycode documentation](https://wiki.libsdl.org/SDL2/SDL_Keycode). If a control
+or keyname is missing or unvalid, default controls are applied.
+
+This table shows the default controls:
 
 Control   | QWERTY key | AZERTY key | Bépo key
 ---       | :---:      | :---:      | :---:
@@ -76,7 +87,10 @@ START     | Return     | Return     | Return
 SELECT    | RShift     | RShift     | RShift
 A         | L          | L          | R
 B         | M          | ,          | Q
-Pause emulation | P | P | P *(or J)*
-Show an option menu (during pause) | O | O | O *(or L)*
-Next frame (during pause) | N | N | N *(or ')*
+Pause emulation | P | P | P
+Show an option menu (during pause) | O | O | O
+Next frame (during pause) | N | N | N
 Toogle fast forward | SPACE | SPACE | SPACE
+
+Note: for other keyoard layouts, scancodes are used for Gameboy joypad buttons controls (same keys positions 
+but different key names), and keycodes for other emulator options (same key names but possible different positions).
