@@ -1,5 +1,5 @@
 # game_spop
-A Gameboy emulator
+A work in progress Gameboy emulator written in C.
 
 ## Build project:
 
