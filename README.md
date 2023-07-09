@@ -30,7 +30,10 @@ mingw32-make
 
 ## How to use:
 
-In the executable path, create a folder called `boot_rom`. Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`.
+You need a Gameboy ROM file.
+OPTIONAL: to run the bootrom, create a folder called `boot_rom` in the executable path.
+          Paste the Gameboy DMG boot ROM in this folder with the name `dmg_rom.bin`. Then
+          run the program with `-b` option.
 
 ### Usage:
 ```console

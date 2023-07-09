@@ -19,6 +19,161 @@ void flag_assign16(bool cond, uint16_t *flag, uint16_t mask)
     *flag = cond ? mask | *flag : ~mask & *flag;
 }
 
+int create_inifile(s_emu *emu)
+{
+    s_opt *opt = &emu->opt;
+    
+    opt->inifile = fopen("game_spop.ini", "w");
+    if(NULL == opt->inifile)
+    {
+        perror("fopen inifile: ");
+        return EXIT_FAILURE;
+    }
+    
+    FILE *shrt = opt->inifile;
+    
+    fprintf(shrt, "; List of game_spop controls. See README.md for details.\n");
+    fprintf(shrt, "[controls]\n");
+    SDL_KeyCode keycode;
+    
+    //UP
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_W);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[0], SDL_GetKeyName(keycode));
+    
+    //DOWN
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_S);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[1], SDL_GetKeyName(keycode));
+    
+    //LEFT
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_A);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[2], SDL_GetKeyName(keycode));
+    
+    //RIGHT
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_D);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[3], SDL_GetKeyName(keycode));
+    
+    //START
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_RETURN);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[4], SDL_GetKeyName(keycode));
+    
+    //SELECT
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_RSHIFT);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[5], SDL_GetKeyName(keycode));
+    
+    //A
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_L);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[6], SDL_GetKeyName(keycode));
+    
+    //B
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_M);
+    fprintf(shrt, "%s=%s\n", opt->opt_names[7], SDL_GetKeyName(keycode));
+    
+    //PAUSE
+    fprintf(shrt, "%s=%s\n", opt->opt_names[8], SDL_GetKeyName(SDLK_p));
+    
+    //OPTION
+    fprintf(shrt, "%s=%s\n", opt->opt_names[9], SDL_GetKeyName(SDLK_o));
+    
+    //NEXT FRAME
+    fprintf(shrt, "%s=%s\n", opt->opt_names[10], SDL_GetKeyName(SDLK_n));
+    
+    //FAST FORWARD
+    fprintf(shrt, "%s=%s\n", opt->opt_names[11], SDL_GetKeyName(SDLK_SPACE));
+    
+    return EXIT_SUCCESS;
+}
+
+int open_inifile(s_emu *emu)
+{
+    s_opt *opt = &emu->opt;
+    
+    snprintf(opt->opt_names[0], 25, "JOYP_UP");
+    snprintf(opt->opt_names[1], 25, "JOYP_DOWN");
+    snprintf(opt->opt_names[2], 25, "JOYP_LEFT");
+    snprintf(opt->opt_names[3], 25, "JOYP_RIGHT");
+    snprintf(opt->opt_names[4], 25, "JOYP_START");
+    snprintf(opt->opt_names[5], 25, "JOYP_SELECT");
+    snprintf(opt->opt_names[6], 25, "JOYP_A");
+    snprintf(opt->opt_names[7], 25, "JOYP_B");
+    snprintf(opt->opt_names[8], 25, "OPT_PAUSE");
+    snprintf(opt->opt_names[9], 25, "OPT_OPTIONS");
+    snprintf(opt->opt_names[10], 25, "OPT_NEXT_FRAME");
+    snprintf(opt->opt_names[11], 25, "OPT_FAST_FORWARD");
+    
+    opt->default_scancodes[JOYP_UP] = SDL_SCANCODE_W;
+    opt->default_scancodes[JOYP_DOWN] = SDL_SCANCODE_S;
+    opt->default_scancodes[JOYP_LEFT] = SDL_SCANCODE_A;
+    opt->default_scancodes[JOYP_RIGHT] = SDL_SCANCODE_D;
+    opt->default_scancodes[JOYP_START] = SDL_SCANCODE_RETURN;
+    opt->default_scancodes[JOYP_SELECT] = SDL_SCANCODE_RSHIFT;
+    opt->default_scancodes[JOYP_A] = SDL_SCANCODE_L;
+    opt->default_scancodes[JOYP_B] = SDL_SCANCODE_M;
+    opt->default_scancodes[OPT_PAUSE] = SDL_GetScancodeFromKey(SDLK_p);
+    opt->default_scancodes[OPT_OPTIONS] = SDL_GetScancodeFromKey(SDLK_o);
+    opt->default_scancodes[OPT_NEXT_FRAME] = SDL_GetScancodeFromKey(SDLK_n);
+    opt->default_scancodes[OPT_FAST_FORWARD] = SDL_GetScancodeFromKey(SDLK_SPACE);
+    
+    opt->opt_scancodes[JOYP_UP] = opt->default_scancodes[JOYP_UP];
+    opt->opt_scancodes[JOYP_DOWN] = opt->default_scancodes[JOYP_DOWN];
+    opt->opt_scancodes[JOYP_LEFT] = opt->default_scancodes[JOYP_LEFT];
+    opt->opt_scancodes[JOYP_RIGHT] = opt->default_scancodes[JOYP_RIGHT];
+    opt->opt_scancodes[JOYP_START] = opt->default_scancodes[JOYP_START];
+    opt->opt_scancodes[JOYP_SELECT] = opt->default_scancodes[JOYP_SELECT];
+    opt->opt_scancodes[JOYP_A] = opt->default_scancodes[JOYP_A];
+    opt->opt_scancodes[JOYP_B] = opt->default_scancodes[JOYP_B];
+    opt->opt_scancodes[OPT_PAUSE] = opt->default_scancodes[OPT_PAUSE];
+    opt->opt_scancodes[OPT_OPTIONS] = opt->default_scancodes[OPT_OPTIONS];
+    opt->opt_scancodes[OPT_NEXT_FRAME] = opt->default_scancodes[OPT_NEXT_FRAME];
+    opt->opt_scancodes[OPT_FAST_FORWARD] = opt->default_scancodes[OPT_FAST_FORWARD];
+    
+    opt->inifile = fopen("game_spop.ini", "r");
+    if(NULL == opt->inifile)
+    {
+        if(0 != create_inifile(emu))
+            return EXIT_FAILURE;
+            
+        fclose(opt->inifile);
+        return EXIT_SUCCESS;
+    }
+    
+    //read file
+    char buf[255] = "";
+    while(NULL != fgets(buf, 255, opt->inifile))
+    {
+        if(buf[0] == ';' || buf[0] == ' ' || buf[0] == '\0' || buf[0] == '[')
+            continue;
+
+        for(int i = 0; i < KEYOPT_NB; i++)
+        {
+            if(NULL == strstr(buf, opt->opt_names[i]))
+                continue;
+                
+            char *name = strchr(buf, '=');
+            if(NULL == name)
+            {
+                opt->opt_scancodes[i] = opt->default_scancodes[i];
+                break;
+            }
+            
+            name++;
+            char *sub = strtok(name, "\n");
+            SDL_KeyCode key = SDL_GetKeyFromName(sub);
+            if(key == SDLK_UNKNOWN)
+            {
+                opt->opt_scancodes[i] = opt->default_scancodes[i];
+                break;
+            }
+            
+            opt->opt_scancodes[i] = SDL_GetScancodeFromKey(key);
+            break;
+        }
+    }
+    
+    fclose(opt->inifile);
+    
+    return EXIT_SUCCESS;
+}
+
 void update_event(s_emu *emu)
 {
     s_input *input = &emu->in;
@@ -30,10 +185,10 @@ void update_event(s_emu *emu)
                 input->quit = SDL_TRUE;
                 break;
             case(SDL_KEYDOWN):
-                input->key[input->event.key.keysym.scancode] = SDL_TRUE;                
+                input->scan[input->event.key.keysym.scancode] = SDL_TRUE;                
                 break;
             case(SDL_KEYUP):
-                input->key[input->event.key.keysym.scancode] = SDL_FALSE;
+                input->scan[input->event.key.keysym.scancode] = SDL_FALSE;
                 break;
             case(SDL_MOUSEMOTION):
                 input->x = input->event.motion.x;
@@ -195,6 +350,9 @@ int initialize_emulator(s_emu *emu)
     
     memset(&emu->in, 0, sizeof(s_input));
     if(0 != initialize_SDL())
+        return EXIT_FAILURE;
+    
+    if(0 != open_inifile(emu))
         return EXIT_FAILURE;
     
     if(0 != initialize_screen(emu))
@@ -445,7 +603,7 @@ void fast_forward_toggle(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
     static bool previous = false;
-    if(emu->in.key[SDL_SCANCODE_SPACE] != previous && previous == false)
+    if(emu->in.scan[opt->opt_scancodes[OPT_FAST_FORWARD]] != previous && previous == false)
     {
         if(!opt->fast_forward)
         {
@@ -467,12 +625,13 @@ void fast_forward_toggle(s_emu *emu)
         }
         
     }
-    previous = emu->in.key[SDL_SCANCODE_SPACE];
+    previous = emu->in.scan[opt->opt_scancodes[OPT_FAST_FORWARD]];
 }
 
 void emulate(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
+    s_opt *opt = &emu->opt;
     cpu->t_cycles = 0;
     emu->frame_timer = SDL_GetTicks64();
     
@@ -490,7 +649,7 @@ void emulate(s_emu *emu)
             resize_screen(&emu->scr);
             emu->in.resize = SDL_FALSE;
         }
-        if((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]) || 
+        if((emu->in.scan[opt->opt_scancodes[OPT_PAUSE]]) || 
            (emu->opt.framebyframe && emu->opt.newframe))
         {
             pause_menu(emu);
@@ -541,42 +700,43 @@ void joypad_update(s_emu *emu)
 {
     s_io *io = &emu->cpu.io;
     s_input *in = &emu->in;
+    s_opt *opt = &emu->opt;
     //action buttons
     if(!(io->P1_JOYP & 0x20))
     {
         //start
-        flag_assign(!in->key[SDL_SCANCODE_RETURN],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_START]],
                     &io->P1_JOYP,
                     0x08);
         //select
-        flag_assign(!in->key[SDL_SCANCODE_RSHIFT],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_SELECT]],
                     &io->P1_JOYP,
                     0x04);
         //B
-        flag_assign(!in->key[SDL_SCANCODE_M],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_B]],
                     &io->P1_JOYP,
                     0x02);
         //A
-        flag_assign(!in->key[SDL_SCANCODE_L],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_A]],
                     &io->P1_JOYP,
                     0x01);
     }
     else if (!(io->P1_JOYP & 0x10))
     {
         //down
-        flag_assign(!in->key[SDL_SCANCODE_S],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_DOWN]],
                     &io->P1_JOYP,
                     0x08);
         //up
-        flag_assign(!in->key[SDL_SCANCODE_W],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_UP]],
                     &io->P1_JOYP,
                     0x04);
         //left
-        flag_assign(!in->key[SDL_SCANCODE_A],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_LEFT]],
                     &io->P1_JOYP,
                     0x02);
         //right
-        flag_assign(!in->key[SDL_SCANCODE_D],
+        flag_assign(!in->scan[opt->opt_scancodes[JOYP_RIGHT]],
                     &io->P1_JOYP,
                     0x01);
     }
@@ -589,7 +749,8 @@ void joypad_update(s_emu *emu)
 void pause_menu(s_emu *emu)
 {
     //wait for P key release
-    while(!emu->in.quit && ((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E])))
+    s_opt *opt = &emu->opt;
+    while(!emu->in.quit && (emu->in.scan[opt->opt_scancodes[OPT_PAUSE]]))
     {
         update_event(emu);
         SDL_Delay(5);
@@ -606,23 +767,23 @@ void pause_menu(s_emu *emu)
     while(!emu->in.quit)
     {
         update_event(emu);
-        if((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]))
+        if(emu->in.scan[opt->opt_scancodes[OPT_PAUSE]])
         {
-            while((emu->in.key[SDL_SCANCODE_P]) || (emu->in.key[SDL_SCANCODE_E]))
+            while(emu->in.scan[opt->opt_scancodes[OPT_PAUSE]])
             {
                 SDL_Delay(5);
                 update_event(emu);
             }
             return;
         }
-        if(emu->in.key[SDL_SCANCODE_O] || emu->in.key[SDL_SCANCODE_R])
+        if(emu->in.scan[opt->opt_scancodes[OPT_OPTIONS]])
         {
             if(0 == parse_options_during_exec(&emu->opt))
                 return;
         }
-        if(emu->in.key[SDL_SCANCODE_N] || emu->in.key[SDL_SCANCODE_SEMICOLON])
+        if(emu->in.scan[opt->opt_scancodes[OPT_NEXT_FRAME]])
         {
-            while(emu->in.key[SDL_SCANCODE_N] || emu->in.key[SDL_SCANCODE_SEMICOLON])
+            while(emu->in.scan[opt->opt_scancodes[OPT_NEXT_FRAME]])
             {
                 SDL_Delay(5);
                 update_event(emu);

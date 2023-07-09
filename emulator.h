@@ -45,6 +45,23 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+#define KEYOPT_NB (12)
+
+enum keyopts {
+    JOYP_UP,
+    JOYP_DOWN,
+    JOYP_LEFT,
+    JOYP_RIGHT,
+    JOYP_START,
+    JOYP_SELECT,
+    JOYP_A,
+    JOYP_B,
+    OPT_PAUSE,
+    OPT_OPTIONS,
+    OPT_NEXT_FRAME,
+    OPT_FAST_FORWARD
+};
+
 enum flags_masks {
     ZERO_FMASK = 0x80,
     NEGATIVE_FMASK = 0x40,
@@ -105,11 +122,15 @@ typedef struct s_opt{
     char rom_filename[FILENAME_MAX];
     char sav_filename[FILENAME_MAX];
     FILE *logfile;
+    FILE *inifile;
+    SDL_Scancode opt_scancodes[KEYOPT_NB];
+    SDL_Scancode default_scancodes[KEYOPT_NB];
+    char opt_names[KEYOPT_NB][25];
 }s_opt;
 
 typedef struct s_input{
     SDL_Event event;
-    SDL_bool key[SDL_NUM_SCANCODES];
+    SDL_bool scan[SDL_NUM_SCANCODES];
     SDL_bool quit;
     int x, y, xrel, yrel;
     int xwheel, ywheel;
