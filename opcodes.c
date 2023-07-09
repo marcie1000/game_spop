@@ -1978,10 +1978,10 @@ void SBC_A_A(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint8_t A4bit = cpu->regA & 0x0F;
+    //uint8_t A4bit = cpu->regA & 0x0F;
     bool cy = (cpu->regF & CARRY_FMASK);
     
-    flag_assign(A4bit + cy > A4bit, &cpu->regF, HALF_CARRY_FMASK);
+    flag_assign(cy, &cpu->regF, HALF_CARRY_FMASK);
     
     flag_assign(cpu->regA + cy > cpu->regA, &cpu->regF, CARRY_FMASK);
     flag_assign(true, &cpu->regF, NEGATIVE_FMASK);
