@@ -91,6 +91,7 @@ Pause emulation | P | P | P
 Show an option menu (during pause) | O | O | O
 Next frame (during pause) | N | N | N
 Toogle fast forward | SPACE | SPACE | SPACE
+Toogle fullscreen | F11 | F11 | F11
 
 Note: for other keyoard layouts, scancodes are used for Gameboy joypad buttons controls (same keys positions 
 but different key names), and keycodes for other emulator options (same key names but possible different positions).

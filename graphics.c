@@ -122,7 +122,7 @@ void resize_screen(s_screen *s)
         s->pixel_w = s->pixel_h;
         
     int flags = SDL_GetWindowFlags(s->w);
-    s->window_maximized = (flags & SDL_WINDOW_MAXIMIZED);
+    s->window_maximized = (flags & SDL_WINDOW_MAXIMIZED) || (flags & SDL_WINDOW_FULLSCREEN_DESKTOP);
     
     if(!s->window_maximized)
     {

@@ -45,7 +45,7 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-#define KEYOPT_NB (12)
+#define KEYOPT_NB (13)
 
 enum keyopts {
     JOYP_UP,
@@ -59,7 +59,8 @@ enum keyopts {
     OPT_PAUSE,
     OPT_OPTIONS,
     OPT_NEXT_FRAME,
-    OPT_FAST_FORWARD
+    OPT_FAST_FORWARD,
+    OPT_FULLSCREEN
 };
 
 enum flags_masks {
@@ -115,7 +116,7 @@ enum cartridge_types {
 
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
-         log_instrs, fast_forward, audio, audio_log;
+         log_instrs, fast_forward, audio, audio_log, fullscreen;
     bool newframe; //for frame by frame step
     bool framebyframe;
     uint16_t breakpoint_value;
@@ -316,6 +317,10 @@ void pause_menu(s_emu *emu);
 void log_instructions(s_emu *emu);
 int read_cartridge_header(s_emu *emu);
 int load_sav(s_emu *emu);
+int create_inifile(s_emu *emu);
+int open_inifile(s_emu *emu);
+void fullscreen_toggle(s_emu *emu);
+
 
 
 #endif //EMULATOR_H

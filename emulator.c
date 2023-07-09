@@ -19,6 +19,8 @@ void flag_assign16(bool cond, uint16_t *flag, uint16_t mask)
     *flag = cond ? mask | *flag : ~mask & *flag;
 }
 
+
+
 int create_inifile(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
@@ -32,7 +34,13 @@ int create_inifile(s_emu *emu)
     
     FILE *shrt = opt->inifile;
     
-    fprintf(shrt, "; List of game_spop controls. See README.md for details.\n");
+    fprintf(
+        shrt,
+        "; List of game_spop controls.\n"
+        "; To modify a control, write a key name after the wanted control,\n"
+        "; using one of the names provided in the `Key Name` column in the\n"
+        "; [SDL_Keycode documentation](https://wiki.libsdl.org/SDL2/SDL_Keycode).\n"
+    );
     fprintf(shrt, "[controls]\n");
     SDL_KeyCode keycode;
     
@@ -80,6 +88,9 @@ int create_inifile(s_emu *emu)
     //FAST FORWARD
     fprintf(shrt, "%s=%s\n", opt->opt_names[11], SDL_GetKeyName(SDLK_SPACE));
     
+    //FULLSCREEN
+    fprintf(shrt, "%s=%s\n", opt->opt_names[12], SDL_GetKeyName(SDLK_F11));
+    
     return EXIT_SUCCESS;
 }
 
@@ -99,6 +110,7 @@ int open_inifile(s_emu *emu)
     snprintf(opt->opt_names[9], 25, "OPT_OPTIONS");
     snprintf(opt->opt_names[10], 25, "OPT_NEXT_FRAME");
     snprintf(opt->opt_names[11], 25, "OPT_FAST_FORWARD");
+    snprintf(opt->opt_names[12], 25, "OPT_FULLSCREEN");
     
     opt->default_scancodes[JOYP_UP] = SDL_SCANCODE_W;
     opt->default_scancodes[JOYP_DOWN] = SDL_SCANCODE_S;
@@ -112,6 +124,7 @@ int open_inifile(s_emu *emu)
     opt->default_scancodes[OPT_OPTIONS] = SDL_GetScancodeFromKey(SDLK_o);
     opt->default_scancodes[OPT_NEXT_FRAME] = SDL_GetScancodeFromKey(SDLK_n);
     opt->default_scancodes[OPT_FAST_FORWARD] = SDL_GetScancodeFromKey(SDLK_SPACE);
+    opt->default_scancodes[OPT_FULLSCREEN] = SDL_GetScancodeFromKey(SDLK_F11);
     
     opt->opt_scancodes[JOYP_UP] = opt->default_scancodes[JOYP_UP];
     opt->opt_scancodes[JOYP_DOWN] = opt->default_scancodes[JOYP_DOWN];
@@ -125,6 +138,7 @@ int open_inifile(s_emu *emu)
     opt->opt_scancodes[OPT_OPTIONS] = opt->default_scancodes[OPT_OPTIONS];
     opt->opt_scancodes[OPT_NEXT_FRAME] = opt->default_scancodes[OPT_NEXT_FRAME];
     opt->opt_scancodes[OPT_FAST_FORWARD] = opt->default_scancodes[OPT_FAST_FORWARD];
+    opt->opt_scancodes[OPT_FULLSCREEN] = opt->default_scancodes[OPT_FULLSCREEN];
     
     opt->inifile = fopen("game_spop.ini", "r");
     if(NULL == opt->inifile)
@@ -599,6 +613,45 @@ void bypass_bootrom(s_emu *emu)
     scr->bg_win_enable_priority  = io->LCDC & 0x01;
 }
 
+void fullscreen_toggle(s_emu *emu)
+{
+    s_opt *opt = &emu->opt;
+    s_screen *scr = &emu->scr;
+    static bool previous = false;
+    static int prev_w = 0, prev_h = 0;
+    if(emu->in.scan[opt->opt_scancodes[OPT_FULLSCREEN]] != previous && previous == false)
+    {
+        
+        
+        if(!opt->fullscreen)
+        {
+            SDL_GetWindowSize(scr->w, &prev_w, &prev_h);
+            opt->fullscreen = true;
+            if(0 != SDL_SetWindowFullscreen(emu->scr.w, SDL_WINDOW_FULLSCREEN_DESKTOP))
+            {
+                fprintf(stderr, "SDL_SetWindowFullscreen: %s\n", SDL_GetError());
+                //destroy_emulator(emu, EXIT_FAILURE);
+            }
+            resize_screen(scr);
+        }
+        else
+        {
+            opt->fullscreen = false;
+            if(0 != SDL_SetWindowFullscreen(emu->scr.w, 0))
+            {
+                fprintf(stderr, "SDL_SetWindowFullscreen: %s\n", SDL_GetError());
+                //destroy_emulator(emu, EXIT_FAILURE);
+            }
+            SDL_SetWindowSize(scr->w, prev_w, prev_h);
+            resize_screen(scr);
+        }
+        
+        
+    }
+
+    previous = emu->in.scan[opt->opt_scancodes[OPT_FULLSCREEN]];
+}
+
 void fast_forward_toggle(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
@@ -656,6 +709,7 @@ void emulate(s_emu *emu)
         }
 
         fast_forward_toggle(emu);
+        fullscreen_toggle(emu);
 
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
@@ -983,6 +1037,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->audio_log = false;
     opt->newframe = false;
     opt->framebyframe = false;
+    opt->fullscreen = false;
     if(argc > 1)
     {
         if(0 != parse_options(opt, (size_t) argc, argv, true))
