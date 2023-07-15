@@ -91,6 +91,12 @@ int create_inifile(s_emu *emu)
     //FULLSCREEN
     fprintf(shrt, "%s=%s\n", opt->ctrl_names[12], SDL_GetKeyName(SDLK_F11));
     
+    //SAVESTATE
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[13], SDL_GetKeyName(SDLK_F1));
+    
+    //LOADSTATE
+    fprintf(shrt, "%s=%s\n", opt->ctrl_names[14], SDL_GetKeyName(SDLK_F2));
+    
     fprintf(shrt, "\n");
     fprintf(shrt, "[options]\n");
     fprintf(shrt, "bootrom_path=boot_rom/dmg_rom.bin\n");
@@ -119,6 +125,8 @@ int open_inifile(s_emu *emu)
     snprintf(opt->ctrl_names[10], 25, "OPT_NEXT_FRAME");
     snprintf(opt->ctrl_names[11], 25, "OPT_FAST_FORWARD");
     snprintf(opt->ctrl_names[12], 25, "OPT_FULLSCREEN");
+    snprintf(opt->ctrl_names[13], 25, "OPT_SAVESTATE");
+    snprintf(opt->ctrl_names[14], 25, "OPT_LOADSTATE");
     
     snprintf(opt->bootrom_filename, FILENAME_MAX, "boot_rom/dmg_rom.bin");
     
@@ -141,20 +149,10 @@ int open_inifile(s_emu *emu)
     opt->default_scancodes[OPT_NEXT_FRAME] = SDL_GetScancodeFromKey(SDLK_n);
     opt->default_scancodes[OPT_FAST_FORWARD] = SDL_GetScancodeFromKey(SDLK_SPACE);
     opt->default_scancodes[OPT_FULLSCREEN] = SDL_GetScancodeFromKey(SDLK_F11);
-    
-    opt->opt_scancodes[JOYP_UP] = opt->default_scancodes[JOYP_UP];
-    opt->opt_scancodes[JOYP_DOWN] = opt->default_scancodes[JOYP_DOWN];
-    opt->opt_scancodes[JOYP_LEFT] = opt->default_scancodes[JOYP_LEFT];
-    opt->opt_scancodes[JOYP_RIGHT] = opt->default_scancodes[JOYP_RIGHT];
-    opt->opt_scancodes[JOYP_START] = opt->default_scancodes[JOYP_START];
-    opt->opt_scancodes[JOYP_SELECT] = opt->default_scancodes[JOYP_SELECT];
-    opt->opt_scancodes[JOYP_A] = opt->default_scancodes[JOYP_A];
-    opt->opt_scancodes[JOYP_B] = opt->default_scancodes[JOYP_B];
-    opt->opt_scancodes[OPT_PAUSE] = opt->default_scancodes[OPT_PAUSE];
-    opt->opt_scancodes[OPT_OPTIONS] = opt->default_scancodes[OPT_OPTIONS];
-    opt->opt_scancodes[OPT_NEXT_FRAME] = opt->default_scancodes[OPT_NEXT_FRAME];
-    opt->opt_scancodes[OPT_FAST_FORWARD] = opt->default_scancodes[OPT_FAST_FORWARD];
-    opt->opt_scancodes[OPT_FULLSCREEN] = opt->default_scancodes[OPT_FULLSCREEN];
+    opt->default_scancodes[OPT_SAVESTATE] = SDL_GetScancodeFromKey(SDLK_F1);
+    opt->default_scancodes[OPT_LOADSTATE] = SDL_GetScancodeFromKey(SDLK_F2);
+
+    memcpy(opt->opt_scancodes, opt->default_scancodes, sizeof(opt->opt_scancodes));
     
     opt->audio_ch[0] = true;
     opt->audio_ch[1] = true;
@@ -747,10 +745,91 @@ void fast_forward_toggle(s_emu *emu)
     previous = emu->in.scan[opt->opt_scancodes[OPT_FAST_FORWARD]];
 }
 
+void savestate(s_emu *emu)
+{
+    s_opt *opt = &emu->opt;
+    s_input *in = &emu->in;
+    
+    while(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
+    {
+        update_event(emu);
+        SDL_Delay(5);
+    }
+    
+    char state_filename[FILENAME_MAX];    
+    snprintf(state_filename, FILENAME_MAX, "%s.state", opt->rom_filename);
+    FILE *save = fopen(state_filename, "wb");
+    if(save == NULL)
+    {
+        perror("Error creating state: ");
+        return;
+    }
+    
+    if(1 != fwrite(emu, sizeof(s_emu), 1, save))
+    {
+        perror("Error writing state: ");
+        fclose(save);
+        return;
+    }
+    
+    printf("State saved.\n");
+    
+    fclose(save);
+}
+
+void loadstate(s_emu *emu)
+{
+    s_opt *opt = &emu->opt;
+    s_input *in = &emu->in;
+    
+    while(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
+    {
+        update_event(emu);
+        SDL_Delay(5);
+    }
+    char state_filename[FILENAME_MAX];    
+    snprintf(state_filename, FILENAME_MAX, "%s.state", opt->rom_filename);
+    FILE *save = fopen(state_filename, "rb");
+    if(save == NULL)
+    {
+        perror("Error loading state: ");
+        return;
+    }
+    
+    s_emu *emu_tmp = malloc(sizeof(s_emu));
+    if(emu_tmp == NULL)
+    {
+        perror("Malloc emu_tmp: ");
+        fclose(save);
+        return;
+    }
+    
+    if(1 != fread(emu_tmp, sizeof(s_emu), 1, save))
+    {
+        if(feof(save))
+            fprintf(stderr, "ERROR: invalid state, unexpected end of file.\n");
+        else if(ferror(save))
+            perror("ERROR fread: ");
+            
+        free(emu_tmp);
+        fclose(save);
+        return;
+    }
+    
+    emu_tmp->cpu.ROM_Bank = emu->cpu.ROM_Bank;
+    
+    memcpy(emu, emu_tmp, sizeof(s_emu));
+    printf("state loaded.\n");
+    
+    free(emu_tmp);
+    fclose(save);
+}
+
 void emulate(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_opt *opt = &emu->opt;
+    s_input *in = &emu->in;
     cpu->t_cycles = 0;
     emu->frame_timer = SDL_GetTicks64();
     
@@ -760,19 +839,23 @@ void emulate(s_emu *emu)
     if(emu->opt.audio)
         SDL_PauseAudioDevice(emu->au.dev, 0);
     
-    while(!emu->in.quit)
+    while(!in->quit)
     {
         update_event(emu);
-        if(emu->in.resize)
+        if(in->resize)
         {
             resize_screen(&emu->scr);
-            emu->in.resize = SDL_FALSE;
+            in->resize = SDL_FALSE;
         }
-        if((emu->in.scan[opt->opt_scancodes[OPT_PAUSE]]) || 
+        if((in->scan[opt->opt_scancodes[OPT_PAUSE]]) || 
            (emu->opt.framebyframe && emu->opt.newframe))
         {
             pause_menu(emu);
         }
+        if(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
+            savestate(emu);
+        if(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
+            loadstate(emu);
 
         fast_forward_toggle(emu);
         fullscreen_toggle(emu);

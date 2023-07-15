@@ -45,7 +45,7 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-#define KEYOPT_NB (13)
+#define KEYOPT_NB (15)
 #define INI_OPT_NB (5)
 
 enum keyctrls {
@@ -61,7 +61,9 @@ enum keyctrls {
     OPT_OPTIONS,
     OPT_NEXT_FRAME,
     OPT_FAST_FORWARD,
-    OPT_FULLSCREEN
+    OPT_FULLSCREEN,
+    OPT_SAVESTATE,
+    OPT_LOADSTATE
 };
 
 enum iniopts {
@@ -332,6 +334,8 @@ int load_sav(s_emu *emu);
 int create_inifile(s_emu *emu);
 int open_inifile(s_emu *emu);
 void fullscreen_toggle(s_emu *emu);
+void savestate(s_emu *emu);
+void loadstate(s_emu *emu);
 
 
 

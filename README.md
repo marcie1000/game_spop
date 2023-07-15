@@ -51,8 +51,8 @@ You need a Gameboy ROM file or a boot ROM file (see below).
                               provided, this option is always on. The default file path is
                               `boot_rom/dmg_rom.bin`, but can be modified in `game_spop.ini` 
                               (see below).
-* `--debug-info`, `-i`    = print cpu state at each instruction.
-* `--gb-doctor`, `-d`    =  log cpu state into a file to be used with the [Gameboy
+* `--debug-info`, `-i`      = print cpu state at each instruction.
+* `--gb-doctor`, `-d`       = log cpu state into a file to be used with the [Gameboy
                             doctor tool](https://github.com/robert/gameboy-doctor) (only at launch).
                             Emulator behavior might be inaccurate since LY reading always send 0x90 in
                             this mode.
@@ -73,21 +73,21 @@ or keyname is missing or unvalid, default controls are applied.
 
 This table shows the default controls:
 
-Control   | QWERTY key | AZERTY key | Bépo key
----       | :---:      | :---:      | :---:
-UP        | W          | Z          | é
-DOWN      | S          | S          | U
-LEFT      | A          | Q          | A
-RIGHT     | D          | D          | I
-START     | Return     | Return     | Return
-SELECT    | RShift     | RShift     | RShift
-A         | L          | L          | R
-B         | M          | ,          | Q
-Pause emulation | P | P | P
-Show an option menu (during pause) | O | O | O
-Next frame (during pause) | N | N | N
-Toogle fast forward | SPACE | SPACE | SPACE
-Toogle fullscreen | F11 | F11 | F11
+Control                             | QWERTY key | AZERTY key | Bépo key
+---                                 | :---:      | :---:      | :---:
+UP                                  | W          | Z          | é
+DOWN                                | S          | S          | U
+LEFT                                | A          | Q          | A
+RIGHT                               | D          | D          | I
+START                               | Return     | Return     | Return
+SELECT                              | RShift     | RShift     | RShift
+A                                   | L          | L          | R
+B                                   | M          | ,          | Q
+Pause emulation                     | P          | P          | P
+Show an option menu (during pause)  | O          | O          | O
+Next frame (during pause)           | N          | N          | N
+Toogle fast forward                 | SPACE      | SPACE      | SPACE
+Toogle fullscreen                   | F11        | F11        | F11
 
 *Note: for other keyoard layouts, scancodes are used for Gameboy joypad buttons controls (same keys positions 
 but different key names), and keycodes for other emulator options (same key names but possible different positions).*

@@ -329,7 +329,7 @@ void fill_noise_channel_stream(s_emu *emu)
         }
         
         //signal_state = LSFR_0
-        signal_state = au->ch4_lfsr & 0x0001;
+        signal_state = !(au->ch4_lfsr & 0x0001);
         
         au->ch4_lfsr >>= 1;
     }
@@ -430,6 +430,9 @@ void update_ch4_state(s_audio *au, s_io *io)
     else
         au->ch_freq[3] = 20000;
         
+    if(au->ch_freq[3] > 20000)
+        au->ch_freq[3] = 20000;
+        
     if(au->ch_trigger[3])
     {
         au->ch_reset[3] = true;
@@ -442,6 +445,12 @@ void update_ch4_state(s_audio *au, s_io *io)
     }
     
     au->ch_enable[3] = io->NR52 & 0x08;
+    
+    if(!(io->NR42 & 0xF8))
+    {
+        au->ch_enable[3] = false;
+        io->NR52 &= ~0x08;
+    }
 }
 
 void audio_update(s_emu *emu)
