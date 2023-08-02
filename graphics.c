@@ -117,9 +117,9 @@ void resize_screen(s_screen *s)
     s->pixel_h = h / PIX_BY_H;
     
     if(s->pixel_w > s->pixel_h)
-        s->pixel_h = s->pixel_w;
-    if(s->pixel_h > s->pixel_w)
         s->pixel_w = s->pixel_h;
+    if(s->pixel_h > s->pixel_w)
+        s->pixel_h = s->pixel_w;
         
     int flags = SDL_GetWindowFlags(s->w);
     s->window_maximized = (flags & SDL_WINDOW_MAXIMIZED) || (flags & SDL_WINDOW_FULLSCREEN_DESKTOP);
@@ -286,7 +286,11 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     //8*16 sprite handle
     //IF (sprite 8*16) AND (LY is in the second tile of the sprite)
     bool is_second_tile = ((scr->obj_size) && (io->LY - (cpu->OAM[sptd] - 16) >= 8));
-    //bool bgwin_over_obj = (cpu->OAM[sptd + 3] & 0x80);
+
+    bool bg_win_over_OBJ = (cpu->OAM[sptd + 3] & 0x80);
+    if(bg_win_over_OBJ && *pixel != 0)
+        return EXIT_SUCCESS;
+
     bool yflip = (cpu->OAM[sptd + 3] & 0x40);
     bool xflip = (cpu->OAM[sptd + 3] & 0x20);
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
@@ -300,12 +304,7 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     uint8_t bitmask;
     if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));
     else bitmask = (0x01 << (i - cpu->OAM[sptd + 1] + 8));
-//    
-//    if(data_adress + 1 > VRAM_SIZE)
-//    {
-//        
-//    }
-//    
+
     assert((data_adress + 1) < VRAM_SIZE);
     
     flag_assign((cpu->VRAM[data_adress] & bitmask),

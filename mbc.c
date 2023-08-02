@@ -119,7 +119,6 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
             cpu->cur_low_rom_bk = 0;
             cpu->current_sram_bk = 0;
         }
-
     }
     
     return EXIT_SUCCESS;
