@@ -33,19 +33,15 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF04:
             io->DIV = 0;
             cpu->timer_clock = 0;
-            printf("DIV write %02X\n", data);
             break;
         case 0xFF05:
             io->TIMA = data;
-            printf("TIMA write %02X\n", data);
             break;
         case 0xFF06:
             io->TMA = data;
-            printf("TMA write %02X\n", data);
             break;
         case 0xFF07:
             io->TAC = data & 0x07;
-            printf("TAC write %02X\n", data);
             break;
         case 0xFF0F:
             io->IF = data;

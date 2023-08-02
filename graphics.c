@@ -133,7 +133,7 @@ void resize_screen(s_screen *s)
     {
         if(w > h)
         {
-            uint32_t ratio = h / PIX_BY_H;
+            float ratio = (float)h / PIX_BY_H;
             s->render_dst.w = ratio * PIX_BY_W;
             s->render_dst.h = h;
             s->render_dst.x = (w - s->render_dst.w)/2;
@@ -141,7 +141,7 @@ void resize_screen(s_screen *s)
         }
         else
         {
-            uint32_t ratio = w / PIX_BY_W;
+            float ratio = (float)w / PIX_BY_W;
             s->render_dst.h = ratio * PIX_BY_H;
             s->render_dst.w = w;
             s->render_dst.y = (h - s->render_dst.h)/2;

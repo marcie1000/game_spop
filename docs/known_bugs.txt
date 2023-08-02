@@ -1,2 +1,3 @@
 - In Dr Mario, selected music in th menu should be blinking, but instead it is invisible.
-- Sounds in Dr Mario seams to not be as long as in other emulators, maybe an issue with variables reloading?
+- In Super Mario Land: the bottom of the coin tile in the status bar seems to move with the background, instead of being fixed in the status bar window.
+- In Zelda Link's Awakening: bug in the map in dungeons

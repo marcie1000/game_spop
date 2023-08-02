@@ -31,6 +31,9 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_mbc *mbc = &emu->cart.mbc;
     s_cart *cr = &emu->cart;
+    s_cpu *cpu = &emu->cpu;
+    
+    //RAM Enable (Write Only)
     if(adress <= 0x1FFF)
     {
         if(data == 0)
@@ -40,6 +43,8 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
             mbc->RAM_enable = true;
         }
     }
+    
+    //ROM Bank Number (Write Only)
     else if((adress >= 0x2000) && (adress <= 0x3FFF))
     {
         uint8_t reg5bit = data & 0x1F;
@@ -63,28 +68,58 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
             
         emu->cpu.cur_hi_rom_bk = mbc->ROM_bank_number;
     }
+    
+    //RAM Bank Number — or — Upper Bits of ROM Bank Number (Write Only)
     else if((adress >= 0x4000) && (adress <= 0x5FFF))
     {
         uint8_t ram_bank = data & 0x10;
-        if(ram_bank < cr->sram_banks)
-        {
-            mbc->RAM_bank_number = ram_bank;
-            emu->cpu.current_sram_bk = ram_bank;
-        }
-        
+
         //if 1 MiB ROM or superior
         if(cr->rom_banks >= 64)
         {
             mbc->ROM_bank_number &= ~0x60;
             mbc->ROM_bank_number |= data & 0x60;
-            emu->cpu.cur_hi_rom_bk = mbc->ROM_bank_number;
+            cpu->cur_hi_rom_bk = mbc->ROM_bank_number;
+        }
+        
+        if(mbc->banking_mode_select)
+        {
+            if(ram_bank < cr->sram_banks)
+            {
+                mbc->RAM_bank_number = ram_bank;
+                emu->cpu.current_sram_bk = ram_bank;
+            }
+            cpu->cur_low_rom_bk = mbc->ROM_bank_number & 0x60;
+        }
+        else
+        {
+            cpu->cur_low_rom_bk = 0;
+            cpu->current_sram_bk = 0;
         }
     }
+    
+    //Banking Mode Select (Write Only)
     else if((adress >= 0x6000) && (adress <= 0x7FFF))
     {
         mbc->banking_mode_select = data;
-        fprintf(stderr, "Banking mode 1 unimplemented!\n");
-        return EXIT_FAILURE;
+
+        uint8_t ram_bank = mbc->ROM_bank_number & 0x60;
+
+        if(mbc->banking_mode_select)
+        {
+            if(ram_bank < cr->sram_banks)
+            {
+                mbc->RAM_bank_number = ram_bank;
+                emu->cpu.current_sram_bk = ram_bank;
+            }
+            cpu->cur_low_rom_bk = mbc->ROM_bank_number & 0x60;
+        }
+        else
+        {
+            cpu->cur_low_rom_bk = 0;
+            cpu->current_sram_bk = 0;
+        }
+
     }
     
     return EXIT_SUCCESS;

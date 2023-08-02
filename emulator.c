@@ -817,6 +817,8 @@ void loadstate(s_emu *emu)
     }
     
     emu_tmp->cpu.ROM_Bank = emu->cpu.ROM_Bank;
+    memcpy(emu_tmp->opcode_functions, emu->opcode_functions, sizeof(emu->opcode_functions));
+    memcpy(emu_tmp->cb_functions,     emu->cb_functions,     sizeof(emu->cb_functions));
     
     memcpy(emu, emu_tmp, sizeof(s_emu));
     printf("state loaded.\n");
@@ -852,10 +854,10 @@ void emulate(s_emu *emu)
         {
             pause_menu(emu);
         }
-        if(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
-            savestate(emu);
-        if(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
-            loadstate(emu);
+//        if(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
+//            savestate(emu);
+//        if(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
+//            loadstate(emu);
 
         fast_forward_toggle(emu);
         fullscreen_toggle(emu);
