@@ -11,7 +11,7 @@
 #include "audio.h"
 #include "mbc.h"
 
-int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
+int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
@@ -51,41 +51,41 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF11:
             io->NR11 = data;
-            au->ch_duty_ratio[0]      = (io->NR11 & 0xC0) >> 6;
-            au->ch_init_len_timer[0]  = (io->NR11 & 0x3F);
+            au->ch_duty_ratio[CH1]      = (io->NR11 & 0xC0) >> 6;
+            au->ch_init_len_timer[CH1]  = (io->NR11 & 0x3F);
             break;
         case 0xFF12:
             io->NR12 = data;
-            au->ch_init_volume[0]     = (io->NR12 & 0xF0) >> 4;
-            au->ch_envl_dir[0]        = (io->NR12 & 0x08);
-            au->ch_vol_sweep_pace[0]  = (io->NR12 & 0x07);
+            au->ch_init_volume[CH1]     = (io->NR12 & 0xF0) >> 4;
+            au->ch_envl_dir[CH1]        = (io->NR12 & 0x08);
+            au->ch_vol_sweep_pace[CH1]  = (io->NR12 & 0x07);
             break;
         case 0xFF13:
             io->NR13 = data;
             break;
         case 0xFF14:
             io->NR14 = data & 0xC7;
-            au->ch_trigger[0] = (io->NR14 & 0x80);
-            au->ch_sound_len_enable[0] = (io->NR14 & 0x40);
+            au->ch_trigger[CH1] = (io->NR14 & 0x80);
+            au->ch_sound_len_enable[CH1] = (io->NR14 & 0x40);
             break;
         case 0xFF16:
             io->NR21 = data;
-            au->ch_duty_ratio[1]      = (io->NR21 & 0xC0) >> 6;
-            au->ch_init_len_timer[1]  = (io->NR21 & 0x3F);
+            au->ch_duty_ratio[CH2]      = (io->NR21 & 0xC0) >> 6;
+            au->ch_init_len_timer[CH2]  = (io->NR21 & 0x3F);
             break;
         case 0xFF17:
             io->NR22 = data;
-            au->ch_init_volume[1]     = (io->NR22 & 0xF0) >> 4;
-            au->ch_envl_dir[1]        = (io->NR22 & 0x08);
-            au->ch_vol_sweep_pace[1]  = (io->NR22 & 0x07);
+            au->ch_init_volume[CH2]     = (io->NR22 & 0xF0) >> 4;
+            au->ch_envl_dir[CH2]        = (io->NR22 & 0x08);
+            au->ch_vol_sweep_pace[CH2]  = (io->NR22 & 0x07);
             break;
         case 0xFF18:
             io->NR23 = data;
             break;
         case 0xFF19:
             io->NR24 = data & 0xC7;
-            au->ch_trigger[1] = (io->NR24 & 0x80);
-            au->ch_sound_len_enable[1] = (io->NR24 & 0x40);
+            au->ch_trigger[CH2] = (io->NR24 & 0x80);
+            au->ch_sound_len_enable[CH2] = (io->NR24 & 0x40);
             break;
         case 0xFF1A:
             io->NR30 = data;
@@ -93,7 +93,7 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF1B:
             io->NR31 = data;
-            au->ch_init_len_timer[2] = data;
+            au->ch_init_len_timer[CH3] = data;
             break;
         case 0xFF1C:
             io->NR32 = data;
@@ -104,18 +104,18 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF1E:
             io->NR34 = data;
-            au->ch_trigger[2] = data & 0x80;
-            au->ch_sound_len_enable[2] = data & 0x40;
+            au->ch_trigger[CH3] = data & 0x80;
+            au->ch_sound_len_enable[CH3] = data & 0x40;
             break;
         case 0xFF20:
             io->NR41 = data;
-            au->ch_init_len_timer[3] = data & 0x1F;
+            au->ch_init_len_timer[CH4] = data & 0x3F;
             break;
         case 0xFF21:
             io->NR42 = data;
-            au->ch_init_volume[3] = (data & 0xF0) >> 4;
-            au->ch_envl_dir[3] = data & 0x08;
-            au->ch_vol_sweep_pace[3] = data & 0x07;
+            au->ch_init_volume[CH4] = (data & 0xF0) >> 4;
+            au->ch_envl_dir[CH4] = data & 0x08;
+            au->ch_vol_sweep_pace[CH4] = data & 0x07;
             break;
         case 0xFF22:
             io->NR43 = data;
@@ -125,8 +125,8 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF23:
             io->NR44 = data;
-            au->ch_trigger[3] = data & 0x80;
-            au->ch_sound_len_enable[3] = data & 0x40;
+            au->ch_trigger[CH4] = data & 0x80;
+            au->ch_sound_len_enable[CH4] = data & 0x40;
             break;
         case 0xFF24:
             io->NR50 = data;
@@ -137,14 +137,14 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         case 0xFF25:
             io->NR51 = data;
-            au->ch_l[0] = (io->NR51 & 0x10);
-            au->ch_r[0] = (io->NR51 & 0x01);
-            au->ch_l[1] = (io->NR51 & 0x20);
-            au->ch_r[1] = (io->NR51 & 0x02);
-            au->ch_l[2] = (io->NR51 & 0x40);
-            au->ch_r[2] = (io->NR51 & 0x04);
-            au->ch_l[3] = (io->NR51 & 0x80);
-            au->ch_r[3] = (io->NR51 & 0x08);
+            au->ch_l[CH1] = (io->NR51 & 0x10);
+            au->ch_r[CH1] = (io->NR51 & 0x01);
+            au->ch_l[CH2] = (io->NR51 & 0x20);
+            au->ch_r[CH2] = (io->NR51 & 0x02);
+            au->ch_l[CH3] = (io->NR51 & 0x40);
+            au->ch_r[CH3] = (io->NR51 & 0x04);
+            au->ch_l[CH4] = (io->NR51 & 0x80);
+            au->ch_r[CH4] = (io->NR51 & 0x08);
             break;
         case 0xFF26:
             flag_assign(data & 0x80, &io->NR52, 0x80);
@@ -239,7 +239,7 @@ int write_ioisters(s_emu *emu, uint16_t adress, uint8_t data)
     return EXIT_SUCCESS;
 }
 
-int read_ioisters(s_emu *emu, uint16_t adress, uint8_t *data)
+int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
@@ -463,7 +463,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
     {
-        if(0 != write_ioisters(emu, adress, data))
+        if(0 != write_io_registers(emu, adress, data))
             return EXIT_FAILURE;
     }    
     //HRAM
@@ -531,7 +531,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
     {
-        if(0 != read_ioisters(emu, adress, data))
+        if(0 != read_io_registers(emu, adress, data))
             return EXIT_FAILURE;
     }    
     //HRAM

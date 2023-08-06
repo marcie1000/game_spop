@@ -292,16 +292,25 @@ void fill_noise_channel_stream(s_emu *emu)
         //disable channel
         io->NR52 &= ~(0x01 << 3);
         au->ch_enable[CH4] = false;
+        //debug
+//        if(emu->opt.audio_log)
+//        {
+//            fprintf(emu->opt.logfile, "%f;%u;%u;%u;%u;%lu;%u;%lu\n",
+//            au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[ch], au->ch_vol_sweep_timer[ch], period_counter,
+//            new_period_samples_played, duty, au->samples_played);
+//        }
         return;
     }
     
     uint64_t samples_per_tick = ((float)AUDIO_SAMPLE_RATE / au->ch_freq[CH4]) * 2;
     static uint64_t local_samples_played = 0;
     
+    bool reset_tmp = false;
     if(au->ch_reset[CH4])
     {
         local_samples_played = 0;
         au->ch_reset[CH4] = false;
+        reset_tmp = true;
     }
     
     static bool signal_state = false;
@@ -349,6 +358,18 @@ void fill_noise_channel_stream(s_emu *emu)
                                                1/8 * (au->r_output_vol + 1) * 0.45  ;
     }
     
+    //debug
+    if(emu->opt.audio_log)
+    {
+        fprintf(emu->opt.logfile, "%f;%i;%u;%u;%lu;",
+        au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[CH4], au->ch_vol_sweep_timer[CH4], local_samples_played);
+        fprintf(emu->opt.logfile, "%d;%lu;%u;%u;%u;", 
+        signal_state, au->samples_played, au->ch4_lfsr, au->ch4_clock_div, au->ch_freq[CH4]);
+        fprintf(emu->opt.logfile, "%d;%u;%u;",
+        reset_tmp, au->ch_len_timer[CH4], au->ch_init_len_timer[CH4]);
+        fprintf(emu->opt.logfile, "%u;%u;%u;%u;%lu\n",
+        io->NR41, io->NR42, io->NR43, io->NR44, au->buf_counter);
+    }
     
     local_samples_played += 2;
 }
@@ -515,6 +536,7 @@ void audio_update(s_emu *emu)
         }
         au->buffers_since_last_frame++;
         memset(au->fstream, 0, sizeof(au->fstream));
+        au->buf_counter++;
     }
 }
 
@@ -524,6 +546,8 @@ int init_audio(s_emu *emu)
         return EXIT_SUCCESS;
         
     s_audio *au = &emu->au;
+    
+    au->buf_counter = 0;
  
     memset(au, 0, sizeof(s_audio));
     

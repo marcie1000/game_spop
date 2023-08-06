@@ -488,9 +488,21 @@ int initialize_emulator(s_emu *emu)
         return EXIT_FAILURE;
     }
     
+    /*
+     *         fprintf(emu->opt.logfile, "%f;%i;%u;%u;%lu;",
+        au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[CH4], au->ch_vol_sweep_timer[CH4], local_samples_played);
+        fprintf(emu->opt.logfile, "%d;%lu;%u;%u;%u;", 
+        signal_state, au->samples_played, au->ch4_lfsr, au->ch4_clock_div, au->ch_freq[CH4]);
+        fprintf(emu->opt.logfile, "%d;%u;%u;",
+        au->ch_reset[CH4], au->ch_len_timer[CH4], au->ch_init_len_timer[CH4]);
+        fprintf(emu->opt.logfile, "%u;%u;%u;%u\n",
+        io->NR41, io->NR42, io->NR43, io->NR44);*/
+    
     if(opt->audio_log)
-        fprintf(opt->logfile, "fstream;volume;ch_vol_sweep_counter[0];ch_vol_sweep_timer[0];"
-        "period_counter;npsp;duty;samples_played\n");
+        fprintf(opt->logfile, 
+            "fstream;volume;ch_vol_sweep_counter;ch_vol_sweep_timer;local_samples_played;"
+            "signal_state;samples_played;ch4_lfsr;ch4_clock_div;ch_freq;"
+            "ch_reset;ch_len_timer;ch_init_len_timer;NR41;NR42;NR43;NR44;buf_counter\n");
     
     return EXIT_SUCCESS;
 }

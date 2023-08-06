@@ -242,6 +242,7 @@ typedef struct s_audio{
     bool VIN_l, VIN_r;
     uint8_t l_output_vol, r_output_vol;
     
+    size_t buf_counter;
     
     uint16_t ch_wavelen[2];
     uint16_t ch_len_timer[4];
