@@ -128,27 +128,27 @@ void resize_screen(s_screen *s)
     {
         SDL_SetWindowSize(s->w, s->pixel_w * PIX_BY_W, s->pixel_h * PIX_BY_H);
         s->render_dst_ptr = NULL;
+        return;
+    }
+    //else
+    if(w > h)
+    {
+        float ratio = (float)h / PIX_BY_H;
+        s->render_dst.w = ratio * PIX_BY_W;
+        s->render_dst.h = h;
+        s->render_dst.x = (w - s->render_dst.w)/2;
+        s->render_dst.y = 0;
     }
     else
     {
-        if(w > h)
-        {
-            float ratio = (float)h / PIX_BY_H;
-            s->render_dst.w = ratio * PIX_BY_W;
-            s->render_dst.h = h;
-            s->render_dst.x = (w - s->render_dst.w)/2;
-            s->render_dst.y = 0;
-        }
-        else
-        {
-            float ratio = (float)w / PIX_BY_W;
-            s->render_dst.h = ratio * PIX_BY_H;
-            s->render_dst.w = w;
-            s->render_dst.y = (h - s->render_dst.h)/2;
-            s->render_dst.x = 0;
-        }
-        s->render_dst_ptr = &s->render_dst;
+        float ratio = (float)w / PIX_BY_W;
+        s->render_dst.h = ratio * PIX_BY_H;
+        s->render_dst.w = w;
+        s->render_dst.y = (h - s->render_dst.h)/2;
+        s->render_dst.x = 0;
     }
+    s->render_dst_ptr = &s->render_dst;
+    
 }
 
 int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
@@ -514,11 +514,11 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
 //        SDL_Delay(17 - elapsed);
 //        elapsed = 17;
 //    }
-    if((emu->au.queues_since_last_frame < QUEUES_PER_FRAME) && 
+    if((emu->au.buffers_since_last_frame < BUFFERS_PER_FRAME) && 
       (!emu->opt.fast_forward) && emu->opt.audio && emu->au.apu_enable)
         return;
         
-    emu->au.queues_since_last_frame = 0;
+    emu->au.buffers_since_last_frame = 0;
     emu->opt.newframe = true;
 
     SDL_UnlockTexture(scr->scr);

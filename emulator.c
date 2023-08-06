@@ -302,14 +302,17 @@ int read_cartridge_header(s_emu *emu)
     if(!emu->opt.rom_argument)
         return EXIT_SUCCESS;
         
-    for(int i = 0; i < 12; i++)
+    for(int i = 0; i < 16; i++)
         cr->title[i] = cpu->ROM_Bank_0_tmp[i + 0x0134];
-    cr->title[12] = '\n';
+    cr->title[16] = '\0';
+    
+    printf("Title: %s\n", cr->title);
     
     switch(cpu->ROM_Bank_0_tmp[0x0143])
     {
         case 0x80:
             cr->cgb_flag = CGB_BACKWARDS_COMPATIBLE;
+            printf("ROM type: CGB backwards compatible\n");
             break;
         case 0xC0:
             cr->cgb_flag = CGB_ONLY;
@@ -319,6 +322,7 @@ int read_cartridge_header(s_emu *emu)
             break;
         default:
             cr->cgb_flag = CLASSIC_GB;
+            printf("ROM type: Classic GB\n");
             break;
     }
     
@@ -369,6 +373,12 @@ int read_cartridge_header(s_emu *emu)
             break;
     }
     
+    printf("ROM banks: %d ", cr->rom_banks);
+    if(cr->rom_banks < 64)
+        printf("(%d KiB)\n", cr->rom_banks * 16);
+    else
+        printf("(%f MiB)\n", ((float)cr->rom_banks * 16) / 1024);
+    
     switch(cpu->ROM_Bank_0_tmp[0x0149])
     {
         case 0x00:
@@ -393,12 +403,21 @@ int read_cartridge_header(s_emu *emu)
             break;
     }
     
+    printf("SRAM banks: %d\n", cr->sram_banks);
+    
     switch(cr->type)
     {
         case ROM_ONLY:
+            printf("MBC: ROM ONLY\n");
+            break;
         case MBC1:
+            printf("MBC: MBC1\n");
+            break;
         case MBC1_P_RAM:
+            printf("MBC: MBC1 + RAM\n");
+            break;
         case MBC1_P_RAM_P_BATT:
+            printf("MBC: MBC1 + RAM + BATTERY\n");
             break;
         default:
             fprintf(stderr, "WARNING: MBC code %02X (unimplemented)!\n", cr->type);

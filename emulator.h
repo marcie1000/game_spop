@@ -29,10 +29,10 @@
 #define ROM_BANKS_MAX               (512)
 #define SRAM_BANKS_MAX              (16)
 
-#define AUDIO_SAMPLES_PER_QUEUES    (1600) //800
+#define AUDIO_SAMPLES_PER_BUFFER    (1600)
 #define AUDIO_SAMPLES_DRIVER        (400)
 #define AUDIO_SAMPLE_RATE           (48000)
-#define QUEUES_PER_FRAME            (1)
+#define BUFFERS_PER_FRAME            (1)
 
 //to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
@@ -47,6 +47,14 @@
 
 #define KEYOPT_NB (15)
 #define INI_OPT_NB (5)
+
+enum audio_channels {
+    CH1,
+    CH2,
+    CH3,
+    CH4,
+    AUDIO_CH_NB
+};
 
 enum keyctrls {
     JOYP_UP,
@@ -227,7 +235,7 @@ typedef struct s_audio{
     uint64_t samples_played;
     uint8_t DIV_APU;
     
-    float fstream[AUDIO_SAMPLES_PER_QUEUES];
+    float fstream[AUDIO_SAMPLES_PER_BUFFER];
     
     bool apu_enable;
     
@@ -273,7 +281,7 @@ typedef struct s_audio{
     double samples_timer;
     float duty_ratios[4];
     
-    uint8_t queues_since_last_frame;
+    uint8_t buffers_since_last_frame;
 }s_audio;
 
 typedef struct s_mbc{

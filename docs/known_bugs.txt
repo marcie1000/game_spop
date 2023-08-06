@@ -1,6 +1,4 @@
-- In Dr Mario, selected music in th menu should be blinking, but instead it is invisible.
 - In Super Mario Land: the bottom of the coin tile in the status bar seems to move with the background, instead of being fixed in the status bar window.
 - In Zelda Link's Awakening: bug in the map in dungeons, arrow is not in the right place
 - In SML: game over is not showing properly
 - SML: pause not showing properly
-- OBJ priorities

@@ -645,7 +645,7 @@ void step_by_step_handle(s_emu *emu)
 void div_handle(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
-    uint8_t old_DIV = cpu->io.DIV;
+    static uint8_t old_DIV = 0;
 
     cpu->io.DIV = (cpu->timer_clock & 0xFF00) >> 8;
 
@@ -653,6 +653,8 @@ void div_handle(s_emu *emu)
     {
         emu->au.DIV_APU++;
     }
+    
+    old_DIV = cpu->io.DIV;
 }
 
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
@@ -670,9 +672,10 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
 
     (*opcode_functions[action])(emu, opcode);
     
-    cpu->timer_clock += (cpu->t_cycles - t_cycles_old);
-    cpu->debug_clock += (cpu->t_cycles - t_cycles_old);
-    emu->au.samples_timer += (cpu->t_cycles - t_cycles_old);
+    size_t time_diff = cpu->t_cycles - t_cycles_old;
+    cpu->timer_clock += time_diff;
+    cpu->debug_clock += time_diff;
+    emu->au.samples_timer += time_diff;
 
     cpu->pc += emu->length_table[action];
     
