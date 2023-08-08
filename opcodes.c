@@ -11,7 +11,7 @@
 void opcode_unimplemented(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
-    fprintf(stderr, ANSI_COLOR_RED "WARNING: instruction %s (0x%06X) unimplemented!\n" ANSI_COLOR_RESET, 
+    fprintf(stderr, COLOR_RED "WARNING: instruction %s (0x%06X) unimplemented!\n" COLOR_RESET, 
             emu->mnemonic_index[(op & 0x00ff0000) >> 16], op);
     SDL_Delay(2000);
     destroy_emulator(emu, EXIT_FAILURE);
@@ -20,7 +20,7 @@ void opcode_unimplemented(void *arg, uint32_t op)
 void opcode_non_existant(void *arg, uint32_t op)
 {
     s_emu *emu = arg;
-    fprintf(stderr, ANSI_COLOR_RED "ERROR: instuction 0x%02X doesn't exist!\n" ANSI_COLOR_RESET, (op & 0xFF0000) >> 16);
+    fprintf(stderr, COLOR_RED "ERROR: instuction 0x%02X doesn't exist!\n" COLOR_RESET, (op & 0xFF0000) >> 16);
     destroy_emulator(emu, EXIT_FAILURE);
 }
 

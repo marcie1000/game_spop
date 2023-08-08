@@ -59,7 +59,11 @@ void wavelength_sweep(s_audio *au, s_io *io)
     }
     else
     {
-        au->ch_wavelen[CH1] -= au->ch_wavelen[CH1] / (pow(2, au->ch1_wl_sweep_slope_ctr));
+        unsigned sub = au->ch_wavelen[CH1] / (pow(2, au->ch1_wl_sweep_slope_ctr));
+        if(sub <= au->ch_wavelen[CH1])
+            au->ch_wavelen[CH1] -= sub;
+        else
+            au->ch_wavelen[CH1] = 0;
         if(au->ch_wavelen[CH1] > 0x07FF)
             au->ch_wavelen[CH1] = 0;
     }
@@ -90,7 +94,7 @@ void volume_sweep(s_audio *au, int *volume, int ch)
     }
     //volume sweep
     bool diff = (old_vol_sweep_timer[ch] != au->ch_vol_sweep_timer[ch]);
-    if(diff && (au->ch_vol_sweep_timer[ch] % au->ch_vol_sweep_pace[ch] == 0))
+    if(diff && (au->ch_vol_sweep_timer[ch] % (au->ch_vol_sweep_pace[ch] + 1) == 0))
     {
         au->ch_vol_sweep_timer[ch] = 1;
         if(au->ch_vol_sweep_counter[ch] < 15)
@@ -365,8 +369,8 @@ void fill_noise_channel_stream(s_emu *emu)
         au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[CH4], au->ch_vol_sweep_timer[CH4], local_samples_played);
         fprintf(emu->opt.logfile, "%d;%lu;%u;%u;%u;", 
         signal_state, au->samples_played, au->ch4_lfsr, au->ch4_clock_div, au->ch_freq[CH4]);
-        fprintf(emu->opt.logfile, "%d;%u;%u;",
-        reset_tmp, au->ch_len_timer[CH4], au->ch_init_len_timer[CH4]);
+        fprintf(emu->opt.logfile, "%d;%u;%u;%u;",
+        reset_tmp, au->ch_len_timer[CH4], au->ch_init_len_timer[CH4], au->ch_init_volume[CH4]);
         fprintf(emu->opt.logfile, "%u;%u;%u;%u;%lu\n",
         io->NR41, io->NR42, io->NR43, io->NR44, au->buf_counter);
     }
@@ -442,16 +446,18 @@ void update_ch3_state(s_audio *au, s_io *io)
 
 void update_ch4_state(s_audio *au, s_io *io)
 {
-    float r = au->ch4_clock_div;
+    //The frequency at which the LFSR is clocked is 262144 / (r * (2 ^ s)) Hz.
+    //s = au->ch4_clock_shift
+    double r = au->ch4_clock_div;
     if (au->ch4_clock_div == 0) r = 0.5; 
     
-    if(au->ch4_clock_div != 0)
-        au->ch_freq[CH4] = 262144 / (r * (pow(2.0, au->ch4_clock_shift)));
-    else
-        au->ch_freq[CH4] = 20000;
+    //total_divider = r * (2 ^ s)
+    double total_divider = r * (pow(2.0, au->ch4_clock_shift));
+    
+    au->ch_freq[CH4] = 262144 / total_divider;
         
-    if(au->ch_freq[CH4] > 20000)
-        au->ch_freq[CH4] = 20000;
+//    if(au->ch_freq[CH4] > 48000)
+//        au->ch_freq[CH4] = 48000;
         
     if(au->ch_trigger[CH4])
     {

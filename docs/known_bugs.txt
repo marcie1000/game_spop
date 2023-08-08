@@ -2,3 +2,6 @@
 - In Zelda Link's Awakening: bug in the map in dungeons, arrow is not in the right place
 - In SML: game over is not showing properly
 - SML: pause not showing properly
+- Sound gradually gets out of sync
+- ZLA: wrong volume sweep when cutting grass
+- ZLA: wrong jump sound (freq sweep)

@@ -37,13 +37,13 @@
 //to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
 
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define COLOR_RED     "\x1b[31m"
+#define COLOR_GREEN   "\x1b[32m"
+#define COLOR_YELLOW  "\x1b[33m"
+#define COLOR_BLUE    "\x1b[34m"
+#define COLOR_MAGENTA "\x1b[35m"
+#define COLOR_CYAN    "\x1b[36m"
+#define COLOR_RESET   "\x1b[0m"
 
 #define KEYOPT_NB (15)
 #define INI_OPT_NB (5)
@@ -244,7 +244,7 @@ typedef struct s_audio{
     
     size_t buf_counter;
     
-    uint16_t ch_wavelen[2];
+    unsigned ch_wavelen[2];
     uint16_t ch_len_timer[4];
     uint8_t ch_init_len_timer[4];
     uint8_t ch_vol_sweep_timer[4];
@@ -255,7 +255,7 @@ typedef struct s_audio{
     uint8_t ch_vol_sweep_pace[4];
     bool    ch_l[4], ch_r[4];
     bool ch_sound_len_enable[4];
-    uint16_t ch_freq[4];
+    unsigned ch_freq[4];
     bool ch_trigger[4];
     bool ch_reset[4];
     bool ch_enable[4];

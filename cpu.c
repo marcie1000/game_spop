@@ -193,8 +193,8 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             io->SCX = data;
             break;
         case 0xFF44:
-            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write in I/O register"
-                    " LY (0xFF44), read only!\n" ANSI_COLOR_RESET);
+            fprintf(stderr, COLOR_RED "ERROR: attempt to write in I/O register"
+                    " LY (0xFF44), read only!\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF45:
@@ -229,8 +229,8 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF7F:
             break;
         default:
-            fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write I/O register"
-                    " at adress 0x%04X (unimplemented!)\n" ANSI_COLOR_RESET, adress);
+            fprintf(stderr, COLOR_RED "WARNING: attempt to write I/O register"
+                    " at adress 0x%04X (unimplemented!)\n" COLOR_RESET, adress);
             SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
@@ -280,8 +280,8 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR12;
             break;
         case 0xFF13:
-            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF13,"
-                    " NR13 I/O register (write only)\n" ANSI_COLOR_RESET);
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF13,"
+                    " NR13 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF14:
@@ -294,8 +294,8 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR22;
             break;
         case 0xFF18:
-            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF18,"
-                    " NR23 I/O register (write only)\n" ANSI_COLOR_RESET);
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF18,"
+                    " NR23 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF19:
@@ -305,24 +305,24 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR30;
             break;
         case 0xFF1B:
-            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1B,"
-                    " NR31 I/O register (write only)\n" ANSI_COLOR_RESET);
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF1B,"
+                    " NR31 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF1C:
             *data = io->NR32;
             break;
         case 0xFF1D:
-            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1D,"
-                    " NR33 I/O register (write only)\n" ANSI_COLOR_RESET);
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF1D,"
+                    " NR33 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF1E:
             *data = io->NR34 & 0x40;
             break;
         case 0xFF20:
-            fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress FF1D,"
-                    " NR33 I/O register (write only)\n" ANSI_COLOR_RESET);
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF1D,"
+                    " NR33 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         case 0xFF21:
@@ -405,8 +405,8 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = 0;
             break;
         default:
-            fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to read I/O register"
-                    " at adress 0x%04X (unimplemented!)\n" ANSI_COLOR_RESET, adress);
+            fprintf(stderr, COLOR_RED "WARNING: attempt to read I/O register"
+                    " at adress 0x%04X (unimplemented!)\n" COLOR_RESET, adress);
             SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
@@ -448,7 +448,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     //ECHO RAM
     else if((adress >= 0xE000) && (adress <= 0xFDFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "WARNING: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
         //return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
@@ -458,7 +458,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     }
     else if((adress >= 0xFEA0) && (adress <= 0xFEFF) && (data != 0))
     {
-        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to write at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "ERROR: attempt to write at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
@@ -478,7 +478,7 @@ int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
     
 //    if(emu->opt.debug_info)
 //    {
-//        printf(ANSI_COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" ANSI_COLOR_RESET "\n", data, adress);
+//        printf(COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" COLOR_RESET "\n", data, adress);
 //    }
     
     return EXIT_SUCCESS;
@@ -517,7 +517,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     //ECHO RAM
     else if((adress >= 0xE000) && (adress <= 0xFDFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "WARNING: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "WARNING: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
     }
     //sprite attribute table (OAM)
     else if((adress >= 0xFE00) && (adress <= 0xFE9F))
@@ -526,7 +526,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     }
     else if((adress >= 0xFEA0) && (adress <= 0xFEFF))
     {
-        fprintf(stderr, ANSI_COLOR_RED "ERROR: attempt to read at adress 0x%04X (prohibited)\n" ANSI_COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
         return EXIT_FAILURE;
     }
     else if((adress >= 0xFF00) && (adress <= 0xFF7F))
@@ -546,7 +546,7 @@ int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
     
 //    if(emu->opt.debug_info)
 //    {
-//        printf(ANSI_COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" ANSI_COLOR_RESET "\n", *data, adress);
+//        printf(COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" COLOR_RESET "\n", *data, adress);
 //    }
     
     return EXIT_SUCCESS;
@@ -630,7 +630,7 @@ void breakpoint_handle(s_emu *emu, uint8_t action)
     if(cpu->pc <= emu->opt.breakpoint_value &&
        cpu->pc + emu->length_table[action] >= emu->opt.breakpoint_value)
     {
-        printf(ANSI_COLOR_GREEN "Breakpoint 0x%04X reached!" ANSI_COLOR_RESET "\n", emu->opt.breakpoint_value);
+        printf(COLOR_GREEN "Breakpoint 0x%04X reached!" COLOR_RESET "\n", emu->opt.breakpoint_value);
         ask_breakpoint(&emu->opt);
     }
 }

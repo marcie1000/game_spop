@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <SDL.h>
 #include "emulator.h"
 #include "cpu.h"
@@ -18,8 +19,6 @@ void flag_assign16(bool cond, uint16_t *flag, uint16_t mask)
 {
     *flag = cond ? mask | *flag : ~mask & *flag;
 }
-
-
 
 int create_inifile(s_emu *emu)
 {
@@ -312,17 +311,17 @@ int read_cartridge_header(s_emu *emu)
     {
         case 0x80:
             cr->cgb_flag = CGB_BACKWARDS_COMPATIBLE;
-            printf("ROM type: CGB backwards compatible\n");
+            printf("Game type: CGB backwards compatible\n");
             break;
         case 0xC0:
             cr->cgb_flag = CGB_ONLY;
-            fprintf(stderr, "ERROR: This game is GameBoy Color only "
-                    "(not supported!)\n");
+            fprintf(stderr, COLOR_RED "ERROR: This game is GameBoy Color only "
+                    "(not supported!)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
         default:
             cr->cgb_flag = CLASSIC_GB;
-            printf("ROM type: Classic GB\n");
+            printf("Game type: Classic GB\n");
             break;
     }
     
@@ -377,7 +376,7 @@ int read_cartridge_header(s_emu *emu)
     if(cr->rom_banks < 64)
         printf("(%d KiB)\n", cr->rom_banks * 16);
     else
-        printf("(%f MiB)\n", ((float)cr->rom_banks * 16) / 1024);
+        printf("(%.2f MiB)\n", ((float)cr->rom_banks * 16) / 1024);
     
     switch(cpu->ROM_Bank_0_tmp[0x0149])
     {
@@ -420,7 +419,7 @@ int read_cartridge_header(s_emu *emu)
             printf("MBC: MBC1 + RAM + BATTERY\n");
             break;
         default:
-            fprintf(stderr, "WARNING: MBC code %02X (unimplemented)!\n", cr->type);
+            fprintf(stderr, COLOR_RED "WARNING:" COLOR_RESET " MBC code %02X (unimplemented)!\n", cr->type);
             return EXIT_FAILURE;
             break;
     }
@@ -502,7 +501,7 @@ int initialize_emulator(s_emu *emu)
         fprintf(opt->logfile, 
             "fstream;volume;ch_vol_sweep_counter;ch_vol_sweep_timer;local_samples_played;"
             "signal_state;samples_played;ch4_lfsr;ch4_clock_div;ch_freq;"
-            "ch_reset;ch_len_timer;ch_init_len_timer;NR41;NR42;NR43;NR44;buf_counter\n");
+            "ch_reset;ch_len_timer;ch_init_len_timer;ch_init_volume;NR41;NR42;NR43;NR44;buf_counter\n");
     
     return EXIT_SUCCESS;
 }
@@ -1352,9 +1351,9 @@ void log_instructions(s_emu *emu)
         {
             fprintf(
                 stdout, 
-                ANSI_COLOR_CYAN
-                "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x " ANSI_COLOR_MAGENTA
-                "SP:%04x PC:%04x" ANSI_COLOR_GREEN " (cy: %lu) ppu:+%u PCMEM:%-9s  " ANSI_COLOR_YELLOW "%s\n" ANSI_COLOR_RESET,
+                COLOR_CYAN
+                "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x " COLOR_MAGENTA
+                "SP:%04x PC:%04x" COLOR_GREEN " (cy: %lu) ppu:+%u PCMEM:%-9s  " COLOR_YELLOW "%s\n" COLOR_RESET,
                 cpu->regA, z, n, h, c, cpu->regB, cpu->regC, cpu->regD, cpu->regE,
                 cpu->regH, cpu->regL, cpu->sp, cpu->pc, cpu->debug_clock, io->STAT & 0x03,
                 pcmem, emu->mnemonic_index[pc0]
