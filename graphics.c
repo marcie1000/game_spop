@@ -17,6 +17,7 @@ int initialize_screen(s_emu *emu)
     scr->pixel_h = 2;
     
     scr->window_maximized = false;
+    scr->win_LY = 0;
     
     scr->w = SDL_CreateWindow("Game_spop", SDL_WINDOWPOS_CENTERED,
                                  SDL_WINDOWPOS_CENTERED, PIX_BY_W * scr->pixel_w, PIX_BY_H * scr->pixel_h,
@@ -151,7 +152,7 @@ void resize_screen(s_screen *s)
     
 }
 
-int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
+int draw_background(s_emu *emu, int i, uint8_t *pixel)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -210,27 +211,30 @@ int draw_background(s_emu *emu, size_t i, uint8_t *pixel)
     return EXIT_SUCCESS;
 }
 
-int draw_window(s_emu *emu, size_t i, uint8_t *pixel)
+int draw_window(s_emu *emu, int i, uint8_t *pixel)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
     
-    uint8_t Ytemp = io->LY + io->WY;
-    uint8_t Xtemp = io->WX - 7 + i;
+//    uint8_t Ytemp = io->LY + io->WY;
+
     
-    if(!scr->bg_win_enable_priority)
+    if((!scr->bg_win_enable_priority) || (!scr->window_enable) || (io->LY < io->WY))
+    {
+        scr->win_LY = 0;
         return EXIT_SUCCESS;
-    if(!scr->window_enable)
+    }
+    if(i < ((int)io->WX - 7))
         return EXIT_SUCCESS;
-    if(io->LY < io->WY)
-        return EXIT_SUCCESS;
+        
+    uint8_t Xtemp = i - io->WX + 7;
         
     uint16_t win_map_start_adress = scr->win_tile_map_area ? 0x1C00 : 0x1800;
     uint16_t bg_win_data_start_adr = scr->BG_win_tile_data_area ? 0 : 0x1000;
     
     //relative adress of the tile in the tile map
-    uint16_t rel_win_tilemap_adress = (Ytemp) / 8;
+    uint16_t rel_win_tilemap_adress = (scr->win_LY - 1) / 8;
     rel_win_tilemap_adress *= 32;
     rel_win_tilemap_adress += (Xtemp) / 8;
     if(rel_win_tilemap_adress > 0x400)
@@ -256,7 +260,7 @@ int draw_window(s_emu *emu, size_t i, uint8_t *pixel)
     // adress of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
     uint16_t win_data_adress = bg_win_data_start_adr + 16 * tilenum;
-    win_data_adress += 2 * ((Ytemp) % 8);
+    win_data_adress += 2 * ((scr->win_LY - 1) % 8);
     
     uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
 
@@ -273,7 +277,7 @@ int draw_window(s_emu *emu, size_t i, uint8_t *pixel)
     return EXIT_SUCCESS;
 }
 
-int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
+int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
 {
     assert((sptd + 3) < OAM_SIZE);
     
@@ -330,7 +334,7 @@ int draw_OBJ_tile(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd)
     
 }
 
-int draw_OBJ(s_emu *emu, size_t i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
+int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -367,7 +371,7 @@ void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE], uint8_t
         return;
     
     *nb_sptd = 0;
-    for (size_t i = 0; (i < OAM_SPRITES_MAX * 4) && (*nb_sptd < SPRITES_PER_SCANLINE); i += 4)
+    for (int i = 0; (i < OAM_SPRITES_MAX * 4) && (*nb_sptd < SPRITES_PER_SCANLINE); i += 4)
     {
         //ckeck if sprite is not on the scanline
         if(! ( (cpu->OAM[i] <= io->LY + 16) && 
@@ -393,7 +397,7 @@ int draw_scanline(s_emu *emu)
 
     if(!scr->LCD_PPU_enable)
     {
-        for(size_t i = 0; i < PIX_BY_W; i++)
+        for(int i = 0; i < PIX_BY_W; i++)
         {
             //draw blank line
             scr->pixels[io->LY * PIX_BY_W + i] = SDL_MapRGBA(
@@ -410,7 +414,7 @@ int draw_scanline(s_emu *emu)
     memset(sprites_to_draw, 0, sizeof(uint8_t[SPRITES_PER_SCANLINE]));
     scan_OAM(emu, sprites_to_draw, &nb_sptd);
     
-    for(size_t i = 0; i < PIX_BY_W; i++)
+    for(int i = 0; i < PIX_BY_W; i++)
     {
         uint8_t pixel = 0;
         if(0 != draw_background(emu, i, &pixel))
@@ -447,7 +451,10 @@ void ppu_modes_and_scanlines(s_emu *emu)
         if(0 != draw_scanline(emu))
             destroy_emulator(emu, EXIT_FAILURE);
         if(scr->LCD_PPU_enable)
+        {
             cpu->io.LY++;
+            scr->win_LY++;
+        }
         return;
     }
     
@@ -456,6 +463,7 @@ void ppu_modes_and_scanlines(s_emu *emu)
 //        //vblank
 //        io->STAT |= 1;
         cpu->io.LY = 0;
+        scr->win_LY = 0;
         return;
     }
     
@@ -557,6 +565,7 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     }
     
     cpu->io.LY = 0;
+    scr->win_LY = 0;
     //clear VBlank flag
     //io->IF &= (~0x01);
 }
