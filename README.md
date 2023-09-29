@@ -14,8 +14,6 @@ cmake .. -G "Unix Makefiles"
 make
 ```
 
-(Note: build have only been tested on Linux for now).
-
 ### Windows:
 
 In MinGW [MSYS2](https://www.msys2.org/) terminal, install the following packages (if needed):
