@@ -44,7 +44,7 @@ int create_inifile(s_emu *emu)
     SDL_KeyCode keycode;
     
     //UP
-    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_W);
+    keycode = SDL_GetKeyFromScancode(SDL_SCANCODE_W); //handle different keyboard layouts
     fprintf(shrt, "%s=%s\n", opt->ctrl_names[0], SDL_GetKeyName(keycode));
     
     //DOWN
@@ -143,6 +143,7 @@ int open_inifile(s_emu *emu)
     opt->default_scancodes[JOYP_SELECT] = SDL_SCANCODE_RSHIFT;
     opt->default_scancodes[JOYP_A] = SDL_SCANCODE_L;
     opt->default_scancodes[JOYP_B] = SDL_SCANCODE_M;
+    //get scancodes names to handle different keyboard layouts
     opt->default_scancodes[OPT_PAUSE] = SDL_GetScancodeFromKey(SDLK_p);
     opt->default_scancodes[OPT_OPTIONS] = SDL_GetScancodeFromKey(SDLK_o);
     opt->default_scancodes[OPT_NEXT_FRAME] = SDL_GetScancodeFromKey(SDLK_n);
@@ -156,7 +157,7 @@ int open_inifile(s_emu *emu)
     opt->audio_ch[0] = true;
     opt->audio_ch[1] = true;
     opt->audio_ch[2] = true;
-    opt->audio_ch[3] = false;
+    opt->audio_ch[3] = true;
     
     opt->inifile = fopen("game_spop.ini", "r");
     if(NULL == opt->inifile)
@@ -174,6 +175,7 @@ int open_inifile(s_emu *emu)
     bool options = false;
     while(NULL != fgets(buf, 255, opt->inifile))
     {
+        //avoid lines starting by these chars
         if(buf[0] == ';' || buf[0] == ' ' || buf[0] == '\0')
             continue;
 
@@ -190,11 +192,14 @@ int open_inifile(s_emu *emu)
             continue;
         }
         
+        //controls
         for(int i = 0; (i < KEYOPT_NB) && controls; i++)
         {
+            //parse control name
             if(NULL == strstr(buf, opt->ctrl_names[i]))
                 continue;
                 
+            //get key name writen in file
             char *name = strchr(buf, '=');
             if(NULL == name)
             {
@@ -202,7 +207,9 @@ int open_inifile(s_emu *emu)
                 break;
             }
             
+            //avoid '=' char
             name++;
+            //avoid '\n' char
             char *sub = strtok(name, "\n");
             SDL_KeyCode key = SDL_GetKeyFromName(sub);
             if(key == SDLK_UNKNOWN)
@@ -215,8 +222,10 @@ int open_inifile(s_emu *emu)
             break;
         }
         
+        //other options
         for(int i = 0; (i < INI_OPT_NB) && options; i++)
         {
+            //parse option name
             if(NULL == strstr(buf, opt->ini_opt_names[i]))
                 continue;
             
@@ -1040,10 +1049,11 @@ void pause_menu(s_emu *emu)
  */
 int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginning)
 {
+    //help msg if ./game_spop --help is typed in command line 
     const char help_msg_beginning[] = 
     "Usage\n"
     "\n"
-    "   ./game_spop <ROM file> [option]\n"
+    "   ./game_spop [option] <ROM file>\n"
     "\n"
     "Options\n"
     "   --audio,      -a     = disable audio.\n"
@@ -1069,6 +1079,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          options.\n"
     "   --help,       -h     = show this help message and exit.\n";
     
+    //help msg if --help is typed in option menu during execution
     const char help_msg_during_exec[] = 
     "Options\n"
     "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
@@ -1081,6 +1092,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          options.\n"
     "   --help,       -h     = show this help message and exit.\n";
     
+    //parse
     for(size_t i = 0 + is_program_beginning; i < argc; i++)
     {
         if(((0 == strcmp(argv[i], "--audio")) || (0 == strcmp(argv[i], "-a"))) && (is_program_beginning))
@@ -1189,7 +1201,7 @@ int parse_options_during_exec(s_opt *opt)
         sub = strtok(entry, " \n");
         snprintf(argv[0], 30, "%s", sub);
         ptr[0] = argv[0];
-        for(size_t i = 1; i < argc; i++)
+        for(size_t i = 1; i <= argc; i++)
         {
             sub = strtok(NULL, " \n");
             snprintf(argv[i], 30, "%s", sub);
@@ -1202,24 +1214,26 @@ int parse_options_during_exec(s_opt *opt)
 }
 
 /**
- * @brief Handle the command lines arguments gived to the program
+ * @brief Handle the command lines arguments given to the program
  * when lauching. 
  */
 int parse_start_options(s_opt *opt, int argc, char *argv[])
 {
-    opt->bootrom = false;
-    opt->rom_argument = false;
-    opt->debug_info = false;
-    opt->breakpoints = false;
-    opt->step_by_step = false;
-    opt->gb_doctor = false;
-    opt->log_instrs = false;
-    opt->fast_forward = false;
-    opt->audio = true;
-    opt->audio_log = false;
-    opt->newframe = false;
-    opt->framebyframe = false;
-    opt->fullscreen = false;
+    //default options
+    opt->bootrom        = false;
+    opt->rom_argument   = false;
+    opt->debug_info     = false;
+    opt->breakpoints    = false;
+    opt->step_by_step   = false;
+    opt->gb_doctor      = false;
+    opt->log_instrs     = false;
+    opt->fast_forward   = false;
+    opt->audio          = true;
+    opt->audio_log      = false;
+    opt->newframe       = false;
+    opt->framebyframe   = false;
+    opt->fullscreen     = false;
+    
     if(argc > 1)
     {
         if(0 != parse_options(opt, (size_t) argc, argv, true))
@@ -1241,7 +1255,7 @@ void ask_breakpoint(s_opt *opt)
         return;
         
     bool quit = false;
-    char bp[10] = "";
+    char bp[10] = "";   //user input
     while(!quit)
     {
         printf("Breakpoint value / ENTER (continue) / O (options)\n");

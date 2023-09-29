@@ -3,7 +3,7 @@ A work in progress Gameboy emulator written in C.
 
 ## Build project:
 
-### Linux / macOS / Unix:
+### Linux:
 
 You need to have [SDL2](https://wiki.libsdl.org/SDL2/Installation) and [CMake](https://cmake.org/) installed.
 
@@ -37,7 +37,7 @@ You need a Gameboy ROM file or a boot ROM file (see below).
 
 ### Usage:
 ```console
-./game_spop <ROM file> [options]
+./game_spop [options] <ROM file>
 ```
 
 ### Command line options:

@@ -19,9 +19,11 @@ int initialize_screen(s_emu *emu)
     scr->window_maximized = false;
     scr->win_LY = 0;
     
-    scr->w = SDL_CreateWindow("Game_spop", SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED, PIX_BY_W * scr->pixel_w, PIX_BY_H * scr->pixel_h,
-                                 SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    scr->w = SDL_CreateWindow(
+        "Game_spop", SDL_WINDOWPOS_CENTERED,
+         SDL_WINDOWPOS_CENTERED, PIX_BY_W * scr->pixel_w, PIX_BY_H * scr->pixel_h,
+         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+    );
     if(scr->w == NULL)
     {
         fprintf(stderr, "Error SDL_CreateWindow: %s\n", SDL_GetError());
@@ -39,6 +41,7 @@ int initialize_screen(s_emu *emu)
     SDL_SetRenderDrawBlendMode(scr->r, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(scr->r, 0, 0, 0, 255);
     
+    //texture containing main output
     scr->scr = SDL_CreateTexture(scr->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, PIX_BY_W, PIX_BY_H);
     if(NULL == scr->scr)
     {
@@ -46,6 +49,8 @@ int initialize_screen(s_emu *emu)
         return EXIT_FAILURE;
     }
     
+    //texture containing copy of the last frame that will be shown at 50% transparency for better compatibility
+    //with graphic effects used in some games (like transparent effects in Zelda link's awakening).
     scr->scrcpy = SDL_CreateTexture(scr->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, PIX_BY_W, PIX_BY_H);
     if(NULL == scr->scrcpy)
     {

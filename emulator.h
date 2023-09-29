@@ -9,7 +9,7 @@
 #define CPU_FREQ                    (4194304.0)
 #define GB_VSNC                     (59.73)
 
-#define MEM_SIZE                    (0xFFFF)
+#define MEM_SIZE                    (0xFFFF)    //size of memory bus
 #define START_ADRESS                (0x0000)
 #define OPCODE_NB                   (256)
 #define CB_NB                       (256)
@@ -37,6 +37,7 @@
 //to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
 
+//coloring text output in console
 #define COLOR_RED     "\x1b[31m"
 #define COLOR_GREEN   "\x1b[32m"
 #define COLOR_YELLOW  "\x1b[33m"

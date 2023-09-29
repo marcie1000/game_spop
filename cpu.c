@@ -557,6 +557,7 @@ int initialize_cpu(s_cpu *cpu)
     memset(cpu, 0, sizeof(s_cpu));
     cpu->ROM_Bank = NULL;
     
+    //allocate space for ROM banks
     cpu->ROM_Bank = malloc(sizeof(uint8_t*[ROM_BANKS_MAX]));
     if(NULL == cpu->ROM_Bank)
     {
@@ -567,6 +568,7 @@ int initialize_cpu(s_cpu *cpu)
     for(size_t i = 0; i < ROM_BANKS_MAX; i++)
         cpu->ROM_Bank[i] = NULL;
     
+    //create each bank
     for(size_t i = 0; i < ROM_BANKS_MAX; i++)
     {
         cpu->ROM_Bank[i] = malloc(sizeof(uint8_t[ROM_BANK_SIZE]));
@@ -587,6 +589,10 @@ int initialize_cpu(s_cpu *cpu)
     return EXIT_SUCCESS;
 }
 
+/**
+ * @brief Reads the 3 next bytes of program instructions. 
+ * @param emu
+ */
 uint32_t get_opcode(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
@@ -611,6 +617,10 @@ uint32_t get_opcode(s_emu *emu)
     return op;
 }
 
+/**
+ * @brief Returns the single byte instruction opcode.
+ * @param opcode
+ */
 uint8_t get_action(uint32_t opcode)
 {
     return (opcode & 0xFF0000) >> 16;
@@ -660,6 +670,7 @@ void div_handle(s_emu *emu)
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
+    
     joypad_update(emu);
     interrupt_handler(emu);
     uint32_t opcode = get_opcode(emu);
