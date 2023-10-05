@@ -10,16 +10,32 @@
 #include "audio.h"
 #include "instr_lists.h"
 
+/**
+ * @brief Assign easily a value to flags in an uint8_t. 
+ * @param cond
+ * @param flag
+ * @param mask
+ */
 void flag_assign(bool cond, uint8_t *flag, uint8_t mask)
 {
     *flag = cond ? mask | *flag : ~mask & *flag;
 }
 
+/**
+ * @brief Assign easily a value to flags in an uint16_t. 
+ * @param cond
+ * @param flag
+ * @param mask
+ */
 void flag_assign16(bool cond, uint16_t *flag, uint16_t mask)
 {
     *flag = cond ? mask | *flag : ~mask & *flag;
 }
 
+/**
+ * @brief Creates a .ini config file with default settings, if file doesn't exist.
+ * @param emu
+ */
 int create_inifile(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
@@ -107,6 +123,10 @@ int create_inifile(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
+/**
+ * @brief Opens and reads game_spop.ini config file.
+ * @param emu
+ */
 int open_inifile(s_emu *emu)
 {
     s_opt *opt = &emu->opt;
@@ -533,6 +553,11 @@ int load_boot_rom(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
+/**
+ * @brief Load .sav file if exists and if cartridge has
+ * RAM+BATT flags
+ * @param emu
+ */
 int load_sav(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
@@ -604,6 +629,11 @@ int load_rom(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
+/**
+ * @brief save ram in a .sav file for cartridges with
+ * RAM+BATT flags.
+ * @param emu
+ */
 int save_sav(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
@@ -633,6 +663,7 @@ int save_sav(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
+
 void destroy_emulator(s_emu *emu, int status)
 {
     s_cpu *cpu = &emu->cpu;
@@ -658,6 +689,8 @@ void destroy_emulator(s_emu *emu, int status)
     exit(status);
 }
 
+//Initializes cpu and I/O registers with normal values after 
+//the bootrom sequence.
 void bypass_bootrom(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
@@ -784,87 +817,89 @@ void fast_forward_toggle(s_emu *emu)
     previous = emu->in.scan[opt->opt_scancodes[OPT_FAST_FORWARD]];
 }
 
-void savestate(s_emu *emu)
-{
-    s_opt *opt = &emu->opt;
-    s_input *in = &emu->in;
-    
-    while(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
-    {
-        update_event(emu);
-        SDL_Delay(5);
-    }
-    
-    char state_filename[FILENAME_MAX];    
-    snprintf(state_filename, FILENAME_MAX, "%s.state", opt->rom_filename);
-    FILE *save = fopen(state_filename, "wb");
-    if(save == NULL)
-    {
-        perror("Error creating state: ");
-        return;
-    }
-    
-    if(1 != fwrite(emu, sizeof(s_emu), 1, save))
-    {
-        perror("Error writing state: ");
-        fclose(save);
-        return;
-    }
-    
-    printf("State saved.\n");
-    
-    fclose(save);
-}
+//BROKEN
+//void savestate(s_emu *emu)
+//{
+//    s_opt *opt = &emu->opt;
+//    s_input *in = &emu->in;
+//    
+//    while(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
+//    {
+//        update_event(emu);
+//        SDL_Delay(5);
+//    }
+//    
+//    char state_filename[FILENAME_MAX];    
+//    snprintf(state_filename, FILENAME_MAX, "%s.state", opt->rom_filename);
+//    FILE *save = fopen(state_filename, "wb");
+//    if(save == NULL)
+//    {
+//        perror("Error creating state: ");
+//        return;
+//    }
+//    
+//    if(1 != fwrite(emu, sizeof(s_emu), 1, save))
+//    {
+//        perror("Error writing state: ");
+//        fclose(save);
+//        return;
+//    }
+//    
+//    printf("State saved.\n");
+//    
+//    fclose(save);
+//}
 
-void loadstate(s_emu *emu)
-{
-    s_opt *opt = &emu->opt;
-    s_input *in = &emu->in;
-    
-    while(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
-    {
-        update_event(emu);
-        SDL_Delay(5);
-    }
-    char state_filename[FILENAME_MAX];    
-    snprintf(state_filename, FILENAME_MAX, "%s.state", opt->rom_filename);
-    FILE *save = fopen(state_filename, "rb");
-    if(save == NULL)
-    {
-        perror("Error loading state: ");
-        return;
-    }
-    
-    s_emu *emu_tmp = malloc(sizeof(s_emu));
-    if(emu_tmp == NULL)
-    {
-        perror("Malloc emu_tmp: ");
-        fclose(save);
-        return;
-    }
-    
-    if(1 != fread(emu_tmp, sizeof(s_emu), 1, save))
-    {
-        if(feof(save))
-            fprintf(stderr, "ERROR: invalid state, unexpected end of file.\n");
-        else if(ferror(save))
-            perror("ERROR fread: ");
-            
-        free(emu_tmp);
-        fclose(save);
-        return;
-    }
-    
-    emu_tmp->cpu.ROM_Bank = emu->cpu.ROM_Bank;
-    memcpy(emu_tmp->opcode_functions, emu->opcode_functions, sizeof(emu->opcode_functions));
-    memcpy(emu_tmp->cb_functions,     emu->cb_functions,     sizeof(emu->cb_functions));
-    
-    memcpy(emu, emu_tmp, sizeof(s_emu));
-    printf("state loaded.\n");
-    
-    free(emu_tmp);
-    fclose(save);
-}
+//BROKEN
+//void loadstate(s_emu *emu)
+//{
+//    s_opt *opt = &emu->opt;
+//    s_input *in = &emu->in;
+//    
+//    while(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
+//    {
+//        update_event(emu);
+//        SDL_Delay(5);
+//    }
+//    char state_filename[FILENAME_MAX];    
+//    snprintf(state_filename, FILENAME_MAX, "%s.state", opt->rom_filename);
+//    FILE *save = fopen(state_filename, "rb");
+//    if(save == NULL)
+//    {
+//        perror("Error loading state: ");
+//        return;
+//    }
+//    
+//    s_emu *emu_tmp = malloc(sizeof(s_emu));
+//    if(emu_tmp == NULL)
+//    {
+//        perror("Malloc emu_tmp: ");
+//        fclose(save);
+//        return;
+//    }
+//    
+//    if(1 != fread(emu_tmp, sizeof(s_emu), 1, save))
+//    {
+//        if(feof(save))
+//            fprintf(stderr, "ERROR: invalid state, unexpected end of file.\n");
+//        else if(ferror(save))
+//            perror("ERROR fread: ");
+//            
+//        free(emu_tmp);
+//        fclose(save);
+//        return;
+//    }
+//    
+//    emu_tmp->cpu.ROM_Bank = emu->cpu.ROM_Bank;
+//    memcpy(emu_tmp->opcode_functions, emu->opcode_functions, sizeof(emu->opcode_functions));
+//    memcpy(emu_tmp->cb_functions,     emu->cb_functions,     sizeof(emu->cb_functions));
+//    
+//    memcpy(emu, emu_tmp, sizeof(s_emu));
+//    printf("state loaded.\n");
+//    
+//    free(emu_tmp);
+//    fclose(save);
+//}
 
 void emulate(s_emu *emu)
 {
@@ -1255,11 +1290,11 @@ void ask_breakpoint(s_opt *opt)
         return;
         
     bool quit = false;
-    char bp[10] = "";   //user input
+    char bp[FILENAME_MAX] = "";   //user input
     while(!quit)
     {
         printf("Breakpoint value / ENTER (continue) / O (options)\n");
-        if(NULL == fgets(bp, 10, stdin))
+        if(NULL == fgets(bp, FILENAME_MAX, stdin))
             continue;
         if(bp[0] == 'O' || bp[0] == 'o')
         {
@@ -1274,7 +1309,7 @@ void ask_breakpoint(s_opt *opt)
         }
         errno = 0;
         char *endptr;
-        long val = strtol(bp, &endptr, 0);
+        long val = strtol(bp, &endptr, 16);
         if(errno != 0)
         {
             fprintf(stderr, "strtol: %s\n", strerror(errno));
