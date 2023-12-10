@@ -5,7 +5,7 @@ A work in progress Gameboy emulator written in C.
 
 ### Linux:
 
-You need to have [SDL2](https://wiki.libsdl.org/SDL2/Installation) and [CMake](https://cmake.org/) installed.
+You need to have [SDL2](https://wiki.libsdl.org/SDL2/Installation) development packages and [CMake](https://cmake.org/) installed.
 
 ```console
 mkdir build
