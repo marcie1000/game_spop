@@ -39,6 +39,11 @@ You need a Gameboy ROM file or a boot ROM file (see below).
 ```
 
 ### Command line options:
+
+Some options can also be called when pausing the emulator and accessing the options menu (see below).
+Calling --help in options menu will show a list of these options.
+
+
 * `--audio`, `-a`           = disable audio.
 * `--audio-log`             = print various audio variables in a file at each sample.
 * `--breakpoint`, `-p`      = enable debugging with breakpoints. The program will
@@ -51,11 +56,11 @@ You need a Gameboy ROM file or a boot ROM file (see below).
                               (see below).
 * `--debug-info`, `-i`      = print cpu state at each instruction.
 * `--gb-doctor`, `-d`       = log cpu state into a file to be used with the [Gameboy
-                            doctor tool](https://github.com/robert/gameboy-doctor) (only at launch).
+                            doctor tool](https://github.com/robert/gameboy-doctor).
                             Emulator behavior might be inaccurate since LY reading always send 0x90 in
                             this mode.
 * `--log-instrs`, `-l`  = log cpu state into a file for comparison with other
-                        emulators (only at launch).
+                        emulators.
 * `--step`, `-s`        = enable step by step debugging. Emulator will stop
                           at each new instruction and ask to continue or edit options.
 * `--help`, `-h`        = show this help message and exit.
