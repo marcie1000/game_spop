@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -432,7 +433,7 @@ int read_cartridge_header(s_emu *emu)
     }
     
     printf("SRAM banks: %d\n", cr->sram_banks);
-    
+
     switch(cr->type)
     {
         case ROM_ONLY:
@@ -446,6 +447,14 @@ int read_cartridge_header(s_emu *emu)
             break;
         case MBC1_P_RAM_P_BATT:
             printf("MBC: MBC1 + RAM + BATTERY\n");
+            cr->batt = true;
+            break;
+        case MBC2:
+            printf("MBC: MBC2\n");
+            break;
+        case MBC2_P_BATT:
+            printf("MBC: MBC2 + BATT\n");
+            cr->batt = true;
             break;
         default:
             fprintf(stderr, COLOR_RED "WARNING:" COLOR_RESET " MBC code %02X (unimplemented)!\n", cr->type);
@@ -564,16 +573,28 @@ int load_sav(s_emu *emu)
     s_cart *cr = &emu->cart;
     if(!emu->opt.rom_argument)
         return EXIT_SUCCESS;
-    if(cr->sram_banks < 1)
+    if(cr->sram_banks < 1 && cr->type != MBC2_P_BATT)
         return EXIT_SUCCESS;
+
+    size_t size;
+    if(cr->type == MBC2_P_BATT)
+        size = sizeof(uint8_t[0x200]);
+    else
+        size = sizeof(uint8_t[EXTERNAL_RAM_SIZE]);
+
+    size_t n;
+    if(cr->type == MBC2_P_BATT)
+        n = 1;
+    else
+        n = cr->sram_banks;
         
     FILE *sav = fopen(emu->opt.sav_filename, "rb");
     if(NULL == sav)
         return EXIT_SUCCESS;
         
-    size_t ret = fread(&cpu->SRAM[0][0], sizeof(uint8_t[EXTERNAL_RAM_SIZE]), cr->sram_banks, sav);
+    size_t ret = fread(&cpu->SRAM[0][0], size, n, sav);
     
-    if(ret != (size_t)cr->sram_banks)
+    if(ret != n)
     {
         perror("Error reading sav: ");
         fclose(sav);
@@ -641,7 +662,7 @@ int save_sav(s_emu *emu)
     if(!emu->opt.rom_argument)
         return EXIT_SUCCESS;
         
-    if(cr->sram_banks < 1)
+    if(cr->sram_banks < 1 && cr->type != MBC2_P_BATT)
         return EXIT_SUCCESS;
         
     FILE *sav = fopen(emu->opt.sav_filename, "wb");
@@ -650,9 +671,21 @@ int save_sav(s_emu *emu)
         perror("fopen: ");
         return EXIT_FAILURE;
     }
-    
-    size_t ret = fwrite(&cpu->SRAM[0][0], sizeof(uint8_t[EXTERNAL_RAM_SIZE]), cr->sram_banks, sav);
-    if(ret != (size_t)cr->sram_banks)
+
+    size_t size;
+    if(cr->type == MBC2_P_BATT)
+        size = sizeof(uint8_t[0x200]);
+    else
+        size = sizeof(uint8_t[EXTERNAL_RAM_SIZE]);
+
+    size_t n;
+    if(cr->type == MBC2_P_BATT)
+        n = 1;
+    else
+        n = cr->sram_banks;
+
+    size_t ret = fwrite(&cpu->SRAM[0][0], size, n, sav);
+    if(ret != n)
     {
         perror("Error writing sav: ");
         fclose(sav);

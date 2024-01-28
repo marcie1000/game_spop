@@ -6,5 +6,6 @@
 
 int write_mbc_registers(s_emu *emu, uint16_t address, uint8_t data);
 int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data);
+int mbc2_registers(s_emu *emu, uint16_t address, uint8_t data);
 
 #endif //MBC_H

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -438,7 +439,15 @@ int write_memory(s_emu *emu, uint16_t address, uint8_t data)
     else if((address >= 0xA000) && (address <= 0xBFFF))
     {
         if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
-            cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+        {
+            if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT))
+                cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+            else
+            {
+                uint16_t relative = (address - 0xA000) % 0x200;
+                cpu->SRAM[0][relative] = data & 0x0F;
+            }
+        }
     }
     //WRAM
     else if((address >= 0xC000) && (address <= 0xDFFF))
@@ -505,7 +514,15 @@ int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
     else if((address >= 0xA000) && (address <= 0xBFFF))
     {
         if(emu->cart.mbc.RAM_enable)
-            *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
+        {
+            if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT))
+                *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
+            else
+            {
+                uint16_t relative = (address - 0xA000) % 0x200;
+                *data = cpu->SRAM[0][relative];
+            }
+        }
         else
             *data = 0;
     }

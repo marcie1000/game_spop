@@ -301,6 +301,7 @@ typedef struct s_cart{
     int type;
     int rom_banks;
     int sram_banks;
+    bool batt;
     s_mbc mbc;
 }s_cart;
 

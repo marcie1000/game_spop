@@ -20,6 +20,11 @@ int write_mbc_registers(s_emu *emu, uint16_t address, uint8_t data)
             if(0 != mbc1_registers(emu, address, data))
                 return EXIT_FAILURE;
             break;
+        case MBC2:
+        case MBC2_P_BATT:
+            if(0 != mbc2_registers(emu, address, data))
+                return EXIT_FAILURE;
+            break;
         default:
             fprintf(stderr, "WARNING: MBC registers unimplemented!\n");
             break;
@@ -28,7 +33,27 @@ int write_mbc_registers(s_emu *emu, uint16_t address, uint8_t data)
     return EXIT_SUCCESS;
 }
 
-/* int mbc2_registers(s_emu *emu, uint16_t address, uint8_t data) */
+int mbc2_registers(s_emu *emu, uint16_t address, uint8_t data)
+{
+    s_mbc *mbc = &emu->cart.mbc;
+    s_cart *cr = &emu->cart;
+    s_cpu *cpu = &emu->cpu;
+
+    if(address & 0x0100) // ROM
+    {
+        cpu->cur_hi_rom_bk = data & 0x0F;
+        if(cpu->cur_hi_rom_bk == 0)
+            cpu->cur_hi_rom_bk = 1;
+    }
+    else // RAM
+    {
+        if(data == 0x0A)
+            mbc->RAM_enable = true;
+        else
+            mbc->RAM_enable = false;
+    }
+    return EXIT_SUCCESS;
+}
 
 int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
