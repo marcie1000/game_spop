@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL.h>
@@ -5,7 +6,7 @@
 #include "emulator.h"
 #include "mbc.h"
 
-int write_mbc_registers(s_emu *emu, uint16_t adress, uint8_t data)
+int write_mbc_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
     s_cart *cr = &emu->cart;
     switch(cr->type)
@@ -16,7 +17,7 @@ int write_mbc_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case MBC1:
         case MBC1_P_RAM:
         case MBC1_P_RAM_P_BATT:
-            if(0 != mbc1_registers(emu, adress, data))
+            if(0 != mbc1_registers(emu, address, data))
                 return EXIT_FAILURE;
             break;
         default:
@@ -27,14 +28,16 @@ int write_mbc_registers(s_emu *emu, uint16_t adress, uint8_t data)
     return EXIT_SUCCESS;
 }
 
-int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
+/* int mbc2_registers(s_emu *emu, uint16_t address, uint8_t data) */
+
+int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
     s_mbc *mbc = &emu->cart.mbc;
     s_cart *cr = &emu->cart;
     s_cpu *cpu = &emu->cpu;
     
     //RAM Enable (Write Only)
-    if(adress <= 0x1FFF)
+    if(address <= 0x1FFF)
     {
         if(data == 0)
             mbc->RAM_enable = false;
@@ -45,7 +48,7 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
     }
     
     //ROM Bank Number (Write Only)
-    else if((adress >= 0x2000) && (adress <= 0x3FFF))
+    else if((address >= 0x2000) && (address <= 0x3FFF))
     {
         uint8_t reg5bit = data & 0x1F;
         uint8_t bank = reg5bit;
@@ -70,7 +73,7 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
     }
     
     //RAM Bank Number — or — Upper Bits of ROM Bank Number (Write Only)
-    else if((adress >= 0x4000) && (adress <= 0x5FFF))
+    else if((address >= 0x4000) && (address <= 0x5FFF))
     {
         uint8_t ram_bank = data & 0x10;
 
@@ -99,7 +102,7 @@ int mbc1_registers(s_emu *emu, uint16_t adress, uint8_t data)
     }
     
     //Banking Mode Select (Write Only)
-    else if((adress >= 0x6000) && (adress <= 0x7FFF))
+    else if((address >= 0x6000) && (address <= 0x7FFF))
     {
         mbc->banking_mode_select = data;
 

@@ -43,7 +43,9 @@ else ()
     link_directories(${SDL2_LIBRARIES})
 endif (NOT SDL2_FOUND)
 
-set (CMAKE_C_STANDARD 11)
+set (CMAKE_C_STANDARD 17)
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable (game_spop ${SOURCES} ${HEADERS})
 target_link_libraries (game_spop ${SDL2_LIBRARIES} m)
 

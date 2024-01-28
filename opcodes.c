@@ -113,10 +113,10 @@ void LD_derefa16_SP(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint16_t adress = ((op & 0x0000ff00) >> 8) + ((op & 0x000000ff) << 8);
-    if(0 != write_memory(emu, adress, cpu->sp & 0x00FF))
+    uint16_t address = ((op & 0x0000ff00) >> 8) + ((op & 0x000000ff) << 8);
+    if(0 != write_memory(emu, address, cpu->sp & 0x00FF))
         destroy_emulator(emu, EXIT_FAILURE);
-    if(0 != write_memory(emu, adress + 1, (cpu->sp & 0xFF00) >> 8))
+    if(0 != write_memory(emu, address + 1, (cpu->sp & 0xFF00) >> 8))
         destroy_emulator(emu, EXIT_FAILURE);
     
     cpu->t_cycles += emu->timing_table[0][(op & 0x00FF0000) >> 16]; //20;
@@ -3006,8 +3006,8 @@ void LD_derefa16_A(void *arg, uint32_t op)
     s_emu *emu = arg;
     s_cpu *cpu = &emu->cpu;
     
-    uint16_t adress = ((op & 0x0000ff00) >> 8) + ((op & 0x000000ff) << 8);
-    if(0 != write_memory(emu, adress, cpu->regA))
+    uint16_t address = ((op & 0x0000ff00) >> 8) + ((op & 0x000000ff) << 8);
+    if(0 != write_memory(emu, address, cpu->regA))
         destroy_emulator(emu, EXIT_FAILURE);
     
     cpu->t_cycles += emu->timing_table[0][(op & 0x00FF0000) >> 16]; //16;

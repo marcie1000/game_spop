@@ -1384,12 +1384,12 @@ void log_instructions(s_emu *emu)
         if(emu->length_table[pc0] >= 2)
         {
             snprintf(tmp, 10, " %02x", pc1);
-            strncat(pcmem, tmp, 50);
+            strncat(pcmem, tmp, 49);
         }
         if(emu->length_table[pc0] >= 3)
         {
             snprintf(tmp, 10, " %02x", pc2);
-            strncat(pcmem, tmp, 50);
+            strncat(pcmem, tmp, 49);
         }  
         if(cpu->regF & ZERO_FMASK) z = 'Z';
         if(cpu->regF & NEGATIVE_FMASK) n = 'N';
@@ -1399,7 +1399,7 @@ void log_instructions(s_emu *emu)
         if(opt->debug_info)
         {
             fprintf(
-                stdout, 
+                stdout,
                 COLOR_CYAN
                 "A:%02x F:%c%c%c%c BC:%02X%02x DE:%02x%02x HL:%02x%02x " COLOR_MAGENTA
                 "SP:%04x PC:%04x" COLOR_GREEN " (cy: %lu) ppu:+%u PCMEM:%-9s  " COLOR_YELLOW "%s\n" COLOR_RESET,

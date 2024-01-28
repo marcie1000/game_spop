@@ -169,45 +169,45 @@ int draw_background(s_emu *emu, int i, uint8_t *pixel)
     if(!scr->bg_win_enable_priority)
         return EXIT_SUCCESS;
         
-    uint16_t bg_map_start_adress = scr->BG_tile_map_area ? 0x1C00 : 0x1800;
+    uint16_t bg_map_start_address = scr->BG_tile_map_area ? 0x1C00 : 0x1800;
     uint16_t bg_win_data_start_adr = scr->BG_win_tile_data_area ? 0 : 0x1000;
     
-    //relative adress of the tile in the tile map
-    uint16_t rel_bg_tilemap_adress = (Ytemp) / 8;
-    rel_bg_tilemap_adress *= 32;
-    rel_bg_tilemap_adress += (Xtemp) / 8;
-    if(rel_bg_tilemap_adress > 0x400)
+    //relative address of the tile in the tile map
+    uint16_t rel_bg_tilemap_address = (Ytemp) / 8;
+    rel_bg_tilemap_address *= 32;
+    rel_bg_tilemap_address += (Xtemp) / 8;
+    if(rel_bg_tilemap_address > 0x400)
     {
-        fprintf(stderr, "ERROR: adress is out of bg tile map bounds!\n");
+        fprintf(stderr, "ERROR: address is out of bg tile map bounds!\n");
         return EXIT_FAILURE;
     }
     //number of the tile by its place in tile data
     int16_t tilenum = 0;
     
-    assert((bg_map_start_adress + rel_bg_tilemap_adress) < VRAM_SIZE);
+    assert((bg_map_start_address + rel_bg_tilemap_address) < VRAM_SIZE);
     
     if(scr->BG_win_tile_data_area)
     {
-        tilenum = (uint8_t)cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress];
+        tilenum = (uint8_t)cpu->VRAM[bg_map_start_address + rel_bg_tilemap_address];
     }
     else
     {
-        tilenum = (int8_t) cpu->VRAM[bg_map_start_adress + rel_bg_tilemap_adress]; 
+        tilenum = (int8_t) cpu->VRAM[bg_map_start_address + rel_bg_tilemap_address]; 
     }
 
     
-    // adress of the two bytes in tiles data we want to read (corresponding
+    // address of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
-    uint16_t bg_data_adress = bg_win_data_start_adr + 16 * tilenum;
-    bg_data_adress += 2 * ((Ytemp) % 8);
+    uint16_t bg_data_address = bg_win_data_start_adr + 16 * tilenum;
+    bg_data_address += 2 * ((Ytemp) % 8);
     
     uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
 
-    assert((bg_data_adress + 1) < VRAM_SIZE);
+    assert((bg_data_address + 1) < VRAM_SIZE);
 
-    flag_assign((cpu->VRAM[bg_data_adress] & bitmask),
+    flag_assign((cpu->VRAM[bg_data_address] & bitmask),
                  pixel, 0x01);
-    flag_assign((cpu->VRAM[bg_data_adress + 1] & bitmask), 
+    flag_assign((cpu->VRAM[bg_data_address + 1] & bitmask), 
                  pixel, 0x02);
     
     //modify pixel color through the palette
@@ -235,45 +235,45 @@ int draw_window(s_emu *emu, int i, uint8_t *pixel)
         
     uint8_t Xtemp = i - io->WX + 7;
         
-    uint16_t win_map_start_adress = scr->win_tile_map_area ? 0x1C00 : 0x1800;
+    uint16_t win_map_start_address = scr->win_tile_map_area ? 0x1C00 : 0x1800;
     uint16_t bg_win_data_start_adr = scr->BG_win_tile_data_area ? 0 : 0x1000;
     
-    //relative adress of the tile in the tile map
-    uint16_t rel_win_tilemap_adress = (scr->win_LY - 1) / 8;
-    rel_win_tilemap_adress *= 32;
-    rel_win_tilemap_adress += (Xtemp) / 8;
-    if(rel_win_tilemap_adress > 0x400)
+    //relative address of the tile in the tile map
+    uint16_t rel_win_tilemap_address = (scr->win_LY - 1) / 8;
+    rel_win_tilemap_address *= 32;
+    rel_win_tilemap_address += (Xtemp) / 8;
+    if(rel_win_tilemap_address > 0x400)
     {
-        fprintf(stderr, "ERROR: adress is out of win tile map bounds!\n");
+        fprintf(stderr, "ERROR: address is out of win tile map bounds!\n");
         return EXIT_FAILURE;
     }
     //number of the tile by its place in tile data
     int16_t tilenum = 0;
     
-    assert((win_map_start_adress + rel_win_tilemap_adress) < VRAM_SIZE);
+    assert((win_map_start_address + rel_win_tilemap_address) < VRAM_SIZE);
     
     if(scr->BG_win_tile_data_area)
     {
-        tilenum = (uint8_t)cpu->VRAM[win_map_start_adress + rel_win_tilemap_adress];
+        tilenum = (uint8_t)cpu->VRAM[win_map_start_address + rel_win_tilemap_address];
     }
     else
     {
-        tilenum = (int8_t) cpu->VRAM[win_map_start_adress + rel_win_tilemap_adress]; 
+        tilenum = (int8_t) cpu->VRAM[win_map_start_address + rel_win_tilemap_address]; 
     }
 
     
-    // adress of the two bytes in tiles data we want to read (corresponding
+    // address of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
-    uint16_t win_data_adress = bg_win_data_start_adr + 16 * tilenum;
-    win_data_adress += 2 * ((scr->win_LY - 1) % 8);
+    uint16_t win_data_address = bg_win_data_start_adr + 16 * tilenum;
+    win_data_address += 2 * ((scr->win_LY - 1) % 8);
     
     uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
 
-    assert((win_data_adress + 1) < VRAM_SIZE);
+    assert((win_data_address + 1) < VRAM_SIZE);
 
-    flag_assign((cpu->VRAM[win_data_adress] & bitmask),
+    flag_assign((cpu->VRAM[win_data_address] & bitmask),
                  pixel, 0x01);
-    flag_assign((cpu->VRAM[win_data_adress + 1] & bitmask), 
+    flag_assign((cpu->VRAM[win_data_address + 1] & bitmask), 
                  pixel, 0x02);
     
     //modify pixel color through the palette
@@ -304,21 +304,21 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
     bool xflip = (cpu->OAM[sptd + 3] & 0x20);
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
     
-    uint16_t data_adress = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
+    uint16_t data_address = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
     if(!yflip)
-        data_adress += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
+        data_address += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
     else
-        data_adress += 2 * (7 - ((io->LY - cpu->OAM[sptd] + 16) - 8 * (!is_second_tile && scr->obj_size)));
+        data_address += 2 * (7 - ((io->LY - cpu->OAM[sptd] + 16) - 8 * (!is_second_tile && scr->obj_size)));
     
     uint8_t bitmask;
     if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));
     else bitmask = (0x01 << (i - cpu->OAM[sptd + 1] + 8));
 
-    assert((data_adress + 1) < VRAM_SIZE);
+    assert((data_address + 1) < VRAM_SIZE);
     
-    flag_assign((cpu->VRAM[data_adress] & bitmask),
+    flag_assign((cpu->VRAM[data_address] & bitmask),
                  &pix_tmp, 0x01);
-    flag_assign((cpu->VRAM[data_adress + 1] & bitmask), 
+    flag_assign((cpu->VRAM[data_address + 1] & bitmask), 
                  &pix_tmp, 0x02);
     
     if(pix_tmp == 0)
@@ -365,7 +365,7 @@ int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLIN
  * @brief Scan OAM to select the sprites to draw.
  * @param emu
  * @param sprites_to_draw: an array of 10 uint8_t that contains relative
- *        adresses (in OAM array) to the first byte of each sprite to draw.
+ *        addresses (in OAM array) to the first byte of each sprite to draw.
  */
 void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE], uint8_t *nb_sptd)
 {
@@ -595,29 +595,29 @@ int DMA_transfer(s_emu *emu)
     //ROM bank 01
     else if(io->DMA <= 0x7F)
     {
-        uint16_t start_adress = (io->DMA << 8) - 0x4000;
-        memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_hi_rom_bk][start_adress], OAM_SIZE);
+        uint16_t start_address = (io->DMA << 8) - 0x4000;
+        memcpy(cpu->OAM, &cpu->ROM_Bank[cpu->cur_hi_rom_bk][start_address], OAM_SIZE);
     }
     
     //VRAM
     else if(io->DMA <= 0x9F)
     {
-        uint16_t start_adress = (io->DMA << 8) - 0x8000;
-        memcpy(cpu->OAM, &cpu->VRAM[start_adress], OAM_SIZE);
+        uint16_t start_address = (io->DMA << 8) - 0x8000;
+        memcpy(cpu->OAM, &cpu->VRAM[start_address], OAM_SIZE);
     }
     
     //external RAM
     else if(io->DMA <= 0xBF)
     {
-        uint16_t start_adress = (io->DMA << 8) - 0xA000;
-        memcpy(cpu->OAM, &cpu->SRAM[cpu->current_sram_bk][start_adress], OAM_SIZE);
+        uint16_t start_address = (io->DMA << 8) - 0xA000;
+        memcpy(cpu->OAM, &cpu->SRAM[cpu->current_sram_bk][start_address], OAM_SIZE);
     }
     
     //external WRAM
     else if(io->DMA <= 0xDF)
     {
-        uint16_t start_adress = (io->DMA << 8) - 0xC000;
-        memcpy(cpu->OAM, &cpu->WRAM[start_adress], OAM_SIZE);
+        uint16_t start_address = (io->DMA << 8) - 0xC000;
+        memcpy(cpu->OAM, &cpu->WRAM[start_address], OAM_SIZE);
     }
     
     return EXIT_SUCCESS;

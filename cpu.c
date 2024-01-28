@@ -11,14 +11,14 @@
 #include "audio.h"
 #include "mbc.h"
 
-int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
+int write_io_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
     s_screen *scr = &emu->scr;
     s_audio *au = &emu->au;
     
-    switch(adress)
+    switch(address)
     {
         case 0xFF00:
             flag_assign(data & 0x20, &io->P1_JOYP, 0x20);
@@ -166,7 +166,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
         case 0xFF3D:
         case 0xFF3E:
         case 0xFF3F:
-            io->wave_RAM[adress - 0xFF30] = data;
+            io->wave_RAM[address - 0xFF30] = data;
             break;
         case 0xFF40:
         {
@@ -230,7 +230,7 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
             break;
         default:
             fprintf(stderr, COLOR_RED "WARNING: attempt to write I/O register"
-                    " at adress 0x%04X (unimplemented!)\n" COLOR_RESET, adress);
+                    " at address 0x%04X (unimplemented!)\n" COLOR_RESET, address);
             SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
@@ -239,12 +239,12 @@ int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data)
     return EXIT_SUCCESS;
 }
 
-int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
+int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
     
-    switch(adress)
+    switch(address)
     {
         case 0xFF00:
             *data = io->P1_JOYP;
@@ -280,7 +280,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR12;
             break;
         case 0xFF13:
-            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF13,"
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF13,"
                     " NR13 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
@@ -294,7 +294,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR22;
             break;
         case 0xFF18:
-            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF18,"
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF18,"
                     " NR23 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
@@ -305,7 +305,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR30;
             break;
         case 0xFF1B:
-            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF1B,"
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF1B,"
                     " NR31 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
@@ -313,7 +313,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR32;
             break;
         case 0xFF1D:
-            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF1D,"
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF1D,"
                     " NR33 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
@@ -321,7 +321,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             *data = io->NR34 & 0x40;
             break;
         case 0xFF20:
-            fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress FF1D,"
+            fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF1D,"
                     " NR33 I/O register (write only)\n" COLOR_RESET);
             return EXIT_FAILURE;
             break;
@@ -359,7 +359,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
         case 0xFF3D:
         case 0xFF3E:
         case 0xFF3F:
-            *data = io->wave_RAM[adress - 0xFF30];
+            *data = io->wave_RAM[address - 0xFF30];
             break;
         case 0xFF40:
             *data = io->LCDC;
@@ -406,7 +406,7 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
             break;
         default:
             fprintf(stderr, COLOR_RED "WARNING: attempt to read I/O register"
-                    " at adress 0x%04X (unimplemented!)\n" COLOR_RESET, adress);
+                    " at address 0x%04X (unimplemented!)\n" COLOR_RESET, address);
             SDL_Delay(3000);
             return EXIT_FAILURE;
             break;
@@ -415,138 +415,138 @@ int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data)
     return EXIT_SUCCESS;
 }
 
-int write_memory(s_emu *emu, uint16_t adress, uint8_t data)
+int write_memory(s_emu *emu, uint16_t address, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
     
-    if((adress < 0x3FFF) /* && (adress != 0x2000) && (adress != 0x1B08) && (cpu->pc != 0x0254)*/)
+    if((address < 0x3FFF) /* && (address != 0x2000) && (address != 0x1B08) && (cpu->pc != 0x0254)*/)
     {
-        if(0 != write_mbc_registers(emu, adress, data))
+        if(0 != write_mbc_registers(emu, address, data))
             return EXIT_FAILURE;
     }
-    else if((adress >= 0x4000) && (adress <= 0x7FFF))
+    else if((address >= 0x4000) && (address <= 0x7FFF))
     {
-        if(0 != write_mbc_registers(emu, adress, data))
+        if(0 != write_mbc_registers(emu, address, data))
             return EXIT_FAILURE;
     }
     //VRAM
-    else if((adress >= 0x8000) && (adress <= 0x9FFF))
+    else if((address >= 0x8000) && (address <= 0x9FFF))
     {
-        cpu->VRAM[adress - 0x8000] = data;
+        cpu->VRAM[address - 0x8000] = data;
     }
     //8 KiB External RAM 
-    else if((adress >= 0xA000) && (adress <= 0xBFFF))
+    else if((address >= 0xA000) && (address <= 0xBFFF))
     {
         if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
-            cpu->SRAM[cpu->current_sram_bk][adress - 0xA000] = data;
+            cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
     }
     //WRAM
-    else if((adress >= 0xC000) && (adress <= 0xDFFF))
+    else if((address >= 0xC000) && (address <= 0xDFFF))
     {
-        cpu->WRAM[adress - 0xC000] = data;
+        cpu->WRAM[address - 0xC000] = data;
     }
     //ECHO RAM
-    else if((adress >= 0xE000) && (adress <= 0xFDFF))
+    else if((address >= 0xE000) && (address <= 0xFDFF))
     {
-        fprintf(stderr, COLOR_RED "WARNING: attempt to write in ECHO RAM at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "WARNING: attempt to write in ECHO RAM at address 0x%04X (prohibited)\n" COLOR_RESET, address);
         //return EXIT_FAILURE;
     }
     //sprite attribute table (OAM)
-    else if((adress >= 0xFE00) && (adress <= 0xFE9F))
+    else if((address >= 0xFE00) && (address <= 0xFE9F))
     {
-        cpu->OAM[adress - 0xFE00] = data;
+        cpu->OAM[address - 0xFE00] = data;
     }
-    else if((adress >= 0xFEA0) && (adress <= 0xFEFF) && (data != 0))
+    else if((address >= 0xFEA0) && (address <= 0xFEFF) && (data != 0))
     {
-        fprintf(stderr, COLOR_RED "ERROR: attempt to write at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "ERROR: attempt to write at address 0x%04X (prohibited)\n" COLOR_RESET, address);
         return EXIT_FAILURE;
     }
-    else if((adress >= 0xFF00) && (adress <= 0xFF7F))
+    else if((address >= 0xFF00) && (address <= 0xFF7F))
     {
-        if(0 != write_io_registers(emu, adress, data))
+        if(0 != write_io_registers(emu, address, data))
             return EXIT_FAILURE;
     }    
     //HRAM
-    else if((adress >= 0xFF80) && (adress <= 0xFFFE))
+    else if((address >= 0xFF80) && (address <= 0xFFFE))
     {
-        cpu->HRAM[adress - 0xFF80] = data;
+        cpu->HRAM[address - 0xFF80] = data;
     }
-    else if(adress == 0xFFFF)
+    else if(address == 0xFFFF)
     {
         cpu->io.IE = data;
     }
     
 //    if(emu->opt.debug_info)
 //    {
-//        printf(COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" COLOR_RESET "\n", data, adress);
+//        printf(COLOR_YELLOW "MEMORY: WRITE 0x%02X AT ADRESS 0x%04X" COLOR_RESET "\n", data, address);
 //    }
     
     return EXIT_SUCCESS;
 }
 
-int read_memory(s_emu *emu, uint16_t adress, uint8_t *data)
+int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
     
-    if(adress <= 0x3FFF)
+    if(address <= 0x3FFF)
     {
-        *data = cpu->ROM_Bank[cpu->cur_low_rom_bk][adress];
+        *data = cpu->ROM_Bank[cpu->cur_low_rom_bk][address];
     }
-    else if((adress >= 0x4000) && (adress <= 0x7FFF))
+    else if((address >= 0x4000) && (address <= 0x7FFF))
     {
-        *data = cpu->ROM_Bank[cpu->cur_hi_rom_bk][adress - 0x4000];
+        *data = cpu->ROM_Bank[cpu->cur_hi_rom_bk][address - 0x4000];
     }
     //VRAM
-    else if((adress >= 0x8000) && (adress <= 0x9FFF))
+    else if((address >= 0x8000) && (address <= 0x9FFF))
     {
-        *data = cpu->VRAM[adress - 0x8000];
+        *data = cpu->VRAM[address - 0x8000];
     }
     //8 KiB External RAM 
-    else if((adress >= 0xA000) && (adress <= 0xBFFF))
+    else if((address >= 0xA000) && (address <= 0xBFFF))
     {
         if(emu->cart.mbc.RAM_enable)
-            *data = cpu->SRAM[cpu->current_sram_bk][adress - 0xA000];
+            *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
         else
             *data = 0;
     }
     //WRAM
-    else if((adress >= 0xC000) && (adress <= 0xDFFF))
+    else if((address >= 0xC000) && (address <= 0xDFFF))
     {
-        *data = cpu->WRAM[adress - 0xC000];
+        *data = cpu->WRAM[address - 0xC000];
     }
     //ECHO RAM
-    else if((adress >= 0xE000) && (adress <= 0xFDFF))
+    else if((address >= 0xE000) && (address <= 0xFDFF))
     {
-        fprintf(stderr, COLOR_RED "WARNING: attempt to read in ECHO RAM at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "WARNING: attempt to read in ECHO RAM at address 0x%04X (prohibited)\n" COLOR_RESET, address);
     }
     //sprite attribute table (OAM)
-    else if((adress >= 0xFE00) && (adress <= 0xFE9F))
+    else if((address >= 0xFE00) && (address <= 0xFE9F))
     {
-        *data = cpu->OAM[adress - 0xFE00];
+        *data = cpu->OAM[address - 0xFE00];
     }
-    else if((adress >= 0xFEA0) && (adress <= 0xFEFF))
+    else if((address >= 0xFEA0) && (address <= 0xFEFF))
     {
-        fprintf(stderr, COLOR_RED "ERROR: attempt to read at adress 0x%04X (prohibited)\n" COLOR_RESET, adress);
+        fprintf(stderr, COLOR_RED "ERROR: attempt to read at address 0x%04X (prohibited)\n" COLOR_RESET, address);
         return EXIT_FAILURE;
     }
-    else if((adress >= 0xFF00) && (adress <= 0xFF7F))
+    else if((address >= 0xFF00) && (address <= 0xFF7F))
     {
-        if(0 != read_io_registers(emu, adress, data))
+        if(0 != read_io_registers(emu, address, data))
             return EXIT_FAILURE;
     }    
     //HRAM
-    else if((adress >= 0xFF80) && (adress <= 0xFFFE))
+    else if((address >= 0xFF80) && (address <= 0xFFFE))
     {
-        *data = cpu->HRAM[adress - 0xFF80];
+        *data = cpu->HRAM[address - 0xFF80];
     }
-    else if(adress == 0xFFFF)
+    else if(address == 0xFFFF)
     {
         *data = cpu->io.IE;
     }
     
 //    if(emu->opt.debug_info)
 //    {
-//        printf(COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" COLOR_RESET "\n", *data, adress);
+//        printf(COLOR_YELLOW "MEMORY: READ 0x%02X FROM ADRESS 0x%04X" COLOR_RESET "\n", *data, address);
 //    }
     
     return EXIT_SUCCESS;

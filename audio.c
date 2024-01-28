@@ -130,7 +130,7 @@ void fill_square_channel_stream(s_emu *emu, int ch)
         
         return;
     }
-    
+
     //Variables used to seemlessly continue the sound when samples_played is reset to 0
     //after a SDL_QueueAudio (new buffer beginning)
     static bool period_ended[2] = {true,  true};
@@ -186,10 +186,10 @@ void fill_square_channel_stream(s_emu *emu, int ch)
         //fills the data (left and right)
         //0.5 volume is to avoid saturation
         au->fstream[au->samples_played    ] += (float)volume * 1/15 * au->ch_l[ch] * 
-                                               1/8 * (au->l_output_vol + 1) * 0.45  ;
+                                               1/8 * (au->l_output_vol + 1) * COMMON_VOLUME  ;
                                                
         au->fstream[au->samples_played + 1] += (float)volume * 1/15 * au->ch_r[ch] * 
-                                               1/8 * (au->r_output_vol + 1) * 0.45  ;
+                                               1/8 * (au->r_output_vol + 1) * COMMON_VOLUME  ;
     }
     
     //debug
@@ -276,11 +276,11 @@ void fill_wave_channel_stream(s_emu *emu)
 
     au->fstream[au->samples_played    ] += (float)((io->wave_RAM[au->ch3_samples_counter / 2] &
                                            (0xF << nibble)) >> nibble) * 1/15 * au->ch_l[CH3]   * 
-                                           1/8 * (au->l_output_vol + 1) * output_level * 0.45  ;
+                                           1/8 * (au->l_output_vol + 1) * output_level * COMMON_VOLUME  ;
                                            
     au->fstream[au->samples_played + 1] += (float)((io->wave_RAM[au->ch3_samples_counter / 2] &
                                            (0xF << nibble)) >> nibble) * 1/15 * au->ch_r[CH3]   * 
-                                           1/8 * (au->r_output_vol + 1) * output_level * 0.45  ;
+                                           1/8 * (au->r_output_vol + 1) * output_level * COMMON_VOLUME  ;
     
     local_samples_played += 2;
 }
@@ -356,12 +356,13 @@ void fill_noise_channel_stream(s_emu *emu)
         //fills the data (left and right)
         //0.5 volume is to avoid saturation
         au->fstream[au->samples_played    ] += (float)volume * 1/15 * au->ch_l[CH4] * 
-                                               1/8 * (au->l_output_vol + 1) * 0.45  ;
+                                               1/8 * (au->l_output_vol + 1) * COMMON_VOLUME  ;
                                                
         au->fstream[au->samples_played + 1] += (float)volume * 1/15 * au->ch_r[CH4] * 
-                                               1/8 * (au->r_output_vol + 1) * 0.45  ;
+                                               1/8 * (au->r_output_vol + 1) * COMMON_VOLUME  ;
     }
-    
+
+
     //debug
     if(emu->opt.audio_log)
     {

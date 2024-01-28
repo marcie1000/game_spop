@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include "emulator.h"
 
-int write_io_registers(s_emu *emu, uint16_t adress, uint8_t data);
-int read_io_registers(s_emu *emu, uint16_t adress, uint8_t *data);
-int write_memory(s_emu *emu, uint16_t adress, uint8_t data);
-int read_memory(s_emu *emu, uint16_t adress, uint8_t *data);
+int write_io_registers(s_emu *emu, uint16_t address, uint8_t data);
+int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data);
+int write_memory(s_emu *emu, uint16_t address, uint8_t data);
+int read_memory(s_emu *emu, uint16_t address, uint8_t *data);
 int initialize_cpu(s_cpu *cpu);
 uint32_t get_opcode(s_emu *emu);
 uint8_t get_action(uint32_t opcode);

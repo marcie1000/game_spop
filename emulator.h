@@ -33,6 +33,7 @@
 #define AUDIO_SAMPLES_DRIVER        (400)
 #define AUDIO_SAMPLE_RATE           (48000)
 #define BUFFERS_PER_FRAME           (1)
+#define COMMON_VOLUME               (0.4)
 
 //to avoid compiler warning when a function parameter isn't used
 #define UNUSED __attribute__((unused))
