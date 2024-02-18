@@ -320,6 +320,13 @@ void update_event(s_emu *emu)
     }
 }
 
+/**
+ * @brief Reads values in the cartridge header to set values that will adapt the
+ * emulator's behavior: checks if the cartridge is compatible (non CGB only),
+ * number of ROM banks, number of SRAM banks if any, and MBC used. The function
+ * also reads the title of the game, and displays these values on the terminal.
+ * @param emu
+ */
 int read_cartridge_header(s_emu *emu)
 {
     s_cart *cr = &emu->cart;
@@ -434,27 +441,48 @@ int read_cartridge_header(s_emu *emu)
     
     printf("SRAM banks: %d\n", cr->sram_banks);
 
+    printf("MBC: ");
     switch(cr->type)
     {
         case ROM_ONLY:
-            printf("MBC: ROM ONLY\n");
+            printf("ROM ONLY\n");
             break;
         case MBC1:
-            printf("MBC: MBC1\n");
+            printf("MBC1\n");
             break;
         case MBC1_P_RAM:
-            printf("MBC: MBC1 + RAM\n");
+            printf("MBC1 + RAM\n");
             break;
         case MBC1_P_RAM_P_BATT:
-            printf("MBC: MBC1 + RAM + BATTERY\n");
+            printf("MBC1 + RAM + BATTERY\n");
             cr->batt = true;
             break;
         case MBC2:
-            printf("MBC: MBC2\n");
+            printf("MBC2\n");
             break;
         case MBC2_P_BATT:
-            printf("MBC: MBC2 + BATT\n");
+            printf("MBC2 + BATT\n");
             cr->batt = true;
+            break;
+        case MBC3:
+            printf("MBC3\n");
+            break;
+        case MBC3_P_RAM:
+            printf("MBC3 + RAM\n");
+            break;
+        case MBC3_P_RAM_P_BATT:
+            printf("MBC3 + RAM + BATT\n");
+            cr->batt = true;
+            break;
+        case MBC3_P_TIMER_P_BATT:
+            printf(COLOR_RED "WARNING: MBC3 + TIMER + BATT unimplemented!\n" COLOR_RESET);
+            cr->batt = true;
+            return EXIT_FAILURE;
+            break;
+        case MBC3_P_TIMER_P_RAM_P_BATT:
+            printf(COLOR_RED "WARNING: MBC3 + TIMER + RAM + BATT unimplemented!\n" COLOR_RESET);
+            cr->batt = true;
+            return EXIT_FAILURE;
             break;
         default:
             fprintf(stderr, COLOR_RED "WARNING:" COLOR_RESET " MBC code %02X (unimplemented)!\n", cr->type);
