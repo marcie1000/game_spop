@@ -497,48 +497,48 @@ int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
     {
         *data = cpu->ROM_Bank[cpu->cur_low_rom_bk][address];
     }
-    else if((address >= 0x4000) && (address <= 0x7FFF))
+    else if(/* (address >= 0x4000) && */ (address <= 0x7FFF))
     {
         *data = cpu->ROM_Bank[cpu->cur_hi_rom_bk][address - 0x4000];
     }
     //VRAM
-    else if((address >= 0x8000) && (address <= 0x9FFF))
+    else if(/* (address >= 0x8000) && */ (address <= 0x9FFF))
     {
         *data = cpu->VRAM[address - 0x8000];
     }
     //8 KiB External RAM 
-    else if((address >= 0xA000) && (address <= 0xBFFF))
+    else if(/* (address >= 0xA000) && */ (address <= 0xBFFF))
     {
         if(0 != read_external_RAM(emu, address, data))
             return EXIT_FAILURE;
     }
     //WRAM
-    else if((address >= 0xC000) && (address <= 0xDFFF))
+    else if(/* (address >= 0xC000) && */ (address <= 0xDFFF))
     {
         *data = cpu->WRAM[address - 0xC000];
     }
     //ECHO RAM
-    else if((address >= 0xE000) && (address <= 0xFDFF))
+    else if(/* (address >= 0xE000) && */ (address <= 0xFDFF))
     {
         fprintf(stderr, COLOR_RED "WARNING: attempt to read in ECHO RAM at address 0x%04X (prohibited)\n" COLOR_RESET, address);
     }
     //sprite attribute table (OAM)
-    else if((address >= 0xFE00) && (address <= 0xFE9F))
+    else if(/* (address >= 0xFE00) && */ (address <= 0xFE9F))
     {
         *data = cpu->OAM[address - 0xFE00];
     }
-    else if((address >= 0xFEA0) && (address <= 0xFEFF))
+    else if(/* (address >= 0xFEA0) && */ (address <= 0xFEFF))
     {
         fprintf(stderr, COLOR_RED "ERROR: attempt to read at address 0x%04X (prohibited)\n" COLOR_RESET, address);
         return EXIT_FAILURE;
     }
-    else if((address >= 0xFF00) && (address <= 0xFF7F))
+    else if(/* (address >= 0xFF00) && */ (address <= 0xFF7F))
     {
         if(0 != read_io_registers(emu, address, data))
             return EXIT_FAILURE;
     }    
     //HRAM
-    else if((address >= 0xFF80) && (address <= 0xFFFE))
+    else if(/* (address >= 0xFF80) && */ (address <= 0xFFFE))
     {
         *data = cpu->HRAM[address - 0xFF80];
     }
