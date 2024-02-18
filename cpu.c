@@ -491,7 +491,6 @@ int write_memory(s_emu *emu, uint16_t address, uint8_t data)
 int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_mbc  *mbc = &emu->cart.mbc;
 
     if(address <= 0x3FFF)
     {

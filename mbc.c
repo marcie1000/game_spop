@@ -49,7 +49,6 @@ int mbc3_registers(s_emu *emu, uint16_t address, uint8_t data)
 
 int mbc2_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
-    s_mbc *mbc = &emu->cart.mbc;
     s_cart *cr = &emu->cart;
     s_cpu *cpu = &emu->cpu;
 
@@ -62,16 +61,15 @@ int mbc2_registers(s_emu *emu, uint16_t address, uint8_t data)
     else // RAM
     {
         if(data == 0x0A)
-            mbc->RAM_enable = true;
+            cr->RAM_enable = true;
         else
-            mbc->RAM_enable = false;
+            cr->RAM_enable = false;
     }
     return EXIT_SUCCESS;
 }
 
 int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
-    s_mbc *mbc = &emu->cart.mbc;
     s_cart *cr = &emu->cart;
     s_cpu *cpu = &emu->cpu;
     
@@ -79,10 +77,10 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
     if(address <= 0x1FFF)
     {
         if(data == 0)
-            mbc->RAM_enable = false;
+            cr->RAM_enable = false;
         else if(data == 0x0A && cr->sram_banks > 0)
         {
-            mbc->RAM_enable = true;
+            cr->RAM_enable = true;
         }
     }
     
@@ -102,13 +100,13 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
         //if 1 MiB ROM or superior, keep upper bits of rom bank number
         if(cr->rom_banks >= 64)
         {
-            mbc->ROM_bank_number &= ~0x1F;
-            mbc->ROM_bank_number |= bank;
+            cr->ROM_bank_number &= ~0x1F;
+            cr->ROM_bank_number |= bank;
         }
         else
-            mbc->ROM_bank_number = bank;
+            cr->ROM_bank_number = bank;
             
-        emu->cpu.cur_hi_rom_bk = mbc->ROM_bank_number;
+        emu->cpu.cur_hi_rom_bk = cr->ROM_bank_number;
     }
     
     //RAM Bank Number — or — Upper Bits of ROM Bank Number (Write Only)
@@ -119,19 +117,19 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
         //if 1 MiB ROM or superior
         if(cr->rom_banks >= 64)
         {
-            mbc->ROM_bank_number &= ~0x60;
-            mbc->ROM_bank_number |= data & 0x60;
-            cpu->cur_hi_rom_bk = mbc->ROM_bank_number;
+            cr->ROM_bank_number &= ~0x60;
+            cr->ROM_bank_number |= data & 0x60;
+            cpu->cur_hi_rom_bk = cr->ROM_bank_number;
         }
         
-        if(mbc->banking_mode_select)
+        if(cr->banking_mode_select)
         {
             if(ram_bank < cr->sram_banks)
             {
-                mbc->RAM_bank_number = ram_bank;
+                cr->RAM_bank_number = ram_bank;
                 emu->cpu.current_sram_bk = ram_bank;
             }
-            cpu->cur_low_rom_bk = mbc->ROM_bank_number & 0x60;
+            cpu->cur_low_rom_bk = cr->ROM_bank_number & 0x60;
         }
         else
         {
@@ -143,18 +141,18 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
     //Banking Mode Select (Write Only)
     else if(/* (address >= 0x6000) && */ (address <= 0x7FFF))
     {
-        mbc->banking_mode_select = data;
+        cr->banking_mode_select = data;
 
-        uint8_t ram_bank = mbc->ROM_bank_number & 0x60;
+        uint8_t ram_bank = cr->ROM_bank_number & 0x60;
 
-        if(mbc->banking_mode_select)
+        if(cr->banking_mode_select)
         {
             if(ram_bank < cr->sram_banks)
             {
-                mbc->RAM_bank_number = ram_bank;
+                cr->RAM_bank_number = ram_bank;
                 emu->cpu.current_sram_bk = ram_bank;
             }
-            cpu->cur_low_rom_bk = mbc->ROM_bank_number & 0x60;
+            cpu->cur_low_rom_bk = cr->ROM_bank_number & 0x60;
         }
         else
         {
@@ -169,9 +167,9 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
 int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_mbc *mbc = &emu->cart.mbc;
+    s_cart *cr = &emu->cart;
 
-    if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
+    if(emu->opt.rom_argument && emu->cart.RAM_enable)
     {
         if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
         {
@@ -191,19 +189,19 @@ int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
                     cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
                     break;
                 case 0x08:
-                    mbc->RTC_S = data;
+                    cr->RTC_S = data;
                     break;
                 case 0x09:
-                    mbc->RTC_M = data;
+                    cr->RTC_M = data;
                     break;
                 case 0x0A:
-                    mbc->RTC_H = data;
+                    cr->RTC_H = data;
                     break;
                 case 0x0B:
-                    mbc->RTC_DL = data;
+                    cr->RTC_DL = data;
                     break;
                 case 0x0C:
-                    mbc->RTC_DH = data;
+                    cr->RTC_DH = data;
                     break;
                 default:
                     fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);
@@ -221,9 +219,9 @@ int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
 int read_external_RAM(s_emu *emu, uint16_t address, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
-    s_mbc *mbc = &emu->cart.mbc;
+    s_cart *cr = &emu->cart;
 
-    if(emu->cart.mbc.RAM_enable)
+    if(emu->cart.RAM_enable)
     {
         if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
         {
@@ -243,19 +241,19 @@ int read_external_RAM(s_emu *emu, uint16_t address, uint8_t *data)
                     *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
                     break;
                 case 0x08:
-                    *data = mbc->RTC_S;
+                    *data = cr->RTC_S;
                     break;
                 case 0x09:
-                    *data = mbc->RTC_M;
+                    *data = cr->RTC_M;
                     break;
                 case 0x0A:
-                    *data = mbc->RTC_H;
+                    *data = cr->RTC_H;
                     break;
                 case 0x0B:
-                    *data = mbc->RTC_DL;
+                    *data = cr->RTC_DL;
                     break;
                 case 0x0C:
-                    *data = mbc->RTC_DH;
+                    *data = cr->RTC_DH;
                     break;
                 default:
                     fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);

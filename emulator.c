@@ -333,7 +333,7 @@ int read_cartridge_header(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     memset(cr, 0, sizeof(s_cart));
     
-    cr->mbc.ROM_bank_number = 1;
+    cr->ROM_bank_number = 1;
     
     if(!emu->opt.rom_argument)
         return EXIT_SUCCESS;

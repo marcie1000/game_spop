@@ -288,16 +288,6 @@ typedef struct s_audio{
     uint8_t buffers_since_last_frame;
 }s_audio;
 
-typedef struct s_mbc{
-    bool RAM_enable;
-    unsigned ROM_bank_number;
-    unsigned RAM_bank_number;
-    bool banking_mode_select;
-
-    // MBC3
-    uint8_t RTC_S, RTC_M, RTC_H, RTC_DL, RTC_DH;
-}s_mbc;
-
 typedef struct s_cart{
     char title[20];
     int cgb_flag;
@@ -305,7 +295,13 @@ typedef struct s_cart{
     int rom_banks;
     int sram_banks;
     bool batt;
-    s_mbc mbc;
+    bool RAM_enable;
+    unsigned ROM_bank_number;
+    unsigned RAM_bank_number;
+    bool banking_mode_select;
+
+    // MBC3
+    uint8_t RTC_S, RTC_M, RTC_H, RTC_DL, RTC_DH;
 }s_cart;
 
 typedef struct s_emu{
