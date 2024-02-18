@@ -438,16 +438,8 @@ int write_memory(s_emu *emu, uint16_t address, uint8_t data)
     //8 KiB External RAM 
     else if((address >= 0xA000) && (address <= 0xBFFF))
     {
-        if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
-        {
-            if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT))
-                cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
-            else
-            {
-                uint16_t relative = (address - 0xA000) % 0x200;
-                cpu->SRAM[0][relative] = data & 0x0F;
-            }
-        }
+        if(0 != write_external_RAM(emu, address, data))
+            return EXIT_FAILURE;
     }
     //WRAM
     else if((address >= 0xC000) && (address <= 0xDFFF))
@@ -496,7 +488,8 @@ int write_memory(s_emu *emu, uint16_t address, uint8_t data)
 int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
 {
     s_cpu *cpu = &emu->cpu;
-    
+    s_mbc  *mbc = &emu->cart.mbc;
+
     if(address <= 0x3FFF)
     {
         *data = cpu->ROM_Bank[cpu->cur_low_rom_bk][address];
@@ -513,18 +506,8 @@ int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
     //8 KiB External RAM 
     else if((address >= 0xA000) && (address <= 0xBFFF))
     {
-        if(emu->cart.mbc.RAM_enable)
-        {
-            if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT))
-                *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
-            else
-            {
-                uint16_t relative = (address - 0xA000) % 0x200;
-                *data = cpu->SRAM[0][relative];
-            }
-        }
-        else
-            *data = 0;
+        if(0 != read_external_RAM(emu, address, data))
+            return EXIT_FAILURE;
     }
     //WRAM
     else if((address >= 0xC000) && (address <= 0xDFFF))

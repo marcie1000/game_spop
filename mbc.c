@@ -25,11 +25,25 @@ int write_mbc_registers(s_emu *emu, uint16_t address, uint8_t data)
             if(0 != mbc2_registers(emu, address, data))
                 return EXIT_FAILURE;
             break;
+        case MBC3:
+        case MBC3_P_RAM:
+        case MBC3_P_RAM_P_BATT:
+        case MBC3_P_TIMER_P_BATT:
+        case MBC3_P_TIMER_P_RAM_P_BATT:
+            if(0 != mbc3_registers(emu, address, data))
+                return EXIT_FAILURE;
+            break;
         default:
             fprintf(stderr, "WARNING: MBC registers unimplemented!\n");
             break;
     }
     
+    return EXIT_SUCCESS;
+}
+
+int mbc3_registers(s_emu *emu, uint16_t address, uint8_t data)
+{
+
     return EXIT_SUCCESS;
 }
 
@@ -152,4 +166,73 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
     return EXIT_SUCCESS;
 }
 
+int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_mbc *mbc = &emu->cart.mbc;
 
+    if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
+    {
+        if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT))
+            cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+        else
+        {
+            uint16_t relative = (address - 0xA000) % 0x200;
+            cpu->SRAM[0][relative] = data & 0x0F;
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
+int read_external_RAM(s_emu *emu, uint16_t address, uint8_t *data)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_mbc *mbc = &emu->cart.mbc;
+
+    if(emu->cart.mbc.RAM_enable)
+    {
+        if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
+        {
+            uint16_t relative = (address - 0xA000) % 0x200;
+            *data = cpu->SRAM[0][relative];
+        }
+        // read RTC registers instead of SRAM
+        else if(emu->cart.type == MBC3_P_TIMER_P_BATT ||
+                emu->cart.type == MBC3_P_TIMER_P_RAM_P_BATT)
+        {
+            switch(cpu->current_sram_bk)
+            {
+                case 0x00:
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                    *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
+                    break;
+                case 0x08:
+                    *data = mbc->RTC_S;
+                    break;
+                case 0x09:
+                    *data = mbc->RTC_M;
+                    break;
+                case 0x0A:
+                    *data = mbc->RTC_H;
+                    break;
+                case 0x0B:
+                    *data = mbc->RTC_DL;
+                    break;
+                case 0x0C:
+                    *data = mbc->RTC_DH;
+                    break;
+                default:
+                    fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);
+                    return EXIT_FAILURE;
+                    break;
+            }
+        }
+        else
+            *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
+    }
+    else
+        *data = 0;
+    return EXIT_SUCCESS;
+}
