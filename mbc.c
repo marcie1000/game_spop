@@ -173,13 +173,55 @@ int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
 
     if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
     {
-        if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT))
-            cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
-        else
+        /* if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)) */
+        /*     cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data; */
+        /* else */
+        /* { */
+        /*     uint16_t relative = (address - 0xA000) % 0x200; */
+        /*     cpu->SRAM[0][relative] = data & 0x0F; */
+        /* } */
+
+        if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
         {
             uint16_t relative = (address - 0xA000) % 0x200;
             cpu->SRAM[0][relative] = data & 0x0F;
         }
+        // read RTC registers instead of SRAM
+        else if(emu->cart.type == MBC3_P_TIMER_P_BATT ||
+                emu->cart.type == MBC3_P_TIMER_P_RAM_P_BATT)
+        {
+            switch(cpu->current_sram_bk)
+            {
+                case 0x00:
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                    cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+                    break;
+                case 0x08:
+                    mbc->RTC_S = data;
+                    break;
+                case 0x09:
+                    mbc->RTC_M = data;
+                    break;
+                case 0x0A:
+                    mbc->RTC_H = data;
+                    break;
+                case 0x0B:
+                    mbc->RTC_DL = data;
+                    break;
+                case 0x0C:
+                    mbc->RTC_DH = data;
+                    break;
+                default:
+                    fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);
+                    return EXIT_FAILURE;
+                    break;
+            }
+        }
+        else
+            cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+
     }
     return EXIT_SUCCESS;
 }
