@@ -173,14 +173,6 @@ int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
 
     if(emu->opt.rom_argument && emu->cart.mbc.RAM_enable)
     {
-        /* if(!(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)) */
-        /*     cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data; */
-        /* else */
-        /* { */
-        /*     uint16_t relative = (address - 0xA000) % 0x200; */
-        /*     cpu->SRAM[0][relative] = data & 0x0F; */
-        /* } */
-
         if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
         {
             uint16_t relative = (address - 0xA000) % 0x200;
