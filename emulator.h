@@ -165,15 +165,13 @@ typedef struct s_input{
 
 //I/O registers
 typedef struct s_io{
-    uint8_t P1_JOYP,
+    uint8_t P1_JOYP, SB, SC, DIV, TIMA, TMA, TAC, IF,
             NR10, NR11, NR12, NR13, NR14,
             NR21, NR22, NR23, NR24,
             NR30, NR31, NR32, NR33, NR34,
             NR41, NR42, NR43, NR44,
-            NR50, NR51, NR52, LCDC, 
-            SCY, SCX, WY, WX, LY, BGP, BANK,
-            IE, IF, STAT, LYC, SB, SC, OBP0, OBP1,
-            TMA, DMA, TAC, TIMA, DIV;
+            NR50, NR51, NR52,
+            LCDC, STAT, SCY, SCX, LY, LYC, DMA, BGP, OBP0, OBP1, WY, WX, BANK, IE;
     uint8_t wave_RAM[16];
     bool IME;
 }s_io;
