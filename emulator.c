@@ -477,11 +477,13 @@ int read_cartridge_header(s_emu *emu)
         case MBC3_P_TIMER_P_BATT:
             printf(COLOR_RED "WARNING: MBC3 + TIMER + BATT unimplemented!\n" COLOR_RESET);
             cr->batt = true;
+            cr->has_RTC = true;
             return EXIT_FAILURE;
             break;
         case MBC3_P_TIMER_P_RAM_P_BATT:
             printf(COLOR_RED "WARNING: MBC3 + TIMER + RAM + BATT unimplemented!\n" COLOR_RESET);
             cr->batt = true;
+            cr->has_RTC = true;
             return EXIT_FAILURE;
             break;
         default:

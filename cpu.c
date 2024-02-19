@@ -196,7 +196,7 @@ int write_io_registers(s_emu *emu, uint16_t address, uint8_t data)
         case 0xFF44:
             fprintf(stderr, COLOR_RED "ERROR: attempt to write in I/O register"
                     " LY (0xFF44), read only!\n" COLOR_RESET);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case 0xFF45:
             io->LYC = data;
@@ -232,8 +232,8 @@ int write_io_registers(s_emu *emu, uint16_t address, uint8_t data)
         default:
             fprintf(stderr, COLOR_RED "WARNING: attempt to write I/O register"
                     " at address 0x%04X (unimplemented!)\n" COLOR_RESET, address);
-            SDL_Delay(3000);
-            return EXIT_FAILURE;
+            /* SDL_Delay(3000); */
+            /* return EXIT_FAILURE; */
             break;
     }
     
@@ -283,7 +283,7 @@ int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
         case 0xFF13:
             fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF13,"
                     " NR13 I/O register (write only)\n" COLOR_RESET);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case 0xFF14:
             *data = 0x40 & io->NR14;
@@ -297,7 +297,7 @@ int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
         case 0xFF18:
             fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF18,"
                     " NR23 I/O register (write only)\n" COLOR_RESET);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case 0xFF19:
             *data = 0x40 & io->NR24;
@@ -308,7 +308,7 @@ int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
         case 0xFF1B:
             fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF1B,"
                     " NR31 I/O register (write only)\n" COLOR_RESET);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case 0xFF1C:
             *data = io->NR32;
@@ -316,7 +316,7 @@ int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
         case 0xFF1D:
             fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF1D,"
                     " NR33 I/O register (write only)\n" COLOR_RESET);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case 0xFF1E:
             *data = io->NR34 & 0x40;
@@ -324,7 +324,7 @@ int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
         case 0xFF20:
             fprintf(stderr, COLOR_RED "ERROR: attempt to read at address FF1D,"
                     " NR33 I/O register (write only)\n" COLOR_RESET);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case 0xFF21:
             *data = io->NR42;
@@ -408,8 +408,8 @@ int read_io_registers(s_emu *emu, uint16_t address, uint8_t *data)
         default:
             fprintf(stderr, COLOR_RED "WARNING: attempt to read I/O register"
                     " at address 0x%04X (unimplemented!)\n" COLOR_RESET, address);
-            SDL_Delay(3000);
-            return EXIT_FAILURE;
+            /* SDL_Delay(3000); */
+            /* return EXIT_FAILURE; */
             break;
     }
     

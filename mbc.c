@@ -43,6 +43,61 @@ int write_mbc_registers(s_emu *emu, uint16_t address, uint8_t data)
 
 int mbc3_registers(s_emu *emu, uint16_t address, uint8_t data)
 {
+    s_cart *cr = &emu->cart;
+    s_cpu *cpu = &emu->cpu;
+
+    //RAM and Timer Enable (Write Only)
+    if(address <= 0x1FFF)
+    {
+        if(data == 0)
+        {
+            cr->RAM_enable = false;
+            cr->RTC_enable = false;
+        }
+        else if(data == 0x0A)
+        {
+            if(cr->sram_banks > 0)
+                cr->RAM_enable = true;
+            if(cr->has_RTC)
+                cr->RTC_enable = true;
+        }
+    }
+
+    //ROM Bank Number (Write Only)
+    else if(/* (address >= 0x2000) && */ (address <= 0x3FFF))
+    {
+        assert((data & 0x7F) < cr->rom_banks);
+        cpu->cur_hi_rom_bk = data & 0x7F;
+        if (cpu->cur_hi_rom_bk == 0)
+            cpu->cur_hi_rom_bk = 1;
+    }
+
+    //RAM Bank Number — or — RTC Register Select (Write Only)
+    else if(/* (address >= 0x4000) && */ (address <= 0x5FFF))
+    {
+        if(!cr->has_RTC)
+        {
+            if(data <= 0x03)
+                cpu->current_sram_bk = data;
+            else
+            {
+                fprintf(stderr, COLOR_YELLOW "PANIC! mbc3_registers, data = 0x%02X\n" COLOR_RESET, data);
+                return EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            if(data <= 0x03 || (data >= 0x08 && data <= 0x0C))
+                cpu->current_sram_bk = data;
+        }
+    }
+
+    //TODO Latch Clock Data (Write Only)
+    else if(/* (address >= 0x6000) && */ (address <= 0x7FFF))
+    {
+        fprintf(stderr, COLOR_RED "WARNING: MBC3 Latch Clock Data 6000-7FFF not implemented!\n" COLOR_RESET);
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
@@ -109,7 +164,7 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
         emu->cpu.cur_hi_rom_bk = cr->ROM_bank_number;
     }
     
-    //RAM Bank Number — or — Upper Bits of ROM Bank Number (Write Only)
+    //FIXME RAM Bank Number — or — Upper Bits of ROM Bank Number (Write Only)
     else if(/* (address >= 0x4000) && */ (address <= 0x5FFF))
     {
         uint8_t ram_bank = data & 0x10;

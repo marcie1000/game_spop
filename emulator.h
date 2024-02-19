@@ -292,16 +292,20 @@ typedef struct s_cart{
     char title[20];
     int cgb_flag;
     int type;
-    int rom_banks;
-    int sram_banks;
+    int rom_banks; // total number of ROM banks
+    int sram_banks; // total number of SRAM banks
     bool batt;
     bool RAM_enable;
-    unsigned ROM_bank_number;
-    unsigned RAM_bank_number;
+    // FIXME these are duplicates with cpu->current_sram_bk, cur_low_rom_bk, cur_hi_rom_bk
+    unsigned ROM_bank_number; // the CURRENT ROM bank number, used for MBC1
+    unsigned RAM_bank_number; // the CURRENT RAM bank number
+
     bool banking_mode_select;
 
     // MBC3
     uint8_t RTC_S, RTC_M, RTC_H, RTC_DL, RTC_DH;
+    bool has_RTC;
+    bool RTC_enable;
 }s_cart;
 
 typedef struct s_emu{
