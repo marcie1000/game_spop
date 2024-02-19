@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 #include <SDL.h>
 
 #define CPU_FREQ                    (4194304.0)
@@ -288,6 +289,10 @@ typedef struct s_audio{
     uint8_t buffers_since_last_frame;
 }s_audio;
 
+typedef struct s_rtc{
+    uint8_t RTC_S, RTC_M, RTC_H, RTC_DL, RTC_DH;
+}s_rtc;
+
 typedef struct s_cart{
     char title[20];
     int cgb_flag;
@@ -303,9 +308,11 @@ typedef struct s_cart{
     bool banking_mode_select;
 
     // MBC3
-    uint8_t RTC_S, RTC_M, RTC_H, RTC_DL, RTC_DH;
+    s_rtc rtc_internal;
+    s_rtc rtc_latched;
     bool has_RTC;
     bool RTC_enable;
+    uintmax_t epoch;
 }s_cart;
 
 typedef struct s_emu{

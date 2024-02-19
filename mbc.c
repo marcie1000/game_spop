@@ -95,8 +95,11 @@ int mbc3_registers(s_emu *emu, uint16_t address, uint8_t data)
     //TODO Latch Clock Data (Write Only)
     else if(/* (address >= 0x6000) && */ (address <= 0x7FFF))
     {
-        fprintf(stderr, COLOR_RED "WARNING: MBC3 Latch Clock Data 6000-7FFF not implemented!\n" COLOR_RESET);
-        return EXIT_FAILURE;
+        if(cr->has_RTC)
+        {
+            fprintf(stderr, COLOR_RED "WARNING: MBC3 Latch Clock Data 6000-7FFF not implemented!\n" COLOR_RESET);
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;
@@ -244,19 +247,19 @@ int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
                     cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
                     break;
                 case 0x08:
-                    cr->RTC_S = data;
+                    cr->rtc_internal.RTC_S = data;
                     break;
                 case 0x09:
-                    cr->RTC_M = data;
+                    cr->rtc_internal.RTC_M = data;
                     break;
                 case 0x0A:
-                    cr->RTC_H = data;
+                    cr->rtc_internal.RTC_H = data;
                     break;
                 case 0x0B:
-                    cr->RTC_DL = data;
+                    cr->rtc_internal.RTC_DL = data;
                     break;
                 case 0x0C:
-                    cr->RTC_DH = data;
+                    cr->rtc_internal.RTC_DH = data;
                     break;
                 default:
                     fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);
@@ -296,19 +299,19 @@ int read_external_RAM(s_emu *emu, uint16_t address, uint8_t *data)
                     *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
                     break;
                 case 0x08:
-                    *data = cr->RTC_S;
+                    *data = cr->rtc_latched.RTC_S;
                     break;
                 case 0x09:
-                    *data = cr->RTC_M;
+                    *data = cr->rtc_latched.RTC_M;
                     break;
                 case 0x0A:
-                    *data = cr->RTC_H;
+                    *data = cr->rtc_latched.RTC_H;
                     break;
                 case 0x0B:
-                    *data = cr->RTC_DL;
+                    *data = cr->rtc_latched.RTC_DL;
                     break;
                 case 0x0C:
-                    *data = cr->RTC_DH;
+                    *data = cr->rtc_latched.RTC_DH;
                     break;
                 default:
                     fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);

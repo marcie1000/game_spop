@@ -462,7 +462,7 @@ int write_memory(s_emu *emu, uint16_t address, uint8_t data)
         if(data != 0)
         {
             fprintf(stderr, COLOR_RED "ERROR: attempt to write at address 0x%04X (prohibited)\n" COLOR_RESET, address);
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
         }
     }
     else if(/* (address >= 0xFF00) && */ (address <= 0xFF7F))
@@ -529,7 +529,7 @@ int read_memory(s_emu *emu, uint16_t address, uint8_t *data)
     else if(/* (address >= 0xFEA0) && */ (address <= 0xFEFF))
     {
         fprintf(stderr, COLOR_RED "ERROR: attempt to read at address 0x%04X (prohibited)\n" COLOR_RESET, address);
-        return EXIT_FAILURE;
+        /* return EXIT_FAILURE; */
     }
     else if(/* (address >= 0xFF00) && */ (address <= 0xFF7F))
     {

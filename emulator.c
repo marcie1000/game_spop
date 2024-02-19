@@ -5,6 +5,7 @@
 #include <string.h>
 #include <limits.h>
 #include <SDL.h>
+#include <time.h>
 #include "emulator.h"
 #include "cpu.h"
 #include "graphics.h"
@@ -478,13 +479,13 @@ int read_cartridge_header(s_emu *emu)
             printf(COLOR_RED "WARNING: MBC3 + TIMER + BATT unimplemented!\n" COLOR_RESET);
             cr->batt = true;
             cr->has_RTC = true;
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         case MBC3_P_TIMER_P_RAM_P_BATT:
             printf(COLOR_RED "WARNING: MBC3 + TIMER + RAM + BATT unimplemented!\n" COLOR_RESET);
             cr->batt = true;
             cr->has_RTC = true;
-            return EXIT_FAILURE;
+            /* return EXIT_FAILURE; */
             break;
         default:
             fprintf(stderr, COLOR_RED "WARNING:" COLOR_RESET " MBC code %02X (unimplemented)!\n", cr->type);
@@ -629,6 +630,42 @@ int load_sav(s_emu *emu)
         perror("Error reading sav: ");
         fclose(sav);
         return EXIT_FAILURE;
+    }
+
+    // reads RTC in the BGB emulator format
+    if(cr->has_RTC)
+    {
+        uint8_t rtc_data[48];
+        memset(&rtc_data, 0, sizeof(rtc_data));
+        ret = fread(&rtc_data[0], 44, 1, sav);
+        if(ret != 1)
+        {
+            perror("Error reading sav rtc: ");
+            fclose(sav);
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            // for 64 bit
+            ret = fread(&rtc_data[44], 4, 1, sav);
+
+            // https://bgb.bircd.org/rtcsave.html
+            cr->rtc_internal.RTC_S = rtc_data[0];
+            cr->rtc_internal.RTC_M = rtc_data[4];
+            cr->rtc_internal.RTC_H = rtc_data[8];
+            cr->rtc_internal.RTC_DL = rtc_data[12];
+            cr->rtc_internal.RTC_DH = rtc_data[16];
+
+            cr->rtc_latched.RTC_S = rtc_data[20];
+            cr->rtc_latched.RTC_M = rtc_data[24];
+            cr->rtc_latched.RTC_H = rtc_data[28];
+            cr->rtc_latched.RTC_DL = rtc_data[32];
+            cr->rtc_latched.RTC_DH = rtc_data[36];
+
+            memcpy(&cr->epoch, &rtc_data[40], sizeof(cr->epoch));
+
+            printf("Epoch saved: %ju (%s)\n", cr->epoch, asctime(gmtime((time_t *) &cr->epoch)));
+        }
     }
     
     fclose(sav);
