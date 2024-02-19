@@ -758,7 +758,46 @@ int save_sav(s_emu *emu)
         fclose(sav);
         return EXIT_FAILURE;
     }
-    
+
+    // RTC
+    if(cr->has_RTC)
+    {
+        uint8_t rtc_data[48];
+        memset(&rtc_data, 0, sizeof(rtc_data));
+
+        // https://bgb.bircd.org/rtcsave.html
+        rtc_data[0] = cr->rtc_internal.RTC_S;
+        rtc_data[4] = cr->rtc_internal.RTC_M;
+        rtc_data[8] = cr->rtc_internal.RTC_H;
+        rtc_data[12] = cr->rtc_internal.RTC_DL;
+        rtc_data[16] = cr->rtc_internal.RTC_DH;
+
+        rtc_data[20] = cr->rtc_latched.RTC_S;
+        rtc_data[24] = cr->rtc_latched.RTC_M;
+        rtc_data[28] = cr->rtc_latched.RTC_H;
+        rtc_data[32] = cr->rtc_latched.RTC_DL;
+        rtc_data[36] = cr->rtc_latched.RTC_DH;
+
+        time_t cur_epoch = time(NULL);
+        if(cur_epoch == (time_t)(-1))
+        {
+            perror("Error getting current time: ");
+            fprintf(stderr, "\nTrying to save anyway with old timestamp epoch.\n");
+            cur_epoch = (time_t) cr->epoch;
+        }
+        cr->epoch = (uintmax_t) cur_epoch;
+        memcpy(&rtc_data[40], &cr->epoch, sizeof(cr->epoch));
+        printf("Epoch saved: %ju (%s)\n", cr->epoch, asctime(gmtime(&cur_epoch)));
+
+        ret = fwrite(&rtc_data[0], sizeof(rtc_data), 1, sav);
+        if(ret != 1)
+        {
+            perror("Error writing sav: ");
+            fclose(sav);
+            return EXIT_FAILURE;
+        }
+    }
+
     fclose(sav);
     return EXIT_SUCCESS;
 }
