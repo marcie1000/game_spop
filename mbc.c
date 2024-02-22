@@ -170,7 +170,7 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
     //FIXME RAM Bank Number — or — Upper Bits of ROM Bank Number (Write Only)
     else if(/* (address >= 0x4000) && */ (address <= 0x5FFF))
     {
-        uint8_t ram_bank = data & 0x10;
+        uint8_t ram_bank = data & 0x03;
 
         //if 1 MiB ROM or superior
         if(cr->rom_banks >= 64)
@@ -179,7 +179,8 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
             cr->ROM_bank_number |= data & 0x60;
             cpu->cur_hi_rom_bk = cr->ROM_bank_number;
         }
-        
+
+        // if banking mode enables 0000-3FFF and A000-BFFF banks switching
         if(cr->banking_mode_select)
         {
             if(ram_bank < cr->sram_banks)
@@ -199,7 +200,7 @@ int mbc1_registers(s_emu *emu, uint16_t address, uint8_t data)
     //Banking Mode Select (Write Only)
     else if(/* (address >= 0x6000) && */ (address <= 0x7FFF))
     {
-        cr->banking_mode_select = data;
+        cr->banking_mode_select = data & 0x01;
 
         uint8_t ram_bank = cr->ROM_bank_number & 0x60;
 
