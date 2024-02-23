@@ -532,7 +532,10 @@ int initialize_emulator(s_emu *emu)
     init_prefix_mnemonic_index(emu);
     init_timing_table(emu);
     init_prefix_timing_table(emu);
-    
+
+    // we need to know if $00 and then $01 are written here for MBC3
+    emu->cart.latch_register = 0xFF;
+
     if(0 != load_rom(emu))
         return EXIT_FAILURE;
     

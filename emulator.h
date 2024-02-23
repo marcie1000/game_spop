@@ -313,6 +313,7 @@ typedef struct s_cart{
     bool has_RTC;
     bool RTC_enable;
     uintmax_t epoch;
+    uint8_t latch_register; // to store if $00 and then $01 are written to the latch register
 }s_cart;
 
 typedef struct s_emu{
