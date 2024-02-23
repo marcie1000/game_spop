@@ -76,9 +76,9 @@ int rtc_latch(s_emu *emu, uint16_t address, uint8_t data)
         // write current time to saved epoch
         cr->epoch = (uintmax_t)cur;
 
-        printf("Latched: DH=%u DL=%u H=%u M=%u S=%u Carry=%u Halt=%u\n", cr->rtc_latched.RTC_DH,
-        cr->rtc_latched.RTC_DL, cr->rtc_latched.RTC_H, cr->rtc_latched.RTC_M, cr->rtc_latched.RTC_S, cr->rtc_latched.RTC_DH & 0x80,
-        cr->rtc_latched.RTC_DH & 0x40);
+        /* printf("Latched: DH=%u DL=%u H=%u M=%u S=%u Carry=%u Halt=%u\n", cr->rtc_latched.RTC_DH, */
+        /* cr->rtc_latched.RTC_DL, cr->rtc_latched.RTC_H, cr->rtc_latched.RTC_M, cr->rtc_latched.RTC_S, cr->rtc_latched.RTC_DH & 0x80, */
+        /* cr->rtc_latched.RTC_DH & 0x40); */
         return EXIT_SUCCESS;
     }
 
@@ -128,15 +128,15 @@ int rtc_latch(s_emu *emu, uint16_t address, uint8_t data)
 
     // flags:
     // carry
-    flag_assign(~(days & 0x01FF), &cr->rtc_internal.RTC_DH, 0x80);
+    flag_assign((days & (~0x01FF)), &cr->rtc_internal.RTC_DH, 0x80);
 
     /* fprintf(stderr, COLOR_RED "WARNING: MBC3 Latch Clock Data 6000-7FFF not implemented!\n" COLOR_RESET); */
     /* return EXIT_FAILURE; */
 
     memcpy(&cr->rtc_latched, &cr->rtc_internal, sizeof(s_rtc));
-    printf("Latched: DH=%u DL=%u H=%u M=%u S=%u Carry=%u Halt=%u\n", cr->rtc_latched.RTC_DH,
-        cr->rtc_latched.RTC_DL, cr->rtc_latched.RTC_H, cr->rtc_latched.RTC_M, cr->rtc_latched.RTC_S, cr->rtc_latched.RTC_DH & 0x80,
-        cr->rtc_latched.RTC_DH & 0x40);
+    /* printf("Latched: DH=%u DL=%u H=%u M=%u S=%u Carry=%u Halt=%u\n", cr->rtc_latched.RTC_DH, */
+    /*     cr->rtc_latched.RTC_DL, cr->rtc_latched.RTC_H, cr->rtc_latched.RTC_M, cr->rtc_latched.RTC_S, cr->rtc_latched.RTC_DH & 0x80, */
+    /*     cr->rtc_latched.RTC_DH & 0x40); */
 
     return EXIT_SUCCESS;
 }
@@ -189,7 +189,7 @@ int mbc3_registers(s_emu *emu, uint16_t address, uint8_t data)
         {
             if(data <= 0x03 || (data >= 0x08 && data <= 0x0C))
             {
-                printf("Select 0x%02X bank\n", data);
+                /* printf("Select 0x%02X bank\n", data); */
                 cpu->current_sram_bk = data;
             }
         }
@@ -328,54 +328,59 @@ int write_external_RAM(s_emu *emu, uint16_t address, uint8_t data)
     s_cpu *cpu = &emu->cpu;
     s_cart *cr = &emu->cart;
 
-    if(emu->opt.rom_argument && emu->cart.RAM_enable)
+    if(emu->cart.RAM_enable)
     {
-        if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
+        switch(emu->cart.type)
         {
-            uint16_t relative = (address - 0xA000) % 0x200;
-            cpu->SRAM[0][relative] = data & 0x0F;
+            case MBC2:
+            case MBC2_P_BATT:
+            {
+                uint16_t relative = (address - 0xA000) % 0x200;
+                cpu->SRAM[0][relative] = data & 0x0F;
+                break;
+            }
+            case MBC3:
+            case MBC3_P_RAM:
+            case MBC3_P_RAM_P_BATT:
+            case MBC3_P_TIMER_P_BATT:
+            case MBC3_P_TIMER_P_RAM_P_BATT:
+            {
+                if(cpu->current_sram_bk <= 0x03)
+                    cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+                break;
+            }
+            default:
+            {
+                cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
+                break;
+            }
         }
-        // write RTC registers instead of SRAM
-        else if(emu->cart.type != MBC3_P_TIMER_P_BATT &&
-                emu->cart.type != MBC3_P_TIMER_P_RAM_P_BATT)
-            cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
-
     }
 
     if(cr->RTC_enable)
     {
-        printf("writing at 0x%02X\n", cpu->current_sram_bk);
+        /* printf("writing at 0x%02X\n", cpu->current_sram_bk); */
         switch(cpu->current_sram_bk)
         {
-            case 0x00:
-            case 0x01:
-            case 0x02:
-            case 0x03:
-                cpu->SRAM[cpu->current_sram_bk][address - 0xA000] = data;
-                break;
             case 0x08:
                 cr->rtc_internal.RTC_S = data;
-                printf("RTC: write 0x%02X in S\n", data);
+                /* printf("RTC: write 0x%02X in S\n", data); */
                 break;
             case 0x09:
                 cr->rtc_internal.RTC_M = data;
-                printf("RTC: write 0x%02X in M\n", data);
+                /* printf("RTC: write 0x%02X in M\n", data); */
                 break;
             case 0x0A:
                 cr->rtc_internal.RTC_H = data;
-                printf("RTC: write 0x%02X in H\n", data);
+                /* printf("RTC: write 0x%02X in H\n", data); */
                 break;
             case 0x0B:
                 cr->rtc_internal.RTC_DL = data;
-                printf("RTC: write 0x%02X in DL\n", data);
+                /* printf("RTC: write 0x%02X in DL\n", data); */
                 break;
             case 0x0C:
                 cr->rtc_internal.RTC_DH = data;
-                printf("RTC: write 0x%02X in DH\n", data);
-                break;
-            default:
-                fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);
-                return EXIT_FAILURE;
+                /* printf("RTC: write 0x%02X in DH\n", data); */
                 break;
         }
     }
@@ -388,50 +393,59 @@ int read_external_RAM(s_emu *emu, uint16_t address, uint8_t *data)
     s_cpu *cpu = &emu->cpu;
     s_cart *cr = &emu->cart;
 
+    // default
+    *data = 0xFF;
+
     if(emu->cart.RAM_enable)
     {
-        if(emu->cart.type == MBC2 || emu->cart.type == MBC2_P_BATT)
+        switch(emu->cart.type)
         {
-            uint16_t relative = (address - 0xA000) % 0x200;
-            *data = cpu->SRAM[0][relative];
-        }
-        // read RTC registers instead of SRAM
-        else if(emu->cart.type == MBC3_P_TIMER_P_BATT ||
-                emu->cart.type == MBC3_P_TIMER_P_RAM_P_BATT)
-        {
-            switch(cpu->current_sram_bk)
+            case MBC2:
+            case MBC2_P_BATT:
             {
-                case 0x00:
-                case 0x01:
-                case 0x02:
-                case 0x03:
+                uint16_t relative = (address - 0xA000) % 0x200;
+                *data = cpu->SRAM[0][relative];
+                break;
+            }
+            case MBC3:
+            case MBC3_P_RAM:
+            case MBC3_P_RAM_P_BATT:
+            case MBC3_P_TIMER_P_BATT:
+            case MBC3_P_TIMER_P_RAM_P_BATT:
+            {
+                if(cpu->current_sram_bk <= 0x03)
                     *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
-                    break;
-                case 0x08:
-                    *data = cr->rtc_latched.RTC_S;
-                    break;
-                case 0x09:
-                    *data = cr->rtc_latched.RTC_M;
-                    break;
-                case 0x0A:
-                    *data = cr->rtc_latched.RTC_H;
-                    break;
-                case 0x0B:
-                    *data = cr->rtc_latched.RTC_DL;
-                    break;
-                case 0x0C:
-                    *data = cr->rtc_latched.RTC_DH;
-                    break;
-                default:
-                    fprintf(stderr, COLOR_RED "ERROR: MBC3: Invalid SRAM bank / RTC register (0x%02X)\n" COLOR_RESET, cpu->current_sram_bk);
-                    return EXIT_FAILURE;
-                    break;
+                break;
+            }
+            default:
+            {
+                *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
+                break;
             }
         }
-        else
-            *data = cpu->SRAM[cpu->current_sram_bk][address - 0xA000];
     }
-    else
-        *data = 0xFF;
+
+    if(cr->RTC_enable)
+    {
+        switch(cpu->current_sram_bk)
+        {
+            case 0x08:
+                *data = cr->rtc_latched.RTC_S;
+                break;
+            case 0x09:
+                *data = cr->rtc_latched.RTC_M;
+                break;
+            case 0x0A:
+                *data = cr->rtc_latched.RTC_H;
+                break;
+            case 0x0B:
+                *data = cr->rtc_latched.RTC_DL;
+                break;
+            case 0x0C:
+                *data = cr->rtc_latched.RTC_DH;
+                break;
+        }
+    }
+
     return EXIT_SUCCESS;
 }

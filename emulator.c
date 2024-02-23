@@ -476,16 +476,14 @@ int read_cartridge_header(s_emu *emu)
             cr->batt = true;
             break;
         case MBC3_P_TIMER_P_BATT:
-            printf(COLOR_RED "WARNING: MBC3 + TIMER + BATT unimplemented!\n" COLOR_RESET);
+            printf("MBC3 + TIMER + BATT\n");
             cr->batt = true;
             cr->has_RTC = true;
-            /* return EXIT_FAILURE; */
             break;
         case MBC3_P_TIMER_P_RAM_P_BATT:
-            printf(COLOR_RED "WARNING: MBC3 + TIMER + RAM + BATT unimplemented!\n" COLOR_RESET);
+            printf("MBC3 + TIMER + RAM + BATT\n");
             cr->batt = true;
             cr->has_RTC = true;
-            /* return EXIT_FAILURE; */
             break;
         default:
             fprintf(stderr, COLOR_RED "WARNING:" COLOR_RESET " MBC code %02X (unimplemented)!\n", cr->type);
