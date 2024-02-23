@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1231,28 +1232,29 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   ./game_spop [option] <ROM file>\n"
     "\n"
     "Options\n"
-    "   --audio,      -a     = disable audio.\n"
+    "   --audio,        -a   = disable audio.\n"
     "   --audio-log          = print various audio variables in a file at each \n"
     "                          sample.\n"
-    "   --bootrom,    -b     = launch the DMG bootrom before ROM. If no ROM is\n"
+    "   --bootrom,      -b   = launch the DMG bootrom before ROM. If no ROM is\n"
     "                          provided, this option is always on. The default file path\n"
     "                          is \"boot_rom/dmg_rom.bin\" but can be modified in\n"
     "                          game_spop.ini.\n"
-    "   --breakpoint, -p     = enable debugging with breakpoints. The program will\n"
+    "   --breakpoint,   -p   = enable debugging with breakpoints. The program will\n"
     "                          ask to enter a PC value breakpoint at start, and will\n"
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
-    "   --debug-info, -i     = print cpu state at each instruction.\n"
-    "   --gb-doctor,  -d     = log cpu state into a file to be used with the Gameboy\n"
+    "   --debug-info,   -i   = print cpu state at each instruction.\n"
+    "   --fast-forward, -f   = toggle fast forward at startup.\n"
+    "   --gb-doctor,    -d   = log cpu state into a file to be used with the Gameboy\n"
     "                          doctor tool (https://github.com/robert/gameboy-doctor), \n"
     "                          (only at launch). Emulator behavior might be inaccurate\n"
     "                          since LY reading always send 0x90 in this mode.\n"
-    "   --log-instrs, -l     = log cpu state into a file for comparison with other\n"
+    "   --log-instrs,   -l   = log cpu state into a file for comparison with other\n"
     "                          emulators (only at launch).\n"
-    "   --step,       -s     = enable step by step debugging. Emulator will stop\n"
+    "   --step,         -s   = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
-    "   --help,       -h     = show this help message and exit.\n";
+    "   --help,         -h   = show this help message and exit.\n";
     
     //help msg if --help is typed in option menu during execution
     const char help_msg_during_exec[] = 
@@ -1309,6 +1311,10 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
             opt->step_by_step = !opt->step_by_step;
+        }
+        else if(((0 == strcmp(argv[i], "--fast-forward")) || (0 == strcmp(argv[i], "-f"))) && (is_program_beginning))
+        {
+            opt->fast_forward = true;
         }
         else if(0 == strncmp(argv[i], "--", 2) || ((argv[i][0] == '-') && (strlen(argv[i]) == 2)))
         {

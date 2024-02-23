@@ -55,6 +55,7 @@ Calling --help in options menu will show a list of these options.
                               `boot_rom/dmg_rom.bin`, but can be modified in `game_spop.ini` 
                               (see below).
 * `--debug-info`, `-i`      = print cpu state at each instruction.
+* `--fast-forward`, `-f`    = toggle fast forward at startup.
 * `--gb-doctor`, `-d`       = log cpu state into a file to be used with the [Gameboy
                             doctor tool](https://github.com/robert/gameboy-doctor).
                             Emulator behavior might be inaccurate since LY reading always send 0x90 in

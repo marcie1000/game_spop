@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <SDL.h>
 #include <assert.h>
+#include "SDL_render.h"
 #include "emulator.h"
 #include "graphics.h"
 
@@ -29,8 +30,12 @@ int initialize_screen(s_emu *emu)
         fprintf(stderr, "Error SDL_CreateWindow: %s\n", SDL_GetError());
         return EXIT_FAILURE;
     }
-    
-    scr->r = SDL_CreateRenderer(scr->w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+    unsigned renderer_flags = SDL_RENDERER_ACCELERATED;
+    if(!emu->opt.fast_forward)
+        renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
+
+    scr->r = SDL_CreateRenderer(scr->w, -1, renderer_flags);
     if(scr->r == NULL)
     {
         fprintf(stderr, "Error SDL_CreateRenderer: %s\n", SDL_GetError());
