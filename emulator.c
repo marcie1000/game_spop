@@ -1292,7 +1292,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
                 printf("%s", help_msg_during_exec);
             return EXIT_FAILURE;
         }
-        else if((0 == strcmp(argv[i], "--breakpoint")) || (0 == strcmp(argv[i], "-b")))
+        else if((0 == strcmp(argv[i], "--breakpoint")) || (0 == strcmp(argv[i], "-p")))
         {
             opt->breakpoints = !opt->breakpoints;
         }
