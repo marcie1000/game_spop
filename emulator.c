@@ -1088,11 +1088,6 @@ void emulate(s_emu *emu)
             resize_screen(&emu->scr);
             in->resize = SDL_FALSE;
         }
-        if((in->scan[opt->opt_scancodes[OPT_PAUSE]]) || 
-           (emu->opt.framebyframe && emu->opt.newframe))
-        {
-            pause_menu(emu);
-        }
 //        if(in->scan[opt->opt_scancodes[OPT_SAVESTATE]])
 //            savestate(emu);
 //        if(in->scan[opt->opt_scancodes[OPT_LOADSTATE]])
@@ -1192,8 +1187,13 @@ void joypad_update(s_emu *emu)
 
 void pause_menu(s_emu *emu)
 {
-    //wait for P key release
     s_opt *opt = &emu->opt;
+
+    if(!((emu->in.scan[opt->opt_scancodes[OPT_PAUSE]]) ||
+           (emu->opt.framebyframe && emu->opt.newframe)))
+        return;
+
+    //wait for P key release
     while(!emu->in.quit && (emu->in.scan[opt->opt_scancodes[OPT_PAUSE]]))
     {
         update_event(emu);
@@ -1350,6 +1350,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         else if(0 == strcmp(argv[i], "--pause"))
         {
             opt->framebyframe = true;
+            opt->newframe = true;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
@@ -1401,9 +1402,11 @@ int parse_options_during_exec(s_opt *opt)
             printf("  --step\n");
         if(opt->log_instrs)
             printf("  --log-instrs\n");
-        if(!opt->breakpoints && !opt->debug_info && !opt->step_by_step)
-            printf("  none.\n");
-        
+        if(opt->framebyframe)
+            printf("  --pause\n");
+        /* if(!opt->breakpoints && !opt->debug_info && !opt->step_by_step) */
+        /*     printf("  none.\n"); */
+
         printf(
             "\nEnter an option to toggle or press ENTER to continue without changes.\n"
             "See --help to have a list of available options.\n"

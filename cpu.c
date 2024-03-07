@@ -672,7 +672,9 @@ void div_handle(s_emu *emu)
 void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t))
 {
     s_cpu *cpu = &emu->cpu;
-    
+
+    pause_menu(emu);
+
     joypad_update(emu);
     interrupt_handler(emu);
     uint32_t opcode = get_opcode(emu);
