@@ -1085,7 +1085,7 @@ void emulate(s_emu *emu)
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
         render_frame_and_vblank_if_needed(emu);
-        
+
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -1094,7 +1094,7 @@ void emulate(s_emu *emu)
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
         render_frame_and_vblank_if_needed(emu);
-        
+
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -1103,7 +1103,7 @@ void emulate(s_emu *emu)
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
         render_frame_and_vblank_if_needed(emu);
-        
+
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
         interpret(emu, emu->opcode_functions);
@@ -1250,7 +1250,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          (only at launch). Emulator behavior might be inaccurate\n"
     "                          since LY reading always send 0x90 in this mode.\n"
     "   --log-instrs,   -l   = log cpu state into a file for comparison with other\n"
-    "                          emulators (only at launch).\n"
+    "                          emulators.\n"
     "   --step,         -s   = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -1264,6 +1264,8 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
     "   --debug-info, -i     = print cpu state at each instruction.\n"
+    "   --log-instrs,   -l   = log cpu state into a file for comparison with other\n"
+    "                          emulators.\n"
     "   --step,       -s     = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -1302,11 +1304,22 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
             opt->log_instrs = false;
             opt->audio_log = false;
         }
-        else if(((0 == strcmp(argv[i], "--log-instrs")) || (0 == strcmp(argv[i], "-l"))) && (is_program_beginning))
+        else if((0 == strcmp(argv[i], "--log-instrs")) || (0 == strcmp(argv[i], "-l")))
         {
-            opt->log_instrs = true;
-            opt->audio_log = false;
-            opt->gb_doctor = false;
+            if(!opt->log_instrs)
+            {
+                opt->logfile = fopen("gb_logs.log", "w");
+                if(opt->logfile == NULL)
+                {
+                    fprintf(stderr, "fopen gb_logs.log: %s\n", strerror(errno));
+                    return EXIT_FAILURE;
+                }
+                opt->log_instrs = true;
+                opt->audio_log = false;
+                opt->gb_doctor = false;
+            }
+            else
+                opt->log_instrs = false;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
@@ -1356,6 +1369,8 @@ int parse_options_during_exec(s_opt *opt)
             printf("  --debug-info\n");
         if(opt->step_by_step)
             printf("  --step\n");
+        if(opt->log_instrs)
+            printf("  --log-instrs\n");
         if(!opt->breakpoints && !opt->debug_info && !opt->step_by_step)
             printf("  none.\n");
         
