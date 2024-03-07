@@ -225,6 +225,8 @@ typedef struct s_screen{
     uint8_t win_LY;
     
     bool window_maximized;
+    int refresh_rate;
+    int refresh_rate_mul;
     SDL_Rect render_dst;
     SDL_Rect *render_dst_ptr;
     //2: searching OAM, 3: reading OAM and VRAM,

@@ -540,12 +540,16 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     emu->opt.newframe = true;
 
     SDL_UnlockTexture(scr->scr);
-    SDL_RenderClear(scr->r);
-    SDL_RenderCopy(scr->r, scr->scr, NULL, scr->render_dst_ptr);
-    SDL_RenderCopy(scr->r, scr->scrcpy, NULL, scr->render_dst_ptr);
-    SDL_RenderPresent(scr->r);
-    
-    //screen copy
+
+    for(int i = scr->refresh_rate_mul; i > 0; i--)
+    {
+        SDL_RenderClear(scr->r);
+        SDL_RenderCopy(scr->r, scr->scr, NULL, scr->render_dst_ptr);
+        SDL_RenderCopy(scr->r, scr->scrcpy, NULL, scr->render_dst_ptr);
+        SDL_RenderPresent(scr->r);
+    }
+
+    //screen copy, for transparence effects
     SDL_SetRenderTarget(scr->r, scr->scrcpy);
     SDL_RenderCopy(scr->r, scr->scr, NULL, NULL);
     SDL_SetRenderTarget(scr->r, NULL);

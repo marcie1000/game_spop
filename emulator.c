@@ -546,34 +546,58 @@ int initialize_emulator(s_emu *emu)
         if(0 != load_boot_rom(emu))
             return EXIT_FAILURE;
     }
-    
+
+    SDL_DisplayMode dpmode;
+    if(0 != SDL_GetWindowDisplayMode(emu->scr.w, &dpmode))
+    {
+        fprintf(stderr, "Error SDL_GetWindowDisplayMode: %s\n.", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    emu->scr.refresh_rate = dpmode.refresh_rate;
+    printf("Screen refresh rate: %d Hz\n", emu->scr.refresh_rate);
+
+    if(emu->scr.refresh_rate % 60 != 0)
+    {
+        char text[255] = "";
+        snprintf(text, 254, "Your screen has a refresh rate of %d Hz.\nSince the GameBoy "
+                 "screen uses a refresh rate of 60 Hz, your screen must use a refresh rate "
+                 "which is a multiple of 60 Hz. Please change your refresh rate in order to play.",
+                 emu->scr.refresh_rate);
+
+        fprintf(stderr, COLOR_RED "%s\n" COLOR_RESET, text);
+
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Incompatible refresh rate", text, emu->scr.w);
+        return EXIT_FAILURE;
+    }
+    emu->scr.refresh_rate_mul = emu->scr.refresh_rate / 60;
+
     //gb doctor log file
     if(!opt->gb_doctor && !opt->log_instrs && !opt->audio_log)
         return EXIT_SUCCESS;
-        
+
     opt->logfile = fopen("gb_logs.log", "w");
     if(opt->logfile == NULL)
     {
         fprintf(stderr, "fopen gb_logs.log: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    
+
     /*
      *         fprintf(emu->opt.logfile, "%f;%i;%u;%u;%lu;",
         au->fstream[au->samples_played], volume, au->ch_vol_sweep_counter[CH4], au->ch_vol_sweep_timer[CH4], local_samples_played);
-        fprintf(emu->opt.logfile, "%d;%lu;%u;%u;%u;", 
+        fprintf(emu->opt.logfile, "%d;%lu;%u;%u;%u;",
         signal_state, au->samples_played, au->ch4_lfsr, au->ch4_clock_div, au->ch_freq[CH4]);
         fprintf(emu->opt.logfile, "%d;%u;%u;",
         au->ch_reset[CH4], au->ch_len_timer[CH4], au->ch_init_len_timer[CH4]);
         fprintf(emu->opt.logfile, "%u;%u;%u;%u\n",
         io->NR41, io->NR42, io->NR43, io->NR44);*/
-    
+
     if(opt->audio_log)
-        fprintf(opt->logfile, 
+        fprintf(opt->logfile,
             "fstream;volume;ch_vol_sweep_counter;ch_vol_sweep_timer;local_samples_played;"
             "signal_state;samples_played;ch4_lfsr;ch4_clock_div;ch_freq;"
             "ch_reset;ch_len_timer;ch_init_len_timer;ch_init_volume;NR41;NR42;NR43;NR44;buf_counter\n");
-    
     return EXIT_SUCCESS;
 }
 
