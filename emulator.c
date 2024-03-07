@@ -1275,6 +1275,7 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          since LY reading always send 0x90 in this mode.\n"
     "   --log-instrs,   -l   = log cpu state into a file for comparison with other\n"
     "                          emulators.\n"
+    "   --pause              = toggle pause.\n"
     "   --step,         -s   = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -1288,8 +1289,9 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "                          ask for a new breakpoint when the previous one is\n"
     "                          reached.\n"
     "   --debug-info, -i     = print cpu state at each instruction.\n"
-    "   --log-instrs,   -l   = log cpu state into a file for comparison with other\n"
+    "   --log-instrs, -l     = log cpu state into a file for comparison with other\n"
     "                          emulators.\n"
+    "   --pause              = toggle pause.\n"
     "   --step,       -s     = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -1344,6 +1346,10 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
             }
             else
                 opt->log_instrs = false;
+        }
+        else if(0 == strcmp(argv[i], "--pause"))
+        {
+            opt->framebyframe = true;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
