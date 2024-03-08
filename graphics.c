@@ -361,11 +361,14 @@ int draw_window(s_emu *emu, int i, uint8_t *pixel)
     
     if((!scr->bg_win_enable_priority) || (!scr->window_enable) || (io->LY < io->WY))
     {
-        scr->win_LY = 0;
+        /* scr->win_LY = 0; */
         return EXIT_SUCCESS;
     }
     if(i < ((int)io->WX - 7))
         return EXIT_SUCCESS;
+
+    if(io->LY == io->WY)
+        scr->win_LY = 0;
         
     uint8_t Xtemp = i - io->WX + 7;
         
@@ -373,7 +376,7 @@ int draw_window(s_emu *emu, int i, uint8_t *pixel)
     uint16_t bg_win_data_start_adr = scr->BG_win_tile_data_area ? 0 : 0x1000;
     
     //relative address of the tile in the tile map
-    uint16_t rel_win_tilemap_address = (scr->win_LY - 1) / 8;
+    uint16_t rel_win_tilemap_address = (scr->win_LY) / 8;
     rel_win_tilemap_address *= 32;
     rel_win_tilemap_address += (Xtemp) / 8;
     if(rel_win_tilemap_address > 0x400)
@@ -399,7 +402,7 @@ int draw_window(s_emu *emu, int i, uint8_t *pixel)
     // address of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
     uint16_t win_data_address = bg_win_data_start_adr + 16 * tilenum;
-    win_data_address += 2 * ((scr->win_LY - 1) % 8);
+    win_data_address += 2 * ((scr->win_LY) % 8);
     
     uint8_t bitmask = (0x80 >> ((Xtemp) % 8));
 
