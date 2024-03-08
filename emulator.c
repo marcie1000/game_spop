@@ -1149,6 +1149,9 @@ void joypad_update(s_emu *emu)
     s_io *io = &emu->cpu.io;
     s_input *in = &emu->in;
     s_opt *opt = &emu->opt;
+
+    uint8_t old_P1_JOYP = io->P1_JOYP;
+
     //action buttons
     if(!(io->P1_JOYP & 0x20))
     {
@@ -1189,9 +1192,13 @@ void joypad_update(s_emu *emu)
                     0x01);
     }
     
-    //joypad interrupt
-    if((~io->P1_JOYP) & 0x0F)
-        io->IF |= 0x10;
+    // joypad interrupt
+    // if any of the bits 0-3 change from high to low
+    for(unsigned i = 0; i < 3; i++)
+    {
+        if(((~io->P1_JOYP) & (0x1U << i)) && !((~old_P1_JOYP) & (0x1U << i)))
+            io->IF |= 0x10;
+    }
 }
 
 void pause_menu(s_emu *emu)
