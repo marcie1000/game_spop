@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <SDL.h>
 #include <assert.h>
+#include "SDL_pixels.h"
 #include "SDL_render.h"
+#include "SDL_video.h"
 #include "emulator.h"
 #include "graphics.h"
 
@@ -92,6 +94,103 @@ int initialize_screen(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
+int initialize_plot_win(s_emu *emu)
+{
+    s_plot *plot = &emu->scr.plot;
+    plot->r = NULL;
+    plot->w = NULL;
+    plot->plot = NULL;
+    /* scr->scrcpy = NULL; */
+
+    if(!emu->opt.plot_instructions)
+        return EXIT_SUCCESS;
+
+    plot->width = 1000;
+    plot->height = 1000;
+
+    plot->window_maximized = false;
+    /* scr->win_LY = 0; */
+
+    plot->w = SDL_CreateWindow(
+        "Game_spop", SDL_WINDOWPOS_CENTERED,
+         SDL_WINDOWPOS_CENTERED, plot->width, plot->height,
+         SDL_WINDOW_SHOWN
+    );
+    if(plot->w == NULL)
+    {
+        fprintf(stderr, "Error SDL_CreateWindow: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    plot->r = SDL_CreateRenderer(plot->w, -1, SDL_RENDERER_ACCELERATED);
+    if(plot->r == NULL)
+    {
+        fprintf(stderr, "Error SDL_CreateRenderer: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    SDL_SetRenderTarget(plot->r, NULL);
+    SDL_SetRenderDrawBlendMode(plot->r, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(plot->r, 255, 0, 0, 255);
+
+    //texture containing main output
+    plot->plot = SDL_CreateTexture(plot->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, plot->width, plot->height);
+    if(NULL == plot->plot)
+    {
+        fprintf(stderr, "Error SDL_CreateTexture plot: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    if(0 != lockscreen_plot(plot))
+        return EXIT_FAILURE;
+
+    plot->format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    if(NULL == plot->format)
+    {
+        fprintf(stderr, "Error SDL_AllocFormat: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    // paint texture in white
+    for(size_t i = 0; i < plot->width * plot->height; i++)
+    {
+        plot->pixels[i] = SDL_MapRGBA(plot->format, 255, 255, 255, 255);
+    }
+    SDL_UnlockTexture(plot->plot);
+    SDL_RenderCopy(plot->r, plot->plot, NULL, NULL);
+    SDL_RenderPresent(plot->r);
+
+    if(0 != lockscreen_plot(plot))
+        return EXIT_FAILURE;
+    //texture containing copy of the last frame that will be shown at 50% transparency for better compatibility
+    //with graphic effects used in some games (like transparent effects in Zelda link's awakening).
+    /* scr->scrcpy = SDL_CreateTexture(scr->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, PIX_BY_W, PIX_BY_H); */
+    /* if(NULL == scr->scrcpy) */
+    /* { */
+    /*     fprintf(stderr, "Error SDL_CreateTexture scrcpy: %s\n", SDL_GetError()); */
+    /*     return EXIT_FAILURE; */
+    /* } */
+    /* if(0 != SDL_SetTextureAlphaMod(scr->scrcpy, 127)) */
+    /* { */
+    /*     fprintf(stderr, "Error SDL_SetTextureAlphaMod: %s\n", SDL_GetError()); */
+    /*     return EXIT_FAILURE; */
+    /* } */
+    /* SDL_SetTextureBlendMode(scr->scrcpy, SDL_BLENDMODE_BLEND); */
+
+
+    /* emu->cpu.io.STAT = 2; */
+    /* scr->LCD_PPU_enable = false; */
+    /* scr->win_tile_map_area = false; */
+    /* scr->window_enable = false; */
+    /* scr->BG_win_tile_data_area = false; */
+    /* scr->BG_tile_map_area = false; */
+    /* scr->obj_size = false; */
+    /* scr->obj_enable = false; */
+    /* scr->bg_win_enable_priority = false; */
+
+    return EXIT_SUCCESS;
+}
+
 int lockscreen(s_screen *scr)
 {
     void *tmp;
@@ -103,6 +202,21 @@ int lockscreen(s_screen *scr)
     }
     
     scr->pixels = tmp;
+    return EXIT_SUCCESS;
+}
+
+
+int lockscreen_plot(s_plot *plot)
+{
+    void *tmp;
+
+    if(0 != SDL_LockTexture(plot->plot, NULL, &tmp, &plot->pitch))
+    {
+        fprintf(stderr, "Error SDL_LockTexture: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    plot->pixels = tmp;
     return EXIT_SUCCESS;
 }
 
@@ -118,6 +232,20 @@ void destroy_screen(s_screen *scr)
         SDL_DestroyRenderer(scr->r);
     if(NULL != scr->w)
         SDL_DestroyWindow(scr->w);
+}
+
+void destroy_plot_win(s_plot *plot)
+{
+    if(NULL != plot->format)
+        SDL_FreeFormat(plot->format);
+    if(NULL != plot->plot)
+        SDL_DestroyTexture(plot->plot);
+    /* if(NULL != plot->plotcpy) */
+    /*     SDL_DestroyTexture(plot->plotcpy); */
+    if(NULL != plot->r)
+        SDL_DestroyRenderer(plot->r);
+    if(NULL != plot->w)
+        SDL_DestroyWindow(plot->w);
 }
 
 void resize_screen(s_screen *s)
@@ -499,6 +627,62 @@ void ppu_modes_and_scanlines(s_emu *emu)
     }
 }
 
+void draw_plot(s_emu *emu)
+{
+    if(!emu->opt.plot_instructions)
+        return;
+
+    s_cpu *cpu = &emu->cpu;
+    s_plot *plot = &emu->scr.plot;
+
+    size_t posx = (double)cpu->t_cycles / (CPU_FREQ / GB_VSNC) * (emu->cpu.io.LY + 1) *  plot->width;
+    size_t posy = cpu->pc;
+
+    if(cpu->pc > 0x9FFF) // VRAM
+        posy -= 0x2000;
+    if(cpu->pc > 0xBE80) // 0xE000 <-> 0xFF80
+        posy -= 0x180;
+
+    posy = (double)posy / 0xDE80 * plot->height;
+
+    size_t i = posy * plot->width + posx;
+
+    plot->pixels[i] = SDL_MapRGBA(plot->format, 255, 0, 0, 255);
+}
+
+int render_plot(s_emu *emu)
+{
+    s_plot *plot = &emu->scr.plot;
+    if(!emu->opt.plot_instructions)
+        return EXIT_SUCCESS;
+
+    SDL_UnlockTexture(plot->plot);
+    SDL_RenderClear(plot->r);
+    SDL_RenderCopy(plot->r, plot->plot, NULL, NULL);
+    SDL_RenderPresent(plot->r);
+
+    // paint texture in white
+    for(size_t i = 0; i < plot->width * plot->height; i++)
+    {
+        plot->pixels[i] = SDL_MapRGBA(plot->format, 255, 255, 255, 255);
+    }
+
+    size_t posy = (double)emu->in.y / plot->height * 0xDE80;
+    if(posy > 0x9FFF) // VRAM
+        posy += 0x2000;
+    if(posy > 0xE000) // 0xE000 <-> 0xFF80
+        posy += 0x180;
+
+    char title[255] = "";
+    snprintf(title, 254, "pc: 0x%04lX - game_spop plot", posy);
+    SDL_SetWindowTitle(plot->w, title);
+
+    if(0 != lockscreen_plot(plot))
+        destroy_emulator(emu, EXIT_FAILURE);
+
+    return EXIT_SUCCESS;
+}
+
 void render_frame_and_vblank_if_needed(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
@@ -548,6 +732,8 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
         SDL_RenderCopy(scr->r, scr->scrcpy, NULL, scr->render_dst_ptr);
         SDL_RenderPresent(scr->r);
     }
+
+    render_plot(emu);
 
     //screen copy, for transparence effects
     SDL_SetRenderTarget(scr->r, scr->scrcpy);

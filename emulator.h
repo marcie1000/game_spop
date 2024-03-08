@@ -1,6 +1,7 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include "SDL_render.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -138,7 +139,7 @@ enum cartridge_types {
 
 typedef struct s_opt{
     bool bootrom, rom_argument, debug_info, breakpoints, step_by_step, gb_doctor,
-         log_instrs, fast_forward, audio, audio_log, fullscreen;
+         log_instrs, fast_forward, audio, audio_log, fullscreen, plot_instructions;
     bool newframe; //for frame by frame step
     bool framebyframe;
     bool audio_ch[4];
@@ -202,7 +203,19 @@ typedef struct s_cpu {
     int cur_hi_rom_bk;
 } s_cpu;
 
+typedef struct s_plot{
+    SDL_Renderer *r;
+    SDL_Window *w;
+    SDL_Texture *plot;
+    Uint32 *pixels;
+    int pitch;
+    SDL_PixelFormat *format;
+    uint32_t height, width;
+    bool window_maximized;
+}s_plot;
+
 typedef struct s_screen{
+    s_plot plot;
     SDL_Renderer *r;
     SDL_Window *w;
     uint32_t pixel_h, pixel_w;

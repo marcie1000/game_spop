@@ -692,6 +692,8 @@ void interpret(s_emu *emu, void (*opcode_functions[OPCODE_NB])(void *, uint32_t)
     cpu->debug_clock += time_diff;
     emu->au.samples_timer += time_diff;
 
+    draw_plot(emu);
+
     cpu->pc += emu->length_table[action];
     
     timer_handle(emu);

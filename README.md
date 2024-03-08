@@ -62,6 +62,10 @@ Calling --help in options menu will show a list of these options.
                             this mode.
 * `--log-instrs`, `-l`  = log cpu state into a file for comparison with other
                         emulators.
+* `--pause`              = toggle pause.
+* `--plot-instructions`  = open a window with a visual representation of the different
+                           values of the Program Counter through a frame, for debugging
+                           purposes (exeprimental).
 * `--step`, `-s`        = enable step by step debugging. Emulator will stop
                           at each new instruction and ask to continue or edit options.
 * `--help`, `-h`        = show this help message and exit.

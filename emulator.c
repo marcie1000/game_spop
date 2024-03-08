@@ -317,6 +317,8 @@ void update_event(s_emu *emu)
             case(SDL_WINDOWEVENT):
                 if(input->event.window.event == SDL_WINDOWEVENT_RESIZED)
                     input->resize = SDL_TRUE;
+                else if(input->event.window.event == SDL_WINDOWEVENT_CLOSE)
+                    input->quit = SDL_TRUE;
                 break;
         }
     }
@@ -517,9 +519,13 @@ int initialize_emulator(s_emu *emu)
     
     if(0 != open_inifile(emu))
         return EXIT_FAILURE;
-    
+
+    if(0 != initialize_plot_win(emu))
+        return EXIT_FAILURE;
+
     if(0 != initialize_screen(emu))
         return EXIT_FAILURE;
+
     if(0 != initialize_cpu(&emu->cpu))
         return EXIT_FAILURE;
     if(0 != init_audio(emu))
@@ -837,6 +843,9 @@ void destroy_emulator(s_emu *emu, int status)
         status = EXIT_FAILURE;
     
     destroy_screen(&emu->scr);
+
+    destroy_plot_win(&emu->scr.plot);
+
     destroy_audio(emu);
     
     for(size_t i = 0; i < ROM_BANKS_MAX; i++)
@@ -1276,6 +1285,9 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
     "   --log-instrs,   -l   = log cpu state into a file for comparison with other\n"
     "                          emulators.\n"
     "   --pause              = toggle pause.\n"
+    "   --plot-instructions  = open a window with a visual representation of the different\n"
+    "                          values of the Program Counter through a frame, for debugging\n"
+    "                          purposes (exeprimental).\n"
     "   --step,         -s   = enable step by step debugging. Emulator will stop\n"
     "                          at each new instruction and ask to continue or edit\n"
     "                          options.\n"
@@ -1351,6 +1363,10 @@ int parse_options(s_opt *opt, size_t argc, char *argv[], bool is_program_beginni
         {
             opt->framebyframe = true;
             opt->newframe = true;
+        }
+        else if((0 == strcmp(argv[i], "--plot-instructions")) && is_program_beginning)
+        {
+            opt->plot_instructions = true;
         }
         else if(0 == strcmp(argv[i], "--step") || (0 == strcmp(argv[i], "-s")))
         {
@@ -1462,6 +1478,7 @@ int parse_start_options(s_opt *opt, int argc, char *argv[])
     opt->newframe       = false;
     opt->framebyframe   = false;
     opt->fullscreen     = false;
+    opt->plot_instructions = false;
     
     if(argc > 1)
     {

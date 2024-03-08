@@ -17,6 +17,11 @@ extern int draw_background(s_emu *emu, int i, uint8_t *pixel);
 extern int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd);
 extern int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd);
 extern int DMA_transfer(s_emu *emu);
+extern int lockscreen_plot(s_plot *plot);
+extern int initialize_plot_win(s_emu *emu);
+extern void destroy_plot_win(s_plot *plot);
+extern void draw_plot(s_emu *emu);
+extern int render_plot(s_emu *emu);
 
 #endif //GRAPHICS_H
 
