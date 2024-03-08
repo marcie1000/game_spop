@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL.h>
@@ -427,6 +428,7 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
     
     //8*16 sprite handle
     //IF (sprite 8*16) AND (LY is in the second tile of the sprite)
+    //enforced by hardware
     bool is_second_tile = ((scr->obj_size) && (io->LY - (cpu->OAM[sptd] - 16) >= 8));
 
     bool bg_win_over_OBJ = (cpu->OAM[sptd + 3] & 0x80);
@@ -436,8 +438,14 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
     bool yflip = (cpu->OAM[sptd + 3] & 0x40);
     bool xflip = (cpu->OAM[sptd + 3] & 0x20);
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
-    
-    uint16_t data_address = 16 * (cpu->OAM[sptd + 2] + is_second_tile);
+
+    // Object Tile Adress: discart lsb when 8*16 objects
+    uint8_t OAM_byte2 = cpu->OAM[sptd + 2];
+    if(scr->obj_size)
+        OAM_byte2 &= 0xFE;
+
+    uint16_t data_address = 16 * (OAM_byte2 + is_second_tile);
+    /* data_address  */
     if(!yflip)
         data_address += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
     else

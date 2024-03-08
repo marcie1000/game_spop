@@ -696,7 +696,7 @@ int load_sav(s_emu *emu)
 
             memcpy(&cr->epoch, &rtc_data[40], sizeof(cr->epoch));
 
-            printf("Epoch saved: %ju (%s)\n", cr->epoch, asctime(gmtime((time_t *) &cr->epoch)));
+            printf("Epoch loaded: %ju  -  %s", cr->epoch, asctime(gmtime((time_t *) &cr->epoch)));
         }
     }
     
@@ -819,7 +819,7 @@ int save_sav(s_emu *emu)
         }
         cr->epoch = (uintmax_t) cur_epoch;
         memcpy(&rtc_data[40], &cr->epoch, sizeof(cr->epoch));
-        printf("Epoch saved: %ju (%s)\n", cr->epoch, asctime(gmtime(&cur_epoch)));
+        printf("Epoch saved: %ju  -  %s\n", cr->epoch, asctime(gmtime(&cur_epoch)));
 
         ret = fwrite(&rtc_data[0], sizeof(rtc_data), 1, sav);
         if(ret != 1)
