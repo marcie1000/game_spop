@@ -483,7 +483,7 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
     
 }
 
-int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
+int draw_OBJ(s_emu *emu, int i, uint8_t *pixel)//, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -491,14 +491,14 @@ int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLIN
         return EXIT_SUCCESS;
         
     //checks if sprite is on the pixel currently drawn
-    for(int j = nb_sptd - 1; j >= 0; j--)
+    for(int j = scr->nb_sptd - 1; j >= 0; j--)
     {
         //if (spr_x <= pixel_x + 8) AND
         //   (spr_x + spr_w >= pixel_x + 8)
-        if((cpu->OAM[sptd[j] + 1] <= i + 8) &&
-           (cpu->OAM[sptd[j] + 1] + 8 > i + 8))
+        if((cpu->OAM[scr->sprites_to_draw[j] + 1] <= i + 8) &&
+           (cpu->OAM[scr->sprites_to_draw[j] + 1] + 8 > i + 8))
         {
-            draw_OBJ_tile(emu, i, pixel, sptd[j]);
+            draw_OBJ_tile(emu, i, pixel, scr->sprites_to_draw[j]);
         }
     }
     
@@ -511,27 +511,28 @@ int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd[SPRITES_PER_SCANLIN
  * @param sprites_to_draw: an array of 10 uint8_t that contains relative
  *        addresses (in OAM array) to the first byte of each sprite to draw.
  */
-void scan_OAM(s_emu *emu, uint8_t sprites_to_draw[SPRITES_PER_SCANLINE], uint8_t *nb_sptd)
+void scan_OAM(s_emu *emu)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
-    if(!scr->obj_enable)
+    if(!scr->obj_enable || scr->is_OAM_scanned)
         return;
-    
-    *nb_sptd = 0;
-    for (int i = 0; (i < OAM_SPRITES_MAX * 4) && (*nb_sptd < SPRITES_PER_SCANLINE); i += 4)
+
+    memset(scr->sprites_to_draw, 0, sizeof(uint8_t[SPRITES_PER_SCANLINE]));
+
+    scr->nb_sptd = 0;
+    for (int i = 0; (i < OAM_SPRITES_MAX * 4) && (scr->nb_sptd < SPRITES_PER_SCANLINE); i += 4)
     {
         //ckeck if sprite is not on the scanline
         if(! ( (cpu->OAM[i] <= io->LY + 16) && 
                (cpu->OAM[i] + 8 + 8 * scr->obj_size > io->LY + 16) ) )
             continue;
         
-        sprites_to_draw[*nb_sptd] = i;
-        *nb_sptd += 1;
+        scr->sprites_to_draw[scr->nb_sptd] = i;
+        scr->nb_sptd += 1;
     }
-    
-
+    scr->is_OAM_scanned = true;
 }
 
 int draw_scanline(s_emu *emu)
@@ -541,7 +542,7 @@ int draw_scanline(s_emu *emu)
     s_io *io = &cpu->io;
     s_screen *scr = &emu->scr;
     
-    if(io->LY >= 144)
+    if(io->LY >= 144 || scr->is_scanline_drawn)
         return EXIT_SUCCESS;
 
     if(!scr->LCD_PPU_enable)
@@ -553,15 +554,15 @@ int draw_scanline(s_emu *emu)
                 scr->format, 255, 255, 255, 255
             );
         }
+        scr->is_scanline_drawn = true;
         return EXIT_SUCCESS;
     }
     
     //for each pixel of the scanline
     
-    uint8_t sprites_to_draw[SPRITES_PER_SCANLINE];
-    uint8_t nb_sptd;
-    memset(sprites_to_draw, 0, sizeof(uint8_t[SPRITES_PER_SCANLINE]));
-    scan_OAM(emu, sprites_to_draw, &nb_sptd);
+    /* uint8_t sprites_to_draw[SPRITES_PER_SCANLINE]; */
+    /* uint8_t nb_sptd; */
+    /* memset(sprites_to_draw, 0, sizeof(uint8_t[SPRITES_PER_SCANLINE])); */
     
     for(int i = 0; i < PIX_BY_W; i++)
     {
@@ -570,7 +571,7 @@ int draw_scanline(s_emu *emu)
             return EXIT_FAILURE;
         if(0 != draw_window(emu, i, &pixel))
             return EXIT_FAILURE;
-        if(0 != draw_OBJ(emu, i, &pixel, sprites_to_draw, nb_sptd))
+        if(0 != draw_OBJ(emu, i, &pixel))
             return EXIT_FAILURE;
             
         //convert to 4 possible grayscales [0, 255] values
@@ -580,6 +581,9 @@ int draw_scanline(s_emu *emu)
             scr->format, pixel, pixel, pixel, 255
         );
     }
+
+    scr->is_OAM_scanned = false;
+    scr->is_scanline_drawn = true;
     
     return EXIT_SUCCESS;
 }
@@ -589,51 +593,60 @@ void ppu_modes_and_scanlines(s_emu *emu)
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
     s_screen *scr = &emu->scr;
-    
+
+    // Reset PPU mode bits
     io->STAT &= ~0x03;
-    
+
+    // MODE 2
+    // If a LINE CYCLE is COMPLETE, change to MODE 2 and begin a new line
     if(cpu->t_cycles >= (CPU_FREQ / GB_VSNC / 154))
     {
         cpu->t_cycles -= (CPU_FREQ / GB_VSNC / 154);
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
-        io->STAT |= (scr->LCD_PPU_enable) ? 2 : 1;    
-        if(0 != draw_scanline(emu))
-            destroy_emulator(emu, EXIT_FAILURE);
+        io->STAT |= (scr->LCD_PPU_enable) ? 2 : 1;
+        scr->is_scanline_drawn = false;
+
         if(scr->LCD_PPU_enable)
         {
             cpu->io.LY++;
             scr->win_LY++;
+            scan_OAM(emu);
         }
         return;
     }
-    
+
     if(!scr->LCD_PPU_enable)
     {
-//        //vblank
-//        io->STAT |= 1;
         cpu->io.LY = 0;
         scr->win_LY = 0;
         return;
     }
-    
+
+    // MODE 2
+    // If PPU is still in mode 2, set mode 2 flags
     if(cpu->t_cycles < PPU_MODE2)
     {
         //Searching OAM for OBJs whose Y coordinate overlap this line
         io->STAT |= 2;
         return;
     }
-    
+
+    // MODE 3
     if(cpu->t_cycles < PPU_MODE3 + PPU_MODE2)
     {
         //Reading OAM and VRAM to generate the picture
         io->STAT |= 3;
         return;
     }
-    
+
+    // MODE 0
     if(cpu->t_cycles < PPU_MODE0 + PPU_MODE3 + PPU_MODE2)
     {
         //Nothing (HBlank)
-        io->STAT |= 0;
+        if(0 != draw_scanline(emu))
+            destroy_emulator(emu, EXIT_FAILURE);
+
+        // Now, the game can change the registers safely.
         return;
     }
 }

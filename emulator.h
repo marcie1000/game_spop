@@ -245,6 +245,11 @@ typedef struct s_screen{
     //2: searching OAM, 3: reading OAM and VRAM,
     //0: HBlank, 1: VBlank
     uint8_t PPU_mode;
+
+    uint8_t sprites_to_draw[SPRITES_PER_SCANLINE];
+    uint8_t nb_sptd;
+    bool is_OAM_scanned;
+    bool is_scanline_drawn;
 }s_screen;
 
 typedef struct s_audio{
