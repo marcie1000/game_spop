@@ -442,12 +442,12 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
     bool xflip = (cpu->OAM[sptd + 3] & 0x20);
     bool OBPnum = (cpu->OAM[sptd + 3] & 0x10);
 
-    // Object Tile Adress: discart lsb when 8*16 objects
+    // Object Tile Adress: discard lsb when 8*16 objects
     uint8_t OAM_byte2 = cpu->OAM[sptd + 2];
     if(scr->obj_size)
         OAM_byte2 &= 0xFE;
 
-    uint16_t data_address = 16 * (OAM_byte2 + is_second_tile);
+    int data_address = 16 * (OAM_byte2 + is_second_tile);
     /* data_address  */
     if(!yflip)
         data_address += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
@@ -473,9 +473,6 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
         pix_tmp = (io->OBP0 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
     else
         pix_tmp = (io->OBP1 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
-//    
-//    if(pix_tmp == 0)
-//        return EXIT_SUCCESS;
 
     *pixel = pix_tmp;
     
@@ -524,13 +521,13 @@ void scan_OAM(s_emu *emu)
     scr->nb_sptd = 0;
     for (int i = 0; (i < OAM_SPRITES_MAX * 4) && (scr->nb_sptd < SPRITES_PER_SCANLINE); i += 4)
     {
-        //ckeck if sprite is not on the scanline
-        if(! ( (cpu->OAM[i] <= io->LY + 16) && 
-               (cpu->OAM[i] + 8 + 8 * scr->obj_size > io->LY + 16) ) )
-            continue;
-        
-        scr->sprites_to_draw[scr->nb_sptd] = i;
-        scr->nb_sptd += 1;
+        //ckecks if sprite is on the scanline
+        if ( (cpu->OAM[i] <= io->LY + 16) &&
+               (cpu->OAM[i] + 8 + 8 * scr->obj_size > io->LY + 16) )
+        {
+            scr->sprites_to_draw[scr->nb_sptd] = i;
+            scr->nb_sptd += 1;
+        }
     }
     scr->is_OAM_scanned = true;
 }
