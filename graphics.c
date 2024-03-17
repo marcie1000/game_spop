@@ -291,7 +291,7 @@ void resize_screen(s_screen *s)
     
 }
 
-int draw_background(s_emu *emu, int i, uint8_t *pixel)
+int draw_background(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -340,17 +340,17 @@ int draw_background(s_emu *emu, int i, uint8_t *pixel)
     assert((bg_data_address + 1) < VRAM_SIZE);
 
     flag_assign((cpu->VRAM[bg_data_address] & bitmask),
-                 pixel, 0x01);
+                 color, 0x01);
     flag_assign((cpu->VRAM[bg_data_address + 1] & bitmask), 
-                 pixel, 0x02);
-    
+                 color, 0x02);
+
     //modify pixel color through the palette
-    *pixel = (io->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
+    *pixel = (io->BGP & (0x03 << 2 * *color)) >> 2 * *color;
     
     return EXIT_SUCCESS;
 }
 
-int draw_window(s_emu *emu, int i, uint8_t *pixel)
+int draw_window(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -409,17 +409,17 @@ int draw_window(s_emu *emu, int i, uint8_t *pixel)
     assert((win_data_address + 1) < VRAM_SIZE);
 
     flag_assign((cpu->VRAM[win_data_address] & bitmask),
-                 pixel, 0x01);
+                 color, 0x01);
     flag_assign((cpu->VRAM[win_data_address + 1] & bitmask), 
-                 pixel, 0x02);
+                 color, 0x02);
     
     //modify pixel color through the palette
-    *pixel = (io->BGP & (0x03 << 2 * *pixel)) >> 2 * *pixel;
+    *pixel = (io->BGP & (0x03 << 2 * *color)) >> 2 * *color;
     
     return EXIT_SUCCESS;
 }
 
-int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
+int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t *color, uint8_t sptd)
 {
     assert((sptd + 3) < OAM_SIZE);
     
@@ -427,15 +427,14 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
     
-    uint8_t pix_tmp = 0;
-    
+
     //8*16 sprite handle
     //IF (sprite 8*16) AND (LY is in the second tile of the sprite)
     //enforced by hardware
     bool is_second_tile = ((scr->obj_size) && (io->LY - (cpu->OAM[sptd] - 16) >= 8));
 
     bool bg_win_over_OBJ = (cpu->OAM[sptd + 3] & 0x80);
-    if(bg_win_over_OBJ && *pixel != 0)
+    if(bg_win_over_OBJ && *color != 0)
         return EXIT_SUCCESS;
 
     bool yflip = (cpu->OAM[sptd + 3] & 0x40);
@@ -453,34 +452,33 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t sptd)
         data_address += 2 * ((io->LY - cpu->OAM[sptd] + 16) - 8 * is_second_tile);
     else
         data_address += 2 * (7 - ((io->LY - cpu->OAM[sptd] + 16) - 8 * (!is_second_tile && scr->obj_size)));
-    
+
     uint8_t bitmask;
     if(!xflip) bitmask = (0x80 >> (i - cpu->OAM[sptd + 1] + 8));
     else bitmask = (0x01 << (i - cpu->OAM[sptd + 1] + 8));
 
     assert((data_address + 1) < VRAM_SIZE);
-    
+
+    /* uint8_t pix_tmp = 0; */
     flag_assign((cpu->VRAM[data_address] & bitmask),
-                 &pix_tmp, 0x01);
+                 color, 0x01);
     flag_assign((cpu->VRAM[data_address + 1] & bitmask), 
-                 &pix_tmp, 0x02);
+                 color, 0x02);
     
-    if(pix_tmp == 0)
+    if(*color == 0)
         return EXIT_SUCCESS;
     
     //modify pixel color through the palette
     if(!OBPnum)
-        pix_tmp = (io->OBP0 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
+        *pixel = (io->OBP0 & (0x03 << 2 * *color)) >> 2 * *color;
     else
-        pix_tmp = (io->OBP1 & (0x03 << 2 * pix_tmp)) >> 2 * pix_tmp;
-
-    *pixel = pix_tmp;
+        *pixel = (io->OBP1 & (0x03 << 2 * *color)) >> 2 * *color;
     
     return EXIT_SUCCESS;
     
 }
 
-int draw_OBJ(s_emu *emu, int i, uint8_t *pixel)//, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
+int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)//, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -495,7 +493,7 @@ int draw_OBJ(s_emu *emu, int i, uint8_t *pixel)//, uint8_t sptd[SPRITES_PER_SCAN
         if((cpu->OAM[scr->sprites_to_draw[j] + 1] <= i + 8) &&
            (cpu->OAM[scr->sprites_to_draw[j] + 1] + 8 > i + 8))
         {
-            draw_OBJ_tile(emu, i, pixel, scr->sprites_to_draw[j]);
+            draw_OBJ_tile(emu, i, pixel, color, scr->sprites_to_draw[j]);
         }
     }
     
@@ -564,11 +562,12 @@ int draw_scanline(s_emu *emu)
     for(int i = 0; i < PIX_BY_W; i++)
     {
         uint8_t pixel = 0;
-        if(0 != draw_background(emu, i, &pixel))
+        uint8_t color = 0;
+        if(0 != draw_background(emu, i, &pixel, &color))
             return EXIT_FAILURE;
-        if(0 != draw_window(emu, i, &pixel))
+        if(0 != draw_window(emu, i, &pixel, &color))
             return EXIT_FAILURE;
-        if(0 != draw_OBJ(emu, i, &pixel))
+        if(0 != draw_OBJ(emu, i, &pixel, &color))
             return EXIT_FAILURE;
             
         //convert to 4 possible grayscales [0, 255] values
