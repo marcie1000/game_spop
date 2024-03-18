@@ -786,6 +786,9 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     
     cpu->io.LY = 0;
     scr->win_LY = 0;
+
+    scr->is_OAM_scanned = false;
+    scan_OAM(emu);
     //clear VBlank flag
     //io->IF &= (~0x01);
 }
