@@ -12,7 +12,7 @@ extern void scan_OAM(s_emu *emu);
 extern int draw_scanline(s_emu *emu);
 extern int lockscreen(s_screen *scr);
 extern void ppu_modes_and_scanlines(s_emu *emu);
-extern void render_frame_and_vblank_if_needed(s_emu *emu);
+extern void render_frame(s_emu *emu);
 extern int draw_window(s_emu *emu, int i, uint8_t *pixel, uint8_t *color);
 extern int draw_background(s_emu *emu, int i, uint8_t *pixel, uint8_t *color);
 extern int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t *color);
@@ -23,6 +23,7 @@ extern int initialize_plot_win(s_emu *emu);
 extern void destroy_plot_win(s_plot *plot);
 extern void draw_plot(s_emu *emu);
 extern int render_plot(s_emu *emu);
+extern void vblank(s_emu *emu);
 
 #endif //GRAPHICS_H
 

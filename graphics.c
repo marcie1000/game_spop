@@ -163,31 +163,6 @@ int initialize_plot_win(s_emu *emu)
 
     if(0 != lockscreen_plot(plot))
         return EXIT_FAILURE;
-    //texture containing copy of the last frame that will be shown at 50% transparency for better compatibility
-    //with graphic effects used in some games (like transparent effects in Zelda link's awakening).
-    /* scr->scrcpy = SDL_CreateTexture(scr->r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, PIX_BY_W, PIX_BY_H); */
-    /* if(NULL == scr->scrcpy) */
-    /* { */
-    /*     fprintf(stderr, "Error SDL_CreateTexture scrcpy: %s\n", SDL_GetError()); */
-    /*     return EXIT_FAILURE; */
-    /* } */
-    /* if(0 != SDL_SetTextureAlphaMod(scr->scrcpy, 127)) */
-    /* { */
-    /*     fprintf(stderr, "Error SDL_SetTextureAlphaMod: %s\n", SDL_GetError()); */
-    /*     return EXIT_FAILURE; */
-    /* } */
-    /* SDL_SetTextureBlendMode(scr->scrcpy, SDL_BLENDMODE_BLEND); */
-
-
-    /* emu->cpu.io.STAT = 2; */
-    /* scr->LCD_PPU_enable = false; */
-    /* scr->win_tile_map_area = false; */
-    /* scr->window_enable = false; */
-    /* scr->BG_win_tile_data_area = false; */
-    /* scr->BG_tile_map_area = false; */
-    /* scr->obj_size = false; */
-    /* scr->obj_enable = false; */
-    /* scr->bg_win_enable_priority = false; */
 
     return EXIT_SUCCESS;
 }
@@ -241,8 +216,6 @@ void destroy_plot_win(s_plot *plot)
         SDL_FreeFormat(plot->format);
     if(NULL != plot->plot)
         SDL_DestroyTexture(plot->plot);
-    /* if(NULL != plot->plotcpy) */
-    /*     SDL_DestroyTexture(plot->plotcpy); */
     if(NULL != plot->r)
         SDL_DestroyRenderer(plot->r);
     if(NULL != plot->w)
@@ -321,14 +294,9 @@ int draw_background(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)
     assert((bg_map_start_address + rel_bg_tilemap_address) < VRAM_SIZE);
     
     if(scr->BG_win_tile_data_area)
-    {
         tilenum = (uint8_t)cpu->VRAM[bg_map_start_address + rel_bg_tilemap_address];
-    }
     else
-    {
-        tilenum = (int8_t) cpu->VRAM[bg_map_start_address + rel_bg_tilemap_address]; 
-    }
-
+        tilenum = (int8_t) cpu->VRAM[bg_map_start_address + rel_bg_tilemap_address];
     
     // address of the two bytes in tiles data we want to read (corresponding
     // to the current scanline we are drawing)
@@ -355,9 +323,6 @@ int draw_window(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
     s_io *io = &cpu->io;
-    
-//    uint8_t Ytemp = io->LY + io->WY;
-
     
     if((!scr->bg_win_enable_priority) || (!scr->window_enable) || (io->LY < io->WY))
     {
@@ -478,7 +443,7 @@ int draw_OBJ_tile(s_emu *emu, int i, uint8_t *pixel, uint8_t *color, uint8_t spt
     
 }
 
-int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)//, uint8_t sptd[SPRITES_PER_SCANLINE], uint8_t nb_sptd)
+int draw_OBJ(s_emu *emu, int i, uint8_t *pixel, uint8_t *color)
 {
     s_screen *scr = &emu->scr;
     s_cpu *cpu = &emu->cpu;
@@ -554,11 +519,6 @@ int draw_scanline(s_emu *emu)
     }
     
     //for each pixel of the scanline
-    
-    /* uint8_t sprites_to_draw[SPRITES_PER_SCANLINE]; */
-    /* uint8_t nb_sptd; */
-    /* memset(sprites_to_draw, 0, sizeof(uint8_t[SPRITES_PER_SCANLINE])); */
-    
     for(int i = 0; i < PIX_BY_W; i++)
     {
         uint8_t pixel = 0;
@@ -578,7 +538,7 @@ int draw_scanline(s_emu *emu)
         );
     }
 
-    scr->is_OAM_scanned = false;
+    /* scr->is_OAM_scanned = false; */
     scr->is_scanline_drawn = true;
     
     return EXIT_SUCCESS;
@@ -601,11 +561,14 @@ void ppu_modes_and_scanlines(s_emu *emu)
         //PPU enable : stat = mod2; else stat = mod 1 (VBlank)
         io->STAT |= (scr->LCD_PPU_enable) ? 2 : 1;
         scr->is_scanline_drawn = false;
+        scr->is_OAM_scanned = false;
 
         if(scr->LCD_PPU_enable)
         {
             cpu->io.LY++;
             scr->win_LY++;
+            vblank(emu);
+            render_frame(emu);
             scan_OAM(emu);
         }
         return;
@@ -703,39 +666,38 @@ int render_plot(s_emu *emu)
     return EXIT_SUCCESS;
 }
 
-void render_frame_and_vblank_if_needed(s_emu *emu)
+void vblank(s_emu *emu)
 {
     s_cpu *cpu = &emu->cpu;
     s_screen *scr = &emu->scr;
     s_io *io = &cpu->io;
-    
+
     if(io->LY < 144)
     {
         //io->IF &= ~0x01;
         scr->old_STAT = io->STAT;
         return;
     }
-    
-    //set VBlank interrupt flag 
+
+    //set VBlank interrupt flag
     if((scr->old_STAT & 0x03) != 1)
-    {
         io->IF |= 0x01;
-    }
-    
+
     io->STAT &= ~0x03;
     io->STAT |= 1;
-    
+
     scr->old_STAT = io->STAT;
+}
+
+void render_frame(s_emu *emu)
+{
+    s_cpu *cpu = &emu->cpu;
+    s_screen *scr = &emu->scr;
+    s_io *io = &cpu->io;
     
     if(cpu->io.LY < 154)
         return;
-        
-//    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-//    if(elapsed <= 17 && !emu->opt.fast_forward)
-//    {
-//        SDL_Delay(17 - elapsed);
-//        elapsed = 17;
-//    }
+
     if((emu->au.buffers_since_last_frame < BUFFERS_PER_FRAME) && 
       (!emu->opt.fast_forward) && emu->opt.audio && emu->au.apu_enable)
         return;
@@ -763,9 +725,6 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     if(0 != lockscreen(scr))
         destroy_emulator(emu, EXIT_FAILURE);
 
-//    Uint64 elapsed = SDL_GetTicks64() - emu->frame_timer;
-//    static uint64_t elapsed_sum = 0;
-//    elapsed_sum += elapsed;
     static int sum_cnt = 0;
     sum_cnt++;
     
@@ -786,11 +745,6 @@ void render_frame_and_vblank_if_needed(s_emu *emu)
     
     cpu->io.LY = 0;
     scr->win_LY = 0;
-
-    scr->is_OAM_scanned = false;
-    scan_OAM(emu);
-    //clear VBlank flag
-    //io->IF &= (~0x01);
 }
 
 int DMA_transfer(s_emu *emu)

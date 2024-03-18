@@ -1112,7 +1112,6 @@ void emulate(s_emu *emu)
 
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
-        render_frame_and_vblank_if_needed(emu);
 
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
@@ -1121,7 +1120,6 @@ void emulate(s_emu *emu)
 
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
-        render_frame_and_vblank_if_needed(emu);
 
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
@@ -1130,7 +1128,6 @@ void emulate(s_emu *emu)
 
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
-        render_frame_and_vblank_if_needed(emu);
 
         interpret(emu, emu->opcode_functions);   
         interpret(emu, emu->opcode_functions);
@@ -1139,7 +1136,7 @@ void emulate(s_emu *emu)
 
         ppu_modes_and_scanlines(emu);
         audio_update(emu);
-        render_frame_and_vblank_if_needed(emu);   
+
 //        
     }
 }
